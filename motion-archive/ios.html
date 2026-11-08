@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>iOS UI·UX 도감</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="ux.css">
+<style>:root{--bg:#F2F2F7;--surface:#FFFFFF;--stage:#F2F2F7;--ui:#FFFFFF;--frame:#C7C7CC;--ink:#1C1C1E;--ink-2:#3A3A3C;--ink-3:#6C6C70;--line:#D1D1D6;--shine:#F2F2F7;--rule:#E5E5EA;--accent:#007AFF;--accent-ink:#FFFFFF;--accent-soft:#E3EEFF;--inv-accent:#64B5FF;--danger:#FF3B30;--danger-soft:#FFE5E3;--warn:#FF9500;--warn-soft:#FFF0DB;--shadow:none;
+--f-dis:-apple-system,BlinkMacSystemFont,"SF Pro Display","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;--f-txt:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000000;--surface:#1C1C1E;--stage:#2C2C2E;--ui:#3A3A3C;--frame:#545458;--ink:#F2F2F7;--ink-2:#D1D1D6;--ink-3:#AEAEB2;--line:#545458;--shine:#636366;--rule:#38383A;--accent:#0A84FF;--accent-soft:#0A2D52;--inv-accent:#0060DF;--danger:#FF453A;--danger-soft:#4A1E1B;--warn:#FF9F0A;--warn-soft:#4A3214}}
+:root[data-theme="dark"]{--bg:#000000;--surface:#1C1C1E;--stage:#2C2C2E;--ui:#3A3A3C;--frame:#545458;--ink:#F2F2F7;--ink-2:#D1D1D6;--ink-3:#AEAEB2;--line:#545458;--shine:#636366;--rule:#38383A;--accent:#0A84FF;--accent-soft:#0A2D52;--inv-accent:#0060DF;--danger:#FF453A;--danger-soft:#4A1E1B;--warn:#FF9F0A;--warn-soft:#4A3214}
+.card{border-radius:22px}.card .stage{border-radius:14px}.chip{border-radius:10px;padding:10px 14px}.chip[aria-pressed="true"],.chip.sel{background:var(--accent);color:#fff}.search input{border-radius:10px}.hero h1{letter-spacing:-.03em}</style>
+</head>
+<body data-page="ios">
+<header class="top wrap"><a class="brand" href="index.html">UI·UX <b>도감</b></a><nav class="pages" aria-label="페이지"><a href="index.html" data-en="Atlas">전체 도감</a><a href="ios.html" aria-current="page" data-en="iOS">iOS</a><a href="android.html" data-en="Android">안드로이드</a><a href="motion.html" data-en="Motion">애니메이션</a><a href="terms.html" data-en="Glossary">UI 용어</a></nav></header>
+
+<header class="hero wrap">
+  <p class="eyebrow" data-en="iOS · Human Interface Guidelines">iOS · Human Interface Guidelines</p>
+  <h1 data-en="This is how&lt;br&gt;&lt;mark&gt;iOS&lt;/mark&gt; moves">iOS 화면은<br><mark>이렇게</mark> 움직여요</h1>
+  <p class="lede" data-en="Based on Apple’s Human Interface Guidelines, this page collects the screen structure, navigation, controls, alerts and list patterns used in iPhone and iPad apps, each with a live example. It reflects Liquid Glass from iOS 26 and the changes in iOS 27.">애플 휴먼 인터페이스 가이드라인(HIG)을 바탕으로, 아이폰과 아이패드 앱에서 쓰는 화면 구조·내비게이션·컨트롤·알림·목록 패턴을 움직이는 예시로 정리했어요. iOS 26의 리퀴드 글래스와 iOS 27의 변화도 반영했어요.</p>
+  <dl class="meta">
+    <div><dt data-en="Concepts">개념</dt><dd id="n-items">0</dd></div>
+    <div><dt data-en="Topics">분류</dt><dd id="n-cats">0</dd></div>
+  </dl>
+</header>
+
+<nav class="bar" aria-label="분류와 검색">
+  <div class="bar-in wrap">
+    <button class="chip" id="c-all" type="button" aria-pressed="true">전체</button>
+    <button class="chip pk" id="pk" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="pop"><span class="pk-l" id="pk-l">주제 선택</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="pop" id="pop" hidden><div class="pop-h"><b id="pop-t">주제를 골라 보세요</b></div><div class="pop-g" id="pop-g"></div></div>
+    <label class="search" for="q"><span class="sr" id="q-l">개념 검색</span><input id="q" type="search" placeholder="탭 바, 시트, 스와이프…" data-q-ko="탭 바, 시트, 스와이프…" data-q-en="Tab bar, sheet, swipe…" autocomplete="off"></label>
+    <button class="ib lg" id="lg" type="button" aria-label="Switch to English"><span>EN</span></button>
+    <button class="ib tt" id="tt" type="button" aria-label="다크 모드로 보기"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </div>
+</nav>
+
+<main id="list" class="wrap"></main>
+<p class="empty wrap" id="empty" hidden data-en="Nothing matches. Try the Korean or English name.">찾는 개념이 없어요. 한글 이름이나 영어 이름으로 다시 검색해 보세요.</p>
+
+<footer class="foot wrap">
+  <div class="foot-t">
+    <p data-en="Every example is a CSS animation and only plays while its card is on screen.">예시는 모두 CSS 애니메이션이에요. 카드가 화면에 보일 때만 재생돼요.</p>
+    <p data-en="With Reduce Motion turned on, examples stay still and only move on hover or when a card is opened.">기기에서 '동작 줄이기'를 켜면 멈춘 상태로 보이고, 마우스를 올리거나 카드를 열 때만 움직여요.</p>
+  </div>
+  <p class="made">Made by <a href="https://github.com/starrykss" target="_blank" rel="noopener noreferrer">@starrykss</a></p>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="d-t">
+    <div class="d-st"><div class="stage"><div class="sc" id="d-sc"></div></div></div>
+    <div class="d-b">
+      <div class="d-top">
+        <p class="eyebrow" id="d-cat"></p>
+        <button class="ib" id="d-x" type="button" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <h3 id="d-t"></h3>
+      <p class="d-e" id="d-e"></p>
+      <p class="d-d" id="d-d"></p>
+      <div class="d-u"><b id="d-ul">언제 쓰나요</b><span id="d-u"></span></div>
+      <div class="d-nav">
+        <button class="ib" id="d-p" type="button" aria-label="이전 개념"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="d-pos" id="d-pos"></span>
+        <button class="ib" id="d-n" type="button" aria-label="다음 개념"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="d1.js"></script>
+<script src="d1b.js"></script>
+<script src="d15a.js"></script>
+<script src="d15b.js"></script>
+<script src="d2.js"></script>
+<script src="d5.js"></script>
+<script src="d5b.js"></script>
+<script src="d22a.js"></script>
+<script src="d22b.js"></script>
+<script src="d16a.js"></script>
+<script src="d16b.js"></script>
+<script src="d7a.js"></script>
+<script src="d7b.js"></script>
+<script src="d17.js"></script>
+<script src="d8a.js"></script>
+<script src="d8b.js"></script>
+<script src="d8c.js"></script>
+<script src="d9a.js"></script>
+<script src="d9b.js"></script>
+<script src="d18a.js"></script>
+<script src="d18b.js"></script>
+<script src="d3.js"></script>
+<script src="d4.js"></script>
+<script src="d10.js"></script>
+<script src="d19.js"></script>
+<script src="d11.js"></script>
+<script src="d12.js"></script>
+<script src="d12b.js"></script>
+<script src="d20a.js"></script>
+<script src="d20b.js"></script>
+<script src="d21a.js"></script>
+<script src="d21b.js"></script>
+<script src="d6.js"></script>
+<script src="d6b.js"></script>
+<script src="d6c.js"></script>
+<script src="d13.js"></script>
+<script src="d14.js"></script>
+<script src="d14b.js"></script>
+<script src="ios1.js"></script>
+<script src="ios2.js"></script>
+<script src="en1.js"></script>
+<script src="en2.js"></script>
+<script src="en3.js"></script>
+<script src="en4.js"></script>
+<script src="en5.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
