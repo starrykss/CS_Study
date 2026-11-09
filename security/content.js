@@ -45,7 +45,7 @@ function sPK() {
   const S = scene({ id: 'sc-pk', steps: 6, per: 1.2 });
   box(S, 'al', 1, 2.4, 7, 3.4, 'Alice'); box(S, 'bo', 24, 2.4, 7, 3.4, 'Bob'); box(S, 'ev', 12.5, 15.4, 7, 3.4, ['도청자 Eve', 'Eve (attacker)'], { s: C.bad });
   key(S, 'pub', 24.7, 6.6, ['공개키', 'public'], KEYG); key(S, 'prv', 24.7, 8.8, ['개인키', 'private'], KEYR);
-  text(S, 'pn', 24.7, 11, ['개인키는 절대 안 내보내요', 'private never leaves'], { cls: 'cz-t', s: hid() }); S.set('pn', 1, { opacity: '1' });
+  text(S, 'pn', 24.7, 11, ['개인키는 나만 보관', 'private never leaves'], { cls: 'cz-t', s: hid() }); S.set('pn', 1, { opacity: '1' });
   key(S, 'pubA', 24.7, 6.6, ['공개키', 'public'], KEYG, { hide: 1 }); S.set('pubA', 2, { opacity: '1' }).move('pubA', 2, 1.7, 6.6);
   cell(S, 'm', 1, 10.2, '"hi"', { w: 7, h: 2.4, cls: 'cz-c sc-m', s: hid() }); S.set('m', 3, { opacity: '1' });
   cell(S, 'c', 1, 10.2, '9x#2…', { w: 7, h: 2.4, cls: 'cz-c sc-m', s: hid(C.cmp) });
@@ -340,6 +340,283 @@ function sFW() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'scx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono scx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono scx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c scx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono scx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c scx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'scx-s scx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono scx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono scx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono scx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono scx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono scx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'scx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'scx-xs', 5));
+
+
+const CSSX = `
+.scx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.scx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.scx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.scx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.scx-r .in{color:var(--danger);font-weight:800}
+.scx-g .in{color:var(--ok);font-weight:800}
+.scx-a .in{color:var(--accent);font-weight:800}
+.scx-w .in{color:var(--warn);font-weight:800}
+.scx-c .in{font-size:.6em;font-weight:700}
+.scx-c2 .in{font-size:.5em;font-weight:700}
+.scx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.scx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'scx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : 0 }));
+
+/* ================= crypto ================= */
+function sAesMode() {
+  const S = scene({ id: 'sc-aesmode', steps: 5, per: 1.6 });
+  const SH = ['..##....', '.####...', '######..', '.####...', '..##..##', '......##'], CW = .88;
+  const rnd = (i, j) => ((i * 7 + j * 13 + i * j * 5) % 5);
+  const PAL = ['accent', 'ok', 'warn', 'danger', 'ink-3'];
+  const img = (k, x, st, f) => { for (let i = 0; i < 6; i++) for (let j = 0; j < 8; j++) { const [c, p] = f(SH[i][j] === '#', i, j); rect(S, `${k}${i}_${j}`, x + j * CW, 1.2 + i * CW, CW - .04, CW - .04, c, p, st, { r: .05 }); } };
+  img('o', 1, 1, on => on ? ['ink-2', 70] : ['line', 40]); T(S, 'ol', 1, 6.7, ['원본 (블록 = 칸 하나)', 'original (block = one cell)'], 'scx-tiny', 1);
+  img('e', 9.8, 2, on => on ? ['danger', 55] : ['warn', 35]); T(S, 'el', 9.8, 6.7, ['ECB: 무늬가 그대로 ✗', 'ECB: the pattern survives ✗'], 'scx-tiny scx-r', 2);
+  img('c', 18.6, 3, (on, i, j) => [PAL[rnd(i, j)], 35 + rnd(j, i) * 8]); T(S, 'cl', 18.6, 6.7, ['CBC·CTR: 잡음처럼 ✓', 'CBC/CTR: looks like noise ✓'], 'scx-tiny scx-g', 3);
+  const row = (k, y, lbl, items, st, cls) => { T(S, k + 'l', 1, y + .3, lbl, 'scx-xs ' + (cls || ''), st); items.forEach(([t, c], i) => box2(S, `${k}${i}`, 6.4 + i * 4.3, y, 4, 1.2, t, c, st, { pct: 35 })); };
+  row('p', 7.8, ['평문 블록', 'plaintext'], [['P1', 'line'], ['P2', 'line'], ['P1', 'line'], ['P3', 'line']], 1);
+  row('b', 9.3, 'ECB', [['C7', 'danger'], ['C2', 'warn'], ['C7', 'danger'], ['C5', 'warn']], 2, 'scx-r');
+  row('d', 10.8, 'CBC', [['X1', 'ok'], ['X8', 'ok'], ['X3', 'ok'], ['X6', 'ok']], 3, 'scx-g');
+  T(S, 'dn', 23.8, 10.95, ['IV와 앞 블록을 섞어 매번 달라요', 'mixed with the IV and previous block'], 'scx-tiny', 3);
+  row('g', 12.3, 'GCM', [['X4', 'ok'], ['X9', 'ok'], ['X2', 'ok'], ['tag', 'accent']], 4, 'scx-a');
+  T(S, 'gn', 23.8, 12.45, ['암호화 + 위변조 검출 태그', 'encryption + tamper-detecting tag'], 'scx-tiny scx-a', 4);
+  fin(S, 'z', 14, [['같은 AES라도 운용 모드가 중요해요: ECB는 같은 평문 블록 → 같은 암호문이라 패턴이 새어 나가요', 'the mode matters as much as AES: ECB maps equal blocks to equal ciphertext and leaks patterns', 'scx-xs scx-a'], ['요즘 기본값은 AES-GCM이나 ChaCha20-Poly1305 같은 AEAD (암호화 + 인증)', 'today’s default is an AEAD such as AES-GCM or ChaCha20-Poly1305 (encryption + authentication)'], ['같은 키로 nonce(IV)를 두 번 쓰면 안전성이 무너져요 · 라이브러리의 고수준 API를 쓰세요', 'never reuse a nonce (IV) with the same key · prefer a library’s high-level API']]);
+  S.cap(1, '블록 단위 암호화', 'Encrypting block by block').cap(2, 'ECB: 패턴 유출', 'ECB leaks patterns').cap(3, 'CBC·CTR: 연쇄로 섞기', 'CBC/CTR: chain and mix').cap(4, 'GCM: 인증까지', 'GCM adds authentication').cap(5, '블록 암호 운용 모드', 'Block cipher modes');
+  return S;
+}
+function sHmac() {
+  const S = scene({ id: 'sc-hmac', steps: 5, per: 1.6 });
+  box2(S, 'm1', 1, 1.2, 6.4, 1.3, 'amount=100', 'line', 1, { pct: 40 }); ar(S, 'a1', [7.5, 1.85], [9.3, 1.85], 'ink-3', 1, { h: .08 }); box2(S, 'h1', 9.4, 1.2, 4.2, 1.3, 'SHA-256', 'accent', 1, { pct: 30 }); ar(S, 'a2', [13.7, 1.85], [15.5, 1.85], 'ink-3', 1, { h: .08 }); box2(S, 'd1', 15.6, 1.2, 4, 1.3, 'a3f…', 'ok', 1, { pct: 35 });
+  box2(S, 'm2', 1, 2.9, 6.4, 1.3, 'amount=900', 'danger', 1, { pct: 30 }); ar(S, 'a3', [7.5, 3.55], [9.3, 3.55], 'ink-3', 1, { h: .08 }); box2(S, 'h2', 9.4, 2.9, 4.2, 1.3, 'SHA-256', 'accent', 1, { pct: 30 }); ar(S, 'a4', [13.7, 3.55], [15.5, 3.55], 'ink-3', 1, { h: .08 }); box2(S, 'd2', 15.6, 2.9, 4, 1.3, '7c1…', 'danger', 1, { pct: 30 });
+  T(S, 't1', 20.4, 1.9, ['해시만 붙이면 공격자도', 'with a plain hash the attacker'], 'scx-xs scx-r', 1); T(S, 't1b', 20.4, 2.9, ['다시 계산해 위조해요', 'just recomputes it'], 'scx-xs scx-r', 1);
+  box2(S, 'kh', 1, 5, 9.4, 1.3, 'H(key ‖ msg)', 'warn', 2, { pct: 30 }); T(S, 'kt', 11, 4.9, ['SHA-256 길이 확장 공격: 키 없이도', 'SHA-256 length extension: without the key,'], 'scx-xs scx-r', 2); T(S, 'kt2', 11, 5.9, ['H(key ‖ msg ‖ pad ‖ &admin=1)을 계산해요', 'compute H(key ‖ msg ‖ pad ‖ &admin=1)'], 'cz-mono scx-xs scx-r', 2);
+  box2(S, 'in', 1, 7.4, 10.4, 1.4, 'H((K ⊕ ipad) ‖ m)', 'accent', 3, { pct: 25 }); ar(S, 'ia', [11.5, 8.1], [13.3, 8.1], 'ink-3', 3, { h: .08 }); box2(S, 'out', 13.4, 7.4, 11.2, 1.4, ['H((K ⊕ opad) ‖ 안쪽 값)', 'H((K ⊕ opad) ‖ inner)'], 'accent', 3, { pct: 35 }); ar(S, 'oa', [24.7, 8.1], [26.5, 8.1], 'ink-3', 3, { h: .08 }); box2(S, 'tag', 26.6, 7.4, 4.4, 1.4, 'tag', 'ok', 3, { pct: 40 });
+  T(S, 'hn', 1, 9.1, ['HMAC: 키로 두 번 감싸 길이 확장을 막아요', 'HMAC wraps twice with the key, blocking length extension'], 'scx-xs scx-g', 3);
+  code(S, 'cd', 1, 10.2, 30, ['const expected = hmacSha256(secret, rawBody);', ["if (!timingSafeEqual(expected, req.headers['x-signature'])) reject();   // 웹훅 검증", "if (!timingSafeEqual(expected, req.headers['x-signature'])) reject();   // webhook check"]], [], { st: 4 });
+  fin(S, 'z', 13.6, [['MAC: 비밀 키를 아는 쪽만 만들 수 있는 체크섬 → 무결성 + 출처 인증', 'a MAC is a checksum only key holders can produce → integrity plus authenticity', 'scx-xs scx-a'], ['웹훅 서명(GitHub, Stripe), API 요청 서명(AWS SigV4), JWT HS256, 서명된 쿠키에 써요', 'used for webhook signatures (GitHub, Stripe), request signing (AWS SigV4), JWT HS256 and signed cookies'], ['전자 서명과 달리 양쪽이 같은 키를 가져서 “누가 만들었는지”를 제3자에게 증명하진 못해요', 'unlike signatures, both sides share the key, so it can’t prove authorship to a third party']]);
+  S.cap(1, '해시만으로는 부족', 'A hash alone isn’t enough').cap(2, '키를 앞에 붙이면?', 'Prefixing the key?').cap(3, 'HMAC 구조', 'How HMAC is built').cap(4, '웹훅 검증', 'Verifying webhooks').cap(5, 'HMAC과 메시지 인증 코드', 'HMAC and MACs');
+  return S;
+}
+function sRand() {
+  const S = scene({ id: 'sc-rand', steps: 5, per: 1.6 });
+  T(S, 'mt', 1, .3, ['Math.random() 출력 몇 개를 관찰하면…', 'observe a few Math.random() outputs…'], 'scx-xs scx-a', 1);
+  ['0.1342', '0.7731', '0.4410'].forEach((v, i) => box2(S, 'o' + i, 1 + i * 4.2, 1.3, 3.9, 1.3, v, 'line', 1, { pct: 40 }));
+  ar(S, 'oa', [13.7, 1.95], [15.5, 1.95], 'danger', 1, { h: .08 }); box2(S, 'stt', 15.6, 1.3, 5.6, 1.3, ['내부 상태 복원', 'recover the state'], 'danger', 1, { pct: 30 }); ar(S, 'sa', [21.3, 1.95], [23.1, 1.95], 'danger', 1, { h: .08 }); box2(S, 'pr', 23.2, 1.3, 7.8, 1.3, ['다음 값 0.9055 예측 ✓', 'predict next: 0.9055 ✓'], 'danger', 1, { pct: 40 });
+  T(S, 'mn', 1, 2.9, ['일반 PRNG(xorshift128+ 등)는 빠르지만 예측 가능해요', 'ordinary PRNGs (xorshift128+, …) are fast but predictable'], 'scx-xs scx-r', 1);
+  [['인터럽트 타이밍', 'interrupt timing'], ['디스크·네트워크 지터', 'disk/network jitter'], ['하드웨어 RNG (RDRAND)', 'hardware RNG (RDRAND)']].forEach((t, i) => { box2(S, 'en' + i, 1, 4.4 + i * 1.5, 8.4, 1.2, t, 'warn', 2, { pct: 30 }); seg(S, 'el' + i, [9.45, 5 + i * 1.5], [11.95, 6.5], 2, 'ink-3', .07); });
+  box2(S, 'pool', 12, 5.7, 5.4, 1.6, ['엔트로피 풀', 'entropy pool'], 'warn', 2, { pct: 40 }); ar(S, 'pa', [17.5, 6.5], [19.3, 6.5], 'ink-3', 2, { h: .08 });
+  box2(S, 'drbg', 19.4, 5.7, 5.8, 1.6, 'ChaCha20 DRBG', 'ok', 2, { pct: 35 }); ar(S, 'da', [25.3, 6.5], [27.1, 6.5], 'ink-3', 2, { h: .08 }); box2(S, 'out', 27.2, 5.7, 3.8, 1.6, ['출력', 'output'], 'ok', 2, { pct: 40 });
+  T(S, 'cn', 12, 8, ['출력을 아무리 봐도 다음 값을 알 수 없어요 (CSPRNG)', 'no amount of output reveals the next value (CSPRNG)'], 'scx-xs scx-g', 2);
+  code(S, 'bad', 1, 9.2, 14.6, ['token = Math.random()', '  .toString(36).slice(2);'], [], { st: 3 }); T(S, 'bx', 13.8, 9.35, '✗', 'scx-s scx-r', 3);
+  code(S, 'good', 16.4, 9.2, 14.6, ['crypto.getRandomValues(buf);', ['# Python: secrets.token_urlsafe(32)', '# Python: secrets.token_urlsafe(32)']], [], { st: 3 }); T(S, 'gx', 29.9, 9.35, '✓', 'scx-s scx-g', 3);
+  T(S, 's4', 1, 12.6, ['비밀 토큰은 128비트 이상 · 시간·PID로 시드 만들기 금지 · 비밀번호 재설정·세션 ID·API 키 모두 해당', 'tokens need 128+ bits · never seed from time or PIDs · covers reset links, session IDs, API keys'], 'scx-xs scx-a', 4);
+  fin(S, 'z', 14, [['보안용 난수는 반드시 암호학적으로 안전한 생성기(CSPRNG)에서', 'security randomness must come from a cryptographically secure generator (CSPRNG)', 'scx-xs scx-a'], ['OS가 모은 엔트로피로 시드한 뒤 암호 알고리즘으로 늘려요 (/dev/urandom, getrandom())', 'the OS seeds it from collected entropy and stretches it with a cipher (/dev/urandom, getrandom())']]);
+  S.cap(1, '예측 가능한 난수', 'Predictable randomness').cap(2, 'CSPRNG의 구조', 'How a CSPRNG works').cap(3, '코드에서는', 'In code').cap(4, '얼마나 길게', 'How long to make tokens').cap(5, '안전한 난수', 'Secure randomness');
+  return S;
+}
+function sTiming() {
+  const S = scene({ id: 'sc-timing', steps: 5, per: 1.6 });
+  code(S, 'cd', 1, .8, 15, ['function eq(a, b) {', '  for (let i = 0; i < a.length; i++)', '    if (a[i] !== b[i]) return false;', '  return true;', '}'], [[2, 1]], { hoff: 4 });
+  T(S, 'cn', 1, 8.2, ['첫 번째로 다른 글자에서 바로 돌아가요', 'it returns at the first mismatch'], 'scx-xs scx-r', 1);
+  T(S, 'gt', 17, .3, ['비밀 토큰 c4e9…에 대해 첫 글자를 바꿔 가며 시간 측정', 'time guesses for the secret c4e9… by first character'], 'scx-tiny scx-a', 2);
+  [['0000…', 6, 'line'], ['7000…', 6, 'line'], ['c000…', 8.6, 'danger'], ['f000…', 6, 'line']].forEach(([g, w, c], i) => { const y = 1.2 + i * 1.5; T(S, 'g' + i, 17, y + .2, g, 'cz-mono scx-xs', 2); rect(S, 'gb' + i, 21, y, w, 1.1, c, 40, 2, { r: .2 }); T(S, 'gv' + i, 21.2 + w, y + .2, w > 7 ? '52 µs' : '40 µs', 'cz-mono scx-tiny' + (w > 7 ? ' scx-r' : ''), 2); });
+  T(S, 'k3', 17, 7.3, ['c가 맞으면 비교가 한 글자 더 진행 → 조금 느려요', 'a correct c makes the loop go one step further → slower'], 'scx-tiny scx-r', 2);
+  ['c', 'c4', 'c4e', 'c4e9', '…'].forEach((t, i) => box2(S, 'p' + i, 1 + i * 4, 9, 3.6, 1.2, t, i < 4 ? 'danger' : 'line', 3, { pct: 30 }));
+  T(S, 'pn', 21.4, 9.2, ['16ⁿ 대신 16 × n번 시도', '16 × n tries instead of 16ⁿ'], 'scx-xs scx-r', 3);
+  code(S, 'fx', 1, 10.6, 30, ['let diff = 0;', 'for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);', ['return diff === 0;   // 실무에선 crypto.timingSafeEqual · hmac.compare_digest', 'return diff === 0;   // in practice: crypto.timingSafeEqual · hmac.compare_digest']], [], { st: 4 });
+  fin(S, 'z', 15.4, [['타이밍 공격: 처리 시간 차이로 비밀을 한 조각씩 알아내요 → 비밀 비교는 상수 시간으로', 'timing attacks learn secrets piece by piece from time differences → compare secrets in constant time', 'scx-xs scx-a'], ['네트워크 잡음이 있어도 측정을 반복하면 통계로 드러나요 · 캐시 타이밍(Spectre), 전력 분석도 같은 계열의 부채널', 'noise averages out over many measurements · cache timing (Spectre) and power analysis are related side channels']]);
+  S.cap(1, '조기 반환 비교', 'An early-exit comparison').cap(2, '시간 차이 측정', 'Measure the difference').cap(3, '한 글자씩 맞히기', 'Guess one character at a time').cap(4, '상수 시간 비교', 'Constant-time comparison').cap(5, '타이밍 공격', 'Timing attacks');
+  return S;
+}
+
+/* ================= web ================= */
+function sSsrf() {
+  const S = scene({ id: 'sc-ssrf', steps: 5, per: 1.6 });
+  frame(S, 'vpc', 8.6, 1, 22.4, 9.4, 'ink-3', 0, { dash: 1, w: .1 }); T(S, 'vpcl', 8.9, 1.1, ['클라우드 내부망 (VPC)', 'cloud private network (VPC)'], 'scx-tiny', 0);
+  box2(S, 'u', 1, 4.6, 6, 1.6, ['사용자', 'user'], 'line', 0, { pct: 40 }); box2(S, 'sv', 10, 4.6, 7, 1.6, ['서버: 미리보기', 'server: preview'], 'accent', 0, { pct: 30 });
+  box2(S, 'ext', 1, 1.2, 6, 1.6, 'cat.example', 'ok', 1, { pct: 30 });
+  [['md', 2.2, ['메타데이터 169.254.169.254', 'metadata 169.254.169.254']], ['rd', 4.8, 'Redis 10.0.0.5:6379'], ['ad', 7.4, ['관리자 localhost:8080', 'admin localhost:8080']]].forEach(([k, y, l]) => box2(S, k, 21, y, 9.4, 1.5, l, 'warn', 0, { pct: 25 }));
+  ar(S, 'r0', [7.1, 5.4], [9.9, 5.4], 'ink-3', 0, { h: .08 });
+  T(S, 'q1', 1, 6.6, '?url=https://cat.example/a.jpg', 'cz-mono scx-tiny', 1, { off: 2 }); elb(S, 'f1', [[11.5, 4.5], [11.5, 2], [7.1, 2]], 'ok', 1, { h: .08, off: 2 });
+  T(S, 'q2', 1, 6.6, '?url=http://169.254.169.254/latest/meta-data/iam/…', 'cz-mono scx-tiny scx-r', 2);
+  elb(S, 'f2', [[17.1, 5], [19, 5], [19, 2.95], [20.9, 2.95]], 'danger', 2, { h: .1 }); tsets(S, 'md', [[2, 'danger', 35]]);
+  T(S, 'k2', 1, 8, ['서버가 대신 접속해 IAM 임시 키를 그대로 돌려줘요', 'the server fetches it and hands back temporary IAM keys'], 'scx-xs scx-r', 2);
+  elb(S, 'f3', [[17.1, 5.6], [20.9, 5.6]], 'danger', 3, { h: .1 }); elb(S, 'f4', [[17.1, 6.1], [19, 6.1], [19, 8.15], [20.9, 8.15]], 'danger', 3, { h: .1 }); tsets(S, 'rd', [[3, 'danger', 30]]); tsets(S, 'ad', [[3, 'danger', 30]]);
+  T(S, 'k3', 1, 9.1, ['내부 서비스·관리자 페이지도 · 리다이렉트, DNS 리바인딩, 10진수 IP로 필터 우회', 'internal services and admin pages too · bypasses via redirects, DNS rebinding, decimal IPs'], 'scx-tiny scx-r', 3);
+  [['허용 목록 호스트만', 'allowlisted hosts only'], ['DNS 해석 후 사설 IP 차단', 'block private IPs after DNS'], ['리다이렉트 끄기', 'disable redirects'], ['IMDSv2 (토큰 필요)', 'IMDSv2 (token required)'], ['이그레스 방화벽', 'egress firewall']].forEach((t, i) => box2(S, 'd' + i, 1 + i * 6.05, 10.9, 5.85, 1.5, t, 'ok', 4, { pct: 30 }));
+  fin(S, 'z', 12.9, [['SSRF: 서버가 사용자 대신 URL을 요청하는 기능을 악용해 내부망에 접근해요', 'SSRF abuses a server-side URL fetch to reach the internal network', 'scx-xs scx-a'], ['2019년 Capital One 유출이 대표 사례 · OWASP Top 10에 들어 있어요', 'the 2019 Capital One breach is the classic case · it is in the OWASP Top 10'], ['미리보기, 웹훅, 이미지 가져오기, PDF 생성처럼 “URL을 받는 기능”이 모두 후보예요', 'link previews, webhooks, image fetchers and PDF renderers, anything that takes a URL, are candidates']]);
+  S.cap(1, '정상: 외부 이미지 가져오기', 'Normal: fetch an external image').cap(2, '공격: 메타데이터 주소', 'Attack: the metadata address').cap(3, '내부 서비스까지', 'Internal services too').cap(4, '방어', 'Defenses').cap(5, 'SSRF', 'Server-side request forgery');
+  return S;
+}
+function sPath() {
+  const S = scene({ id: 'sc-path', steps: 5, per: 1.6 });
+  const F = [['/', 1, 1.2], ['srv/', 2.6, 2.6], ['files/', 4.2, 4], ['report.pdf', 5.8, 5.4], ['etc/', 2.6, 6.8], ['passwd', 4.2, 8.2]], K = ['root', 'srv', 'files', 'rep', 'etc', 'pw'];
+  F.forEach(([l, x, y], i) => box2(S, 'f' + K[i], x, y, 5, 1.1, l, i === 5 ? 'line' : 'accent', 0, { pct: i < 4 ? 25 : 40 }));
+  [[1.6, 2.3, 2.6, 3.1], [3.2, 3.7, 4.2, 4.5], [4.8, 5.1, 5.8, 5.9], [1.6, 2.3, 6.8, 7.3], [3.2, 7.9, 4.2, 8.7]].forEach(([x1, y1, x2, y2], i) => { seg(S, 'tv' + i, [x1, y1], [x1, y2], 0, 'ink-3', .06); seg(S, 'th' + i, [x1, y2], [x2, y2], 0, 'ink-3', .06); });
+  tsets(S, 'frep', [[1, 'ok', 40], [2, 'accent', 25]]);
+  code(S, 'c1', 12, .8, 19, ['path.join("/srv/files", req.query.file)'], [], {});
+  T(S, 'i1', 12, 3.1, 'file=report.pdf → /srv/files/report.pdf ✓', 'cz-mono scx-xs scx-g', 1, { off: 2 });
+  T(S, 'i2', 12, 3.1, 'file=../../etc/passwd → /etc/passwd ✗', 'cz-mono scx-xs scx-r', 2);
+  tsets(S, 'ffiles', [[2, 'warn', 40]]); tsets(S, 'fsrv', [[2, 'warn', 40]]); tsets(S, 'froot', [[2, 'warn', 40]]); tsets(S, 'fetc', [[2, 'warn', 40]]); tsets(S, 'fpw', [[2, 'danger', 40]]);
+  T(S, 'up', 9.6, 4.1, ['.. 두 번 → 루트까지 올라감', 'two “..” climb to the root'], 'scx-tiny scx-r', 2, { off: 3 });
+  code(S, 'c2', 12, 4.4, 19, ["exec('ping -c 1 ' + host)", 'host = "8.8.8.8; cat /etc/passwd"'], [], { st: 3 });
+  T(S, 'i3', 12, 7.8, ['셸이 ; 뒤를 두 번째 명령으로 실행 (명령 주입)', 'the shell runs the part after ; as a second command'], 'scx-xs scx-r', 3);
+  code(S, 'fx', 1, 9.8, 30, ['const p = path.resolve(BASE, name);  if (!p.startsWith(BASE + path.sep)) deny();', ["execFile('ping', ['-c', '1', host]);   // 셸 없이 인자 배열로", "execFile('ping', ['-c', '1', host]);   // no shell, argument array"]], [], { st: 4 });
+  T(S, 'f4', 1, 13.2, ['가능하면 파일명 대신 ID로 받고, 입력은 허용 목록으로 검증 · 프로세스는 최소 권한으로', 'take IDs instead of file names where possible, validate against allowlists, run with least privilege'], 'scx-xs scx-a', 4);
+  fin(S, 'z', 14.4, [['경로 조작과 명령 주입: 사용자 입력이 파일 경로나 셸 명령의 “구조”를 바꾸는 공격', 'path traversal and command injection: user input changes the structure of a path or shell command', 'scx-xs scx-a'], ['SQL 인젝션과 같은 뿌리 · 데이터와 명령을 섞지 말고 분리된 API(인자 배열, 정규화 + 검사)를 써요', 'same root as SQL injection · keep data and commands apart with separate APIs (argument arrays, normalize + check)']]);
+  S.cap(1, '정상 경로', 'A normal path').cap(2, '../로 탈출', 'Escape with ../').cap(3, '셸 명령 주입', 'Shell command injection').cap(4, '방어 코드', 'Defensive code').cap(5, '경로 조작과 명령 주입', 'Path traversal and command injection');
+  return S;
+}
+
+/* ================= ops ================= */
+function sSupply() {
+  const S = scene({ id: 'sc-supply', steps: 5, per: 1.6 });
+  box2(S, 'app', 12.5, .8, 7, 1.4, ['내 앱', 'my app'], 'accent', 1, { pct: 35 });
+  const D = ['react', 'express', 'lodash', 'axios', 'dotenv'];
+  D.forEach((d, i) => { const x = 1 + i * 6.1; box2(S, 'd' + i, x, 3.2, 5.6, 1.2, d, 'line', 1, { pct: 40 }); seg(S, 'dl' + i, [16, 2.25], [x + 2.8, 3.15], 1, 'ink-3', .06); for (let j = 0; j < 4; j++) { const k = `t${i}_${j}`; box2(S, k, x + j * 1.45, 5.2, 1.25, .8, '', 'line', 1, { pct: 45 }); } });
+  T(S, 'cnt', 1, 6.3, ['직접 의존 5개 → 전이 의존까지 수백~수천 개', '5 direct dependencies → hundreds or thousands transitively'], 'scx-xs scx-a', 1);
+  tsets(S, 't1_2', [[2, 'danger', 50]]); tsets(S, 't3_0', [[2, 'danger', 50]]); tsets(S, 'd2', [[2, 'warn', 35]]);
+  T(S, 'a1', 1, 7.4, ['계정 탈취된 메인테이너가 악성 버전 배포 (event-stream, ua-parser-js)', 'a hijacked maintainer publishes a malicious version (event-stream, ua-parser-js)'], 'scx-xs scx-r', 2);
+  T(S, 'a2', 1, 8.4, ['이름 바꿔치기: reqeusts, lodahs · 설치 스크립트(postinstall)로 즉시 실행', 'typosquats like reqeusts or lodahs · postinstall scripts run immediately'], 'scx-xs scx-r', 2);
+  box2(S, 'pv', 1, 9.8, 13.4, 1.4, ['사내 레지스트리: @corp/utils 1.2.0', 'private registry: @corp/utils 1.2.0'], 'ok', 3, { pct: 30 }); box2(S, 'pb', 17.6, 9.8, 13.4, 1.4, ['공개 레지스트리: 같은 이름 99.0.0', 'public registry: same name, 99.0.0'], 'danger', 3, { pct: 30 });
+  T(S, 'dc', 1, 11.4, ['의존성 혼동: 설치 도구가 더 높은 버전인 공개 패키지를 골라 버려요', 'dependency confusion: the installer picks the public package with the higher version'], 'scx-xs scx-r', 3);
+  [['락파일 + 무결성 해시', 'lockfile + integrity hashes'], ['npm ci · 스크립트 끄기', 'npm ci · no install scripts'], ['스코프·사설 레지스트리 고정', 'pin scopes to private registry'], ['SBOM · 서명된 출처(SLSA)', 'SBOM · signed provenance (SLSA)'], ['업데이트 검토 자동화', 'reviewed automated updates']].forEach((t, i) => box2(S, 'df' + i, 1 + i * 6.05, 12.6, 5.85, 1.5, t, 'ok', 4, { pct: 30 }));
+  fin(S, 'z', 14.6, [['공급망 공격: 내가 쓴 코드가 아니라 내가 가져다 쓴 코드·도구를 노려요', 'supply-chain attacks target the code and tools you pull in, not the code you wrote', 'scx-xs scx-a'], ['SolarWinds(빌드 시스템), xz-utils(2024, 장기간 잠입한 메인테이너)처럼 피해가 넓게 퍼져요', 'SolarWinds (build system) and xz-utils (2024, a long-planted maintainer) show how widely it spreads']]);
+  S.cap(1, '수많은 의존성', 'Countless dependencies').cap(2, '오염된 패키지', 'Poisoned packages').cap(3, '의존성 혼동', 'Dependency confusion').cap(4, '방어 수단', 'Defenses').cap(5, '공급망 공격', 'Supply-chain attacks');
+  return S;
+}
+function sStride() {
+  const S = scene({ id: 'sc-stride', steps: 5, per: 1.6 });
+  box2(S, 'u', 1, 1.4, 5, 1.6, ['사용자', 'user'], 'line', 1, { pct: 40 }); rect(S, 'w', 9, 1.2, 5.6, 2, 'accent', 25, 1, { r: 1, html: ['웹 앱', 'web app'], cls: 'cz-c scx-c2' }); rect(S, 'a', 17.6, 1.2, 5.6, 2, 'accent', 25, 1, { r: 1, html: 'API', cls: 'cz-c scx-c2' });
+  rect(S, 'db', 25.6, 1.4, 5.4, 1.6, 'warn', 25, 1, { r: .1, html: 'DB', cls: 'cz-c scx-c2', css: 'border-top:.14em solid var(--warn);border-bottom:.14em solid var(--warn)' });
+  ar(S, 'e1', [6.1, 2.2], [8.9, 2.2], 'ink-3', 1, { h: .08 }); ar(S, 'e2', [14.7, 2.2], [17.5, 2.2], 'ink-3', 1, { h: .08 }); ar(S, 'e3', [23.3, 2.2], [25.5, 2.2], 'ink-3', 1, { h: .08 });
+  seg(S, 'tb1', [7.5, .5], [7.5, 4], 1, 'danger', .08, { dash: 1 }); seg(S, 'tb2', [24.4, .5], [24.4, 4], 1, 'danger', .08, { dash: 1 }); T(S, 'tbl', 7.8, 3.4, ['신뢰 경계', 'trust boundary'], 'scx-tiny scx-r', 1);
+  const ST = [['S', ['위장 → 인증', 'Spoofing → authentication']], ['T', ['변조 → 무결성', 'Tampering → integrity']], ['R', ['부인 → 감사 로그', 'Repudiation → audit logs']], ['I', ['정보 노출 → 기밀성', 'Info disclosure → confidentiality']], ['D', ['서비스 거부 → 가용성', 'Denial of service → availability']], ['E', ['권한 상승 → 인가', 'Elevation → authorization']]];
+  ST.forEach(([l, t], i) => { const x = 1 + (i % 3) * 10.1, y = 4.8 + Math.floor(i / 3) * 1.7; box2(S, 'sl' + i, x, y, 1.6, 1.4, l, 'danger', 2, { pct: 35 }); box2(S, 'st' + i, x + 1.8, y, 8, 1.4, t, 'line', 2, { pct: 40 }); });
+  [['S', 6.8, .3], ['T', 15.4, .3], ['I', 23.6, .3], ['D', 10.9, 3.4], ['E', 19.5, 3.4], ['R', 27.3, 3.2]].forEach(([l, x, y], i) => box2(S, 'tg' + i, x, y, 1.2, .9, l, 'danger', 3, { pct: 45 }));
+  [['사용자→웹 S: 세션 탈취 → MFA, 짧은 세션', 'user→web S: stolen sessions → MFA, short sessions'], ['웹 D: 요청 폭주 → 속도 제한, CDN', 'web D: request floods → rate limits, CDN'], ['웹→API T: 요청 변조 → TLS, 서명', 'web→API T: tampering → TLS, signing'], ['API E: 남의 데이터 접근 → 객체 단위 인가 검사', 'API E: other users’ data → per-object authorization'], ['API→DB I: 유출 → 암호화, 최소 권한 계정', 'API→DB I: leaks → encryption, least-privilege accounts'], ['DB R: “내가 안 했다” → 변경 감사 로그', 'DB R: “I didn’t do it” → audit logs of changes']].forEach((t, i) => T(S, 'm' + i, 1 + (i % 2) * 15.3, 8.6 + Math.floor(i / 2) * 1, t, 'scx-tiny', 3));
+  [['무엇을 만드나?', 'what are we building?'], ['무엇이 잘못될 수 있나?', 'what can go wrong?'], ['어떻게 대응하나?', 'what will we do about it?'], ['잘했나?', 'did we do a good job?']].forEach((t, i) => { box2(S, 'q' + i, 1 + i * 7.6, 12, 7.2, 1.4, t, 'accent', 4, { pct: 30 }); if (i < 3) ar(S, 'qa' + i, [8.25 + i * 7.6, 12.7], [8.55 + i * 7.6, 12.7], 'ink-3', 4, { h: .06 }); });
+  fin(S, 'z', 14, [['위협 모델링: 설계 단계에서 데이터 흐름을 그리고 STRIDE로 “무엇이 잘못될까”를 체계적으로 찾아요', 'threat modeling draws the data flow at design time and uses STRIDE to find what can go wrong', 'scx-xs scx-a'], ['신뢰 경계를 넘는 화살표가 공격이 일어나는 곳 · 기능이 바뀔 때마다 다시 봐요', 'arrows crossing trust boundaries are where attacks happen · revisit whenever features change']]);
+  S.cap(1, '데이터 흐름도', 'A data-flow diagram').cap(2, 'STRIDE 여섯 가지', 'The six STRIDE threats').cap(3, '흐름마다 위협과 대책', 'Threats and fixes per flow').cap(4, '네 가지 질문', 'Four questions').cap(5, '위협 모델링 (STRIDE)', 'Threat modeling (STRIDE)');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'sc-crypto': [
+    item('sc-aesmode', '블록 암호 운용 모드', 'Block cipher modes', 'AES 같은 블록 암호는 16바이트씩만 암호화해요. 긴 데이터를 어떻게 이어 붙이느냐(운용 모드)에 따라 안전성이 크게 달라져요.', 'ECB는 블록을 따로따로 암호화해서 같은 평문 블록이 같은 암호문이 되고, 이미지의 무늬가 그대로 드러날 만큼 패턴이 새어 나가요. CBC는 IV와 앞 블록을, CTR은 카운터를 섞어 매번 다른 결과를 만들어요. 요즘 기본은 암호화와 위변조 검출 태그를 함께 주는 AEAD(AES-GCM, ChaCha20-Poly1305)이고, 같은 키로 nonce를 두 번 쓰면 안전성이 무너지니 라이브러리의 고수준 API를 써요.', 'Block ciphers like AES encrypt only 16 bytes at a time; how blocks are chained (the mode) decides how secure long data is.', 'ECB encrypts each block independently, so equal plaintext blocks become equal ciphertext and patterns leak, enough to keep an image’s outline visible. CBC mixes in an IV and the previous block, CTR a counter, so every block differs. Today’s default is an AEAD (AES-GCM, ChaCha20-Poly1305) that adds a tamper-detecting tag; reusing a nonce with the same key breaks security, so use a library’s high-level API.', sAesMode()),
+    item('sc-hmac', 'HMAC과 메시지 인증 코드', 'HMAC and MACs', '비밀 키를 아는 쪽만 만들 수 있는 체크섬(MAC)으로, 메시지가 바뀌지 않았고 키를 가진 쪽이 보냈음을 확인해요.', '해시만 붙이면 공격자가 메시지를 고친 뒤 다시 계산하면 그만이에요. H(key ‖ msg)처럼 키를 앞에 붙여도 SHA-256은 길이 확장 공격으로 키 없이 뒤에 데이터를 덧붙인 값을 계산할 수 있어요. HMAC은 H((K ⊕ opad) ‖ H((K ⊕ ipad) ‖ m))으로 키를 두 번 감싸 이를 막아요. 웹훅 서명, AWS SigV4, JWT HS256에 쓰이고, 검증할 땐 상수 시간 비교를 해요.', 'A checksum only holders of a secret key can produce, proving a message is unchanged and came from a key holder.', 'A bare hash is useless: an attacker edits the message and recomputes it. Even H(key ‖ msg) fails with SHA-256, whose length-extension property lets an attacker append data and compute a valid value without the key. HMAC, H((K ⊕ opad) ‖ H((K ⊕ ipad) ‖ m)), wraps the key twice to block this. It signs webhooks, AWS SigV4 requests and JWT HS256 tokens, and verification should use a constant-time comparison.', sHmac()),
+    item('sc-rand', '안전한 난수 (CSPRNG)', 'Secure randomness (CSPRNG)', '토큰·키·비밀번호 재설정 링크에 쓰는 난수는 출력을 아무리 봐도 다음 값을 알 수 없는 암호학적으로 안전한 생성기에서 만들어야 해요.', 'Math.random() 같은 일반 PRNG는 빠르지만 출력 몇 개로 내부 상태를 복원해 다음 값을 예측할 수 있어요. CSPRNG는 OS가 인터럽트 타이밍, 지터, 하드웨어 RNG에서 모은 엔트로피로 시드하고 ChaCha20 같은 암호 알고리즘으로 늘려요. crypto.getRandomValues, secrets.token_urlsafe, /dev/urandom을 쓰고, 비밀 토큰은 128비트 이상, 시간·PID로 시드를 만들지 말아요.', 'Random values for tokens, keys and password-reset links must come from a cryptographically secure generator whose next output can’t be predicted.', 'Ordinary PRNGs like Math.random() are fast, but a few outputs reveal their internal state and the next values. A CSPRNG is seeded by the OS from interrupt timing, jitter and hardware RNGs, then stretched with a cipher such as ChaCha20. Use crypto.getRandomValues, secrets.token_urlsafe or /dev/urandom, give secret tokens at least 128 bits, and never seed from the time or PIDs.', sRand()),
+    item('sc-timing', '타이밍 공격', 'Timing attacks', '처리 시간의 미세한 차이로 비밀을 한 조각씩 알아내는 공격이에요. 비밀 값 비교는 상수 시간으로 해야 해요.', '첫 번째로 다른 글자에서 바로 false를 돌려주는 비교는, 첫 글자가 맞을 때 조금 더 오래 걸려요. 공격자는 측정을 반복해 한 글자씩 맞혀서, 16ⁿ번이 필요한 추측을 16 × n번으로 줄여요. 모든 글자를 끝까지 XOR로 비교하는 상수 시간 비교(crypto.timingSafeEqual, hmac.compare_digest)로 막아요. 캐시 타이밍(Spectre), 전력 분석도 같은 계열의 부채널 공격이에요.', 'An attack that learns secrets piece by piece from tiny differences in processing time; compare secret values in constant time.', 'A comparison that returns at the first mismatch takes slightly longer when the first character is right. Repeating measurements, an attacker guesses one character at a time, cutting 16ⁿ guesses to 16 × n. Constant-time comparison, XOR-ing every character to the end (crypto.timingSafeEqual, hmac.compare_digest), stops it. Cache timing (Spectre) and power analysis are related side channels.', sTiming())
+  ],
+  'sc-web': [
+    item('sc-ssrf', 'SSRF', 'Server-side request forgery', '서버가 사용자 대신 URL을 요청하는 기능을 악용해, 밖에서는 닿을 수 없는 내부망 자원에 접근하는 공격이에요.', '링크 미리보기에 url=http://169.254.169.254/…를 넣으면 클라우드 서버가 메타데이터 서비스에 접속해 IAM 임시 키를 돌려줄 수 있어요(2019년 Capital One 유출). 내부 Redis, localhost 관리자 페이지도 노려지고, 리다이렉트·DNS 리바인딩·10진수 IP로 필터를 우회해요. 허용 목록, DNS 해석 후 사설 IP 차단, 리다이렉트 끄기, IMDSv2, 이그레스 방화벽으로 막아요.', 'An attack abusing a server-side URL fetch to reach internal resources that are unreachable from outside.', 'Feeding a link preview url=http://169.254.169.254/… can make a cloud server query its metadata service and return temporary IAM keys (the 2019 Capital One breach). Internal Redis instances and localhost admin pages are targets too, with filters bypassed via redirects, DNS rebinding or decimal IPs. Defend with allowlists, blocking private IPs after DNS resolution, disabling redirects, IMDSv2 and egress firewalls.', sSsrf()),
+    item('sc-path', '경로 조작과 명령 주입', 'Path traversal and command injection', '사용자 입력이 파일 경로나 셸 명령의 구조를 바꿔, 의도하지 않은 파일을 읽거나 명령을 실행하게 만드는 공격이에요.', 'path.join("/srv/files", file)에 ../../etc/passwd를 넣으면 루트까지 올라가 시스템 파일을 읽어요. exec("ping " + host)에 "8.8.8.8; cat /etc/passwd"를 넣으면 셸이 ; 뒤를 두 번째 명령으로 실행해요. 경로는 resolve로 정규화한 뒤 기준 디렉터리 안인지 확인하고, 명령은 셸 없이 인자 배열(execFile)로 넘기며, 가능하면 파일명 대신 ID를 받고 최소 권한으로 실행해요.', 'Attacks where user input changes the structure of a file path or shell command, reading unintended files or running unintended commands.', 'Passing ../../etc/passwd into path.join("/srv/files", file) climbs to the root and reads system files. Passing "8.8.8.8; cat /etc/passwd" into exec("ping " + host) makes the shell run a second command after the semicolon. Normalize paths with resolve and check they stay under the base directory, pass commands as argument arrays without a shell (execFile), accept IDs instead of file names where possible and run with least privilege.', sPath())
+  ],
+  'sc-ops': [
+    item('sc-supply', '공급망 공격', 'Supply-chain attacks', '내가 쓴 코드가 아니라 가져다 쓰는 패키지·빌드 도구를 오염시켜, 그걸 쓰는 모든 곳으로 퍼지는 공격이에요.', '직접 의존 몇 개가 전이 의존 수백~수천 개를 끌고 오고, 계정이 탈취된 메인테이너의 악성 버전(event-stream, ua-parser-js), 이름 바꿔치기, 설치 스크립트가 침투 경로가 돼요. 사내 패키지와 같은 이름의 높은 버전을 공개 레지스트리에 올리는 의존성 혼동도 있어요. 락파일과 무결성 해시, npm ci와 설치 스크립트 끄기, 스코프 고정, SBOM과 서명된 출처(SLSA), 검토된 자동 업데이트로 막아요.', 'Attacks that poison the packages and build tools you pull in rather than your own code, spreading to everyone who uses them.', 'A few direct dependencies drag in hundreds or thousands of transitive ones, and entry points include hijacked maintainers publishing malicious versions (event-stream, ua-parser-js), typosquats and install scripts. Dependency confusion publishes a higher-versioned package under an internal name on a public registry. Defend with lockfiles and integrity hashes, npm ci with install scripts disabled, pinned scopes, SBOMs, signed provenance (SLSA) and reviewed automated updates.', sSupply()),
+    item('sc-stride', '위협 모델링 (STRIDE)', 'Threat modeling (STRIDE)', '설계 단계에서 데이터 흐름도를 그리고 STRIDE 여섯 가지 관점으로 “무엇이 잘못될 수 있나”를 체계적으로 찾는 방법이에요.', 'STRIDE는 위장(→ 인증), 변조(→ 무결성), 부인(→ 감사 로그), 정보 노출(→ 기밀성), 서비스 거부(→ 가용성), 권한 상승(→ 인가)이에요. 사용자 → 웹 → API → DB 흐름에서 신뢰 경계를 넘는 화살표마다 위협과 대책(MFA, 속도 제한, TLS·서명, 객체 단위 인가, 암호화, 감사 로그)을 붙여요. “무엇을 만드나, 무엇이 잘못될까, 어떻게 대응할까, 잘했나”의 네 질문을 기능이 바뀔 때마다 다시 던져요.', 'Drawing the data flow at design time and using STRIDE’s six lenses to find systematically what can go wrong.', 'STRIDE covers spoofing (→ authentication), tampering (→ integrity), repudiation (→ audit logs), information disclosure (→ confidentiality), denial of service (→ availability) and elevation of privilege (→ authorization). For a user → web → API → DB flow, each arrow crossing a trust boundary gets threats and mitigations: MFA, rate limits, TLS and signing, per-object authorization, encryption and audit logs. Ask the four questions (what are we building, what can go wrong, what will we do, did we do well) again whenever features change.', sStride())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('sc-crypto', '암호', 'Cryptography', '암호 기술의 기초', 'Cryptography basics',
     '데이터를 숨기고, 바뀌지 않았음을 증명하고, 누가 보냈는지 확인하는 도구예요.', 'Tools to hide data, prove it hasn’t changed and confirm who sent it.', [
@@ -350,7 +627,7 @@ window.UX = page([
     item('sc-dh', '키 교환 (디피-헬먼)', 'Key exchange · Diffie–Hellman', '서로 공개된 값만 주고받고도 양쪽이 같은 비밀 키를 만들어 내는 방법이에요. 도청자는 같은 키를 만들 수 없어요.', 'TLS 1.3의 ECDHE가 이것이고, 세션마다 새 키를 만들어 나중에 키가 털려도 지난 통신은 안전해요(전방 비밀성).', 'Two sides exchange only public values yet end up with the same secret key; an eavesdropper can’t compute it.', 'TLS 1.3 uses ECDHE with fresh keys per session, so a later key leak doesn’t expose past traffic (forward secrecy).', sDH()),
     item('sc-cert', '인증서와 CA', 'Certificates · CA', '인증서는 "이 공개키는 이 도메인의 것"이라고 믿을 만한 기관(CA)이 서명한 문서예요. 브라우저는 내장된 루트 CA까지 서명이 이어지는지 확인해요.', '인증서 만료는 흔한 장애 원인이라 자동 갱신을 꼭 설정하세요. 중간 인증서를 빠뜨리면 일부 기기에서만 오류가 나요.', 'A certificate is a document signed by a trusted authority saying “this public key belongs to this domain”; browsers check the chain up to a built-in root.', 'Expiry is a common outage, so automate renewal. Forgetting the intermediate cert breaks only some devices.', sCert()),
     item('sc-pwhash', '비밀번호 저장', 'Password storage', '비밀번호는 원문이 아니라 사용자마다 다른 솔트를 붙여 일부러 느린 해시(bcrypt, Argon2)로 저장해요.', 'DB가 유출돼도 해독에 엄청난 시간이 들게 만드는 게 목표예요. 직접 암호 알고리즘을 만들지 말고 검증된 라이브러리를 쓰세요.', 'Store passwords not as text but as slow salted hashes (bcrypt, Argon2), with a different salt per user.', 'The goal is that a leaked database still takes enormous effort to crack. Use vetted libraries; never invent crypto.', sPw())
-  ]),
+  ].concat(XT.add['sc-crypto'] || [])),
   sec('sc-auth', '인증·인가', 'Auth', '인증과 인가', 'Authentication and authorization',
     '누구인지 확인하고, 무엇을 할 수 있는지 정해요.', 'Confirming who someone is and deciding what they may do.', [
     item('sc-authn', '인증 vs 인가', 'Authentication vs authorization', '인증은 "누구인지" 확인하는 것이고, 인가는 확인된 사람이 "무엇을 할 수 있는지" 정하는 거예요.', '로그인 안 됨은 401, 로그인했지만 권한 없음은 403이에요. 권한 검사는 화면이 아니라 반드시 서버에서 해야 해요.', 'Authentication confirms who you are; authorization decides what you are allowed to do.', 'Not logged in is 401; logged in but not allowed is 403. Always enforce permissions on the server, not just the UI.', sAuthn()),
@@ -359,7 +636,7 @@ window.UX = page([
     item('sc-oauth', 'OAuth 2.0 · 소셜 로그인', 'OAuth 2.0 · Social login', '비밀번호를 넘기지 않고, 다른 서비스(구글 등)가 발급한 토큰으로 정해진 범위의 권한만 위임받아요.', '"구글로 로그인"은 OAuth 위의 OpenID Connect예요. 모바일·SPA는 PKCE를 꼭 쓰고, 리디렉트 URI를 정확히 등록하세요.', 'Delegates limited access through a token issued by another service, such as Google, without ever sharing the password.', '“Sign in with Google” is OpenID Connect on top of OAuth. Use PKCE for mobile and SPAs and register exact redirect URIs.', sOAuth()),
     item('sc-mfa', '다중 인증 (MFA)', 'Multi-factor authentication', '비밀번호(아는 것)에 휴대폰 코드·보안 키(가진 것)나 지문(나 자신)을 더해 확인해요.', '비밀번호 유출 공격 대부분을 막아요. SMS보다 OTP 앱, 그보다 패스키·보안 키(FIDO2)가 피싱에 강해요.', 'Combines a password (something you know) with a phone code or key (something you have) or a fingerprint (something you are).', 'It stops most stolen-password attacks. OTP apps beat SMS, and passkeys or FIDO2 keys resist phishing best.', sMFA()),
     item('sc-rbac', '권한 모델 (RBAC)', 'Role-based access control', '사용자에게 권한을 직접 주지 않고 역할(관리자, 편집자, 열람자)을 주고, 역할에 권한을 묶어요.', '필요한 최소한의 권한만 주는 최소 권한 원칙과 함께 써요. 조건이 복잡하면 속성 기반(ABAC)이나 정책 엔진을 써요.', 'Instead of granting permissions to people directly, assign roles (admin, editor, viewer) that carry permissions.', 'Pair it with least privilege. For complex conditions, use attribute-based control (ABAC) or a policy engine.', sRBAC())
-  ]),
+  ].concat(XT.add['sc-auth'] || [])),
   sec('sc-web', '웹 보안', 'Web security', '웹 공격과 방어', 'Web attacks and defenses',
     '실제로 가장 많이 당하는 공격들과 막는 방법이에요.', 'The attacks that actually happen most, and how to stop them.', [
     item('sc-sqli', 'SQL 인젝션', 'SQL injection', '사용자 입력을 문자열로 이어 붙여 쿼리를 만들면, 입력에 섞인 SQL 코드가 그대로 실행돼요.', 'Prepared Statement(파라미터 바인딩)로 입력을 항상 값으로만 다루세요. DB 계정 권한도 최소로 두세요.', 'When user input is concatenated into a query string, SQL inside the input gets executed.', 'Use prepared statements (parameter binding) so input is always data, and give the database account minimal rights.', sSQLi()),
@@ -369,13 +646,14 @@ window.UX = page([
     item('sc-mitm', '중간자 공격', 'Man-in-the-middle', '통신 중간에 끼어든 공격자가 내용을 엿보거나 바꿔치기해요. 공용 와이파이가 대표적인 위험 지점이에요.', '모든 곳에 HTTPS를 쓰고 HSTS로 강제하세요. 앱에서는 인증서 검증을 끄는 코드를 절대 배포하지 마세요.', 'An attacker sitting between two parties reads or alters their traffic; public Wi-Fi is the classic risk.', 'Use HTTPS everywhere and enforce it with HSTS. Never ship app code that disables certificate verification.', sMITM()),
     item('sc-ddos', 'DDoS', 'DDoS · Distributed denial of service', '수많은 기기(봇넷)가 한꺼번에 요청을 보내 서버나 네트워크를 마비시켜요.', 'CDN·WAF(클라우드플레어 등)로 흡수하고, 레이트 리밋과 오토스케일링을 함께 써요. 비싼 API에 캐시가 없으면 작은 공격에도 쓰러져요.', 'Huge numbers of devices (a botnet) send traffic at once to knock a server or network offline.', 'Absorb it with a CDN or WAF (e.g. Cloudflare), plus rate limiting and autoscaling. Expensive uncached endpoints fall to small attacks.', sDDoS()),
     item('sc-idor', '접근 제어 실패 (IDOR)', 'Broken access control · IDOR', '로그인만 확인하고 그 데이터의 주인인지 확인하지 않아서, URL의 ID만 바꾸면 남의 데이터가 보여요.', 'OWASP Top 10의 1위예요. 모든 API에서 서버가 소유권·권한을 확인하고, 테스트에 "다른 사용자로 접근" 케이스를 넣으세요.', 'The server checks that you are logged in but not that you own the data, so changing an ID in the URL reveals others’ records.', 'It is number one in the OWASP Top 10. Check ownership on every API and test “access as another user” cases.', sIDOR())
-  ]),
+  ].concat(XT.add['sc-web'] || [])),
   sec('sc-ops', '운영 보안', 'Operations', '운영 보안', 'Operational security',
     '코드 밖에서 새는 구멍을 막아요.', 'Plugging the holes outside the code.', [
     item('sc-secret', '비밀 정보 관리', 'Secrets management', 'API 키·DB 비밀번호 같은 비밀은 코드에 넣지 않고 환경 변수나 비밀 관리 서비스에 둬요.', '공개 저장소에 올라간 키는 몇 분 안에 수집돼요. git-secrets·gitleaks로 커밋 전에 막고, 유출되면 즉시 폐기·교체하세요.', 'Keep API keys and passwords out of code, in environment variables or a secret manager.', 'Keys pushed to public repos are harvested within minutes. Block them pre-commit with tools like gitleaks, and rotate immediately if leaked.', sSecret()),
     item('sc-fw', '방화벽과 네트워크 분리', 'Firewalls · Network segmentation', '외부에는 꼭 필요한 포트만 열고, DB 같은 내부 시스템은 외부에서 직접 접근할 수 없는 영역에 둬요.', '클라우드 보안 그룹에서 0.0.0.0/0으로 DB·SSH를 여는 실수가 흔해요. 관리 접속은 VPN이나 배스천을 거치게 하세요.', 'Open only the ports that must be public and keep internal systems like databases in zones unreachable from outside.', 'Opening DB or SSH ports to 0.0.0.0/0 in security groups is a common mistake. Route admin access through a VPN or bastion.', sFW())
-  ])
-]);
+  ].concat(XT.add['sc-ops'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .sc-m .in{font-family:var(--f-mono);font-size:.66em;font-weight:600}
 .sc-xs .in{font-size:.52em}
