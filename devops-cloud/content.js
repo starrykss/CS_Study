@@ -486,6 +486,270 @@ function sIncident() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'opx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono opx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono opx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c opx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono opx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c opx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'opx-s opx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono opx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono opx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono opx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono opx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono opx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'opx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'opx-xs', 5));
+
+
+const CSSX = `
+.opx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.opx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.opx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.opx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.opx-r .in{color:var(--danger);font-weight:800}
+.opx-g .in{color:var(--ok);font-weight:800}
+.opx-a .in{color:var(--accent);font-weight:800}
+.opx-w .in{color:var(--warn);font-weight:800}
+.opx-c .in{font-size:.6em;font-weight:700}
+.opx-c2 .in{font-size:.5em;font-weight:700}
+.opx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.opx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'opx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : 0 }));
+
+/* ================= git ================= */
+function sBisect() {
+  const S = scene({ id: 'op-bisect', steps: 5, per: 1.6 });
+  const X = i => 1.4 + i * 1.86, ST = { 0: ['ok', 0], 15: ['danger', 0], 7: ['ok', 2], 11: ['danger', 3], 9: ['ok', 3], 10: ['danger', 4] };
+  hl(S, 'ln', X(0) + .4, X(15) + .4, 3.3, 'ink-3', 0, { w: .08 });
+  for (let i = 0; i < 16; i++) { box2(S, 'c' + i, X(i), 2.7, 1.3, 1.2, '', 'line', 0, { pct: 45 }); T(S, 'cl' + i, X(i) - .3, 4.05, 'c' + (i + 1), 'cz-tc cz-mono opx-tiny', 0, { w: 1.9 }); if (ST[i]) tsets(S, 'c' + i, [[ST[i][1], ST[i][0], 50]]); }
+  T(S, 'g', X(0) - .2, 1.6, ['좋음 ✓', 'good ✓'], 'opx-tiny opx-g', 0); T(S, 'b', X(15) - .6, 1.6, ['망가짐 ✗', 'bad ✗'], 'opx-tiny opx-r', 0);
+  frame(S, 'r2', X(8) - .2, 2.45, X(15) - X(8) + 1.7, 1.7, 'warn', 2, { dash: 1, w: .1, off: 3 }); T(S, 'r2l', X(7) - .4, 1.6, ['c8 테스트: 좋음', 'test c8: good'], 'opx-tiny opx-g', 2, { off: 3 });
+  frame(S, 'r3', X(10) - .2, 2.45, X(11) - X(10) + 1.7, 1.7, 'warn', 3, { dash: 1, w: .1, off: 4 }); T(S, 'r3l', X(8), 1, ['c12 망가짐 → c10 좋음 → 남은 후보 c11·c12', 'c12 bad → c10 good → c11 or c12 left'], 'opx-tiny opx-w', 3, { off: 4 });
+  ring(S, 'cul', X(10) + .65, 3.3, 1.2, 'danger', 4, { w: .14 }); T(S, 'culp', X(10) - 1.4, 1.1, ['범인: c11 (테스트 4번)', 'culprit: c11 (4 tests)'], 'opx-xs opx-r', 4);
+  code(S, 'cd', 1, 5.4, 30, ['git bisect start', ['git bisect bad                # 지금 버전은 망가짐', 'git bisect bad                # the current version is broken'], ['git bisect good v1.0          # 이때는 됐음', 'git bisect good v1.0          # this one worked'], ['git bisect run npm test       # 자동으로 반씩 좁혀 가요', 'git bisect run npm test       # halve the range automatically']], [[1, 1], [2, 2], [3, 3]], { hoff: 5 });
+  fin(S, 'z', 11.6, [['git bisect: 좋은 커밋과 나쁜 커밋 사이를 이진 탐색해 버그를 들여온 커밋을 찾아요', 'git bisect binary-searches between a good and a bad commit to find the one that introduced a bug', 'opx-xs opx-a'], ['커밋 1,000개도 약 10번이면 끝 (log₂ n) · 테스트 스크립트가 있으면 완전 자동', '1,000 commits take about 10 tests (log₂ n) · fully automatic with a test script'], ['작은 커밋을 자주 남겨야 범인 커밋도 작아서 원인이 바로 보여요', 'small, frequent commits keep the culprit small and the cause obvious']]);
+  S.cap(1, '좋음과 나쁨 사이', 'Between good and bad').cap(2, '가운데를 시험', 'Test the middle').cap(3, '반씩 좁히기', 'Halve again').cap(4, '범인 커밋', 'The culprit').cap(5, 'git bisect', 'git bisect');
+  return S;
+}
+function sUndo() {
+  const S = scene({ id: 'op-undo', steps: 5, per: 1.6 });
+  const row = (p, y, st, lbl) => { T(S, p + 't', 1, y - .2, lbl, 'opx-xs opx-a', st); ['A', 'B', 'C', 'D'].forEach((c, i) => { stt(S, p + c, 4 + i * 3.6, y + 1.4, c, c === 'D' ? 'danger' : 'accent', st, { r: .8, pct: 25 }); if (i) hl(S, p + 'e' + i, 4.8 + (i - 1) * 3.6, 3.2 + i * 3.6, y + 1.4, 'ink-3', st, { w: .08 }); }); };
+  row('a', 1, 1, ['revert: 되돌리는 커밋을 새로 추가', 'revert: add a commit that undoes it']);
+  hl(S, 'ae4', 15.6, 17.6, 2.4, 'ok', 2, { w: .08 }); stt(S, 'aR', 18.4, 2.4, "D'", 'ok', 2, { r: .8, pct: 40 });
+  box2(S, 'am', 13.8, .2, 3.2, .9, 'main', 'warn', 1, { pct: 40 }); S.move('am', 2, 16.8, .2);
+  T(S, 'an', 20.6, 2.1, ['히스토리는 그대로 · 공유 브랜치에 안전 ✓', 'history kept · safe when shared ✓'], 'opx-xs opx-g', 2);
+  row('b', 4.8, 3, ['reset --hard C: 브랜치를 뒤로 옮김', 'reset --hard C: move the branch back']);
+  box2(S, 'bm', 9.6, 7.2, 3.2, .9, 'main', 'warn', 3, { pct: 40 }); S.move('bm', 4, 13.2, 7.2); S.set('bD', 3, { opacity: '.35' }); S.set('bDl', 3, { opacity: '.35' }); tsets(S, 'bD', [[4, 'danger', 25]]); S.set('bD', 4, { opacity: '1' }); S.set('bDl', 4, { opacity: '1' });
+  T(S, 'bn', 17.8, 5.6, ['D가 안 보여요', 'D disappears from view'], 'opx-xs opx-r', 3, { off: 4 }); T(S, 'bn2', 17.8, 6.6, ['이미 푸시했다면 남들과 꼬여요 ✗', 'if pushed, it tangles others ✗'], 'opx-xs opx-r', 3, { off: 4 });
+  code(S, 'rl', 1, 8.6, 30, ['$ git reflog', 'a1b2c3 HEAD@{0}: reset: moving to C', 'f9e8d7 HEAD@{1}: commit: D', ['$ git reset --hard HEAD@{1}      # D를 되살려요', '$ git reset --hard HEAD@{1}      # bring D back']], [[2, 4]], { st: 4 });
+  T(S, 'bn4', 17.8, 5.6, ['reflog로 되살려요 ✓', 'recovered via the reflog ✓'], 'opx-xs opx-g', 4);
+  fin(S, 'z', 14.6, [['공유된 커밋은 revert(새 커밋으로 취소), 내 로컬 커밋은 reset(포인터 이동)', 'undo shared commits with revert (a new commit); local ones with reset (move the pointer)', 'opx-xs opx-a'], ['실수해도 reflog에 약 90일간 남아요 · 파일 하나는 git restore, 마지막 커밋 수정은 --amend', 'mistakes stay in the reflog for about 90 days · git restore for a file, --amend for the last commit']]);
+  S.cap(1, '나쁜 커밋 D', 'A bad commit D').cap(2, 'revert로 취소', 'Undo with revert').cap(3, 'reset으로 되감기', 'Rewind with reset').cap(4, 'reflog로 구조', 'Rescue with the reflog').cap(5, 'Git에서 되돌리기', 'Undoing things in Git');
+  return S;
+}
+
+/* ================= delivery ================= */
+function sGitops() {
+  const S = scene({ id: 'op-gitops', steps: 5, per: 1.6 });
+  box2(S, 'dev', 1, 1.6, 4.6, 1.5, ['개발자', 'developer'], 'line', 0, { pct: 40 }); ar(S, 'pr', [5.7, 2.35], [11.9, 2.35], 'accent', 1, { h: .08 }); T(S, 'prl', 6, 1.2, ['PR 리뷰 → 병합', 'PR review → merge'], 'opx-tiny opx-a', 1);
+  rect(S, 'git', 12, 1.2, 6.6, 3.2, 'accent', 15, 0, { r: .3, css: 'border:.1em solid var(--accent)' }); T(S, 'gitl', 12.3, 1.35, ['Git 저장소', 'Git repository'], 'opx-xs opx-a', 0);
+  T(S, 'r2', 12.4, 2.6, 'replicas: 2', 'cz-mono opx-xs', 0, { off: 1 }); T(S, 'r3', 12.4, 2.6, 'replicas: 3', 'cz-mono opx-xs opx-a', 1);
+  frame(S, 'cl', 20.4, .8, 10.6, 9.4, 'ink-3', 0, { dash: 1, w: .1 }); T(S, 'cll', 20.7, .9, ['쿠버네티스 클러스터', 'Kubernetes cluster'], 'opx-tiny', 0);
+  box2(S, 'ctl', 21, 1.8, 9.4, 1.6, ['GitOps 컨트롤러 (Argo CD)', 'GitOps controller (Argo CD)'], 'ok', 0, { pct: 30 });
+  elb(S, 'pull', [[21, 2.6], [19.6, 2.6], [19.6, 3.4], [18.7, 3.4]], 'ok', 2, { h: .08, dash: 1 });
+  ar(S, 'ap', [25.7, 3.5], [25.7, 5.4], 'ok', 2, { h: .08 }); T(S, 'apl', 26.1, 4.2, ['비교 → 적용', 'diff → apply'], 'opx-tiny opx-g', 2);
+  for (let i = 0; i < 5; i++) { box2(S, 'p' + i, 21 + i * 1.9, 5.6, 1.7, 1.4, 'pod', i < 2 ? 'accent' : i === 2 ? 'ok' : 'danger', i < 2 ? 0 : i === 2 ? 2 : 3, { pct: 35, off: i > 2 ? 4 : 0 }); }
+  T(S, 'dr', 21, 7.4, ['누가 kubectl로 5개로 바꿈 → 곧 3개로 되돌려요', 'someone kubectl-scales to 5 → reverted to 3'], 'opx-tiny opx-r', 3, { off: 4 });
+  T(S, 'rb', 21, 7.4, ['롤백 = git revert 한 번', 'rollback = one git revert'], 'opx-tiny opx-a', 4);
+  stepT(S, 'k', 1, 10.6, [['원하는 상태(매니페스트)를 Git에 두고 PR로만 바꿔요', 'desired state (manifests) lives in Git and changes only via PRs'], ['클러스터 안 컨트롤러가 Git을 당겨 와 실제 상태와 비교하고 맞춰요 (조정 루프)', 'a controller in the cluster pulls Git, diffs it with reality and converges (reconcile loop)'], ['손으로 바꾼 차이(드리프트)도 Git 기준으로 되돌려요 (자가 치유)', 'manual drift is reverted to what Git says (self-healing)'], ['CI가 클러스터 권한을 가질 필요가 없고, 모든 변경이 Git 이력에 남아요', 'CI needs no cluster credentials, and every change is in the Git history']], 'opx-xs opx-a');
+  fin(S, 'z', 12, [['GitOps: Git을 단일 진실 공급원으로, 클러스터가 스스로 그 상태로 수렴하는 배포 방식', 'GitOps makes Git the single source of truth and lets the cluster converge to it on its own', 'opx-xs opx-a'], ['Argo CD, Flux가 대표 도구 · 쿠버네티스의 “선언하면 맞춰 준다”는 철학을 배포 전체로 넓혔어요', 'Argo CD and Flux are the main tools · it extends Kubernetes’ declarative reconcile idea to deployment']]);
+  S.cap(1, 'Git에서 변경', 'Change it in Git').cap(2, '컨트롤러가 맞춰요', 'The controller converges').cap(3, '드리프트 되돌리기', 'Revert drift').cap(4, '롤백도 Git으로', 'Roll back with Git').cap(5, 'GitOps', 'GitOps');
+  return S;
+}
+function s12f() {
+  const S = scene({ id: 'op-12factor', steps: 5, per: 1.6 });
+  const F = [['① 코드베이스 하나', '① one codebase'], ['② 의존성 명시', '② explicit deps'], ['③ 설정은 환경에', '③ config in env'], ['④ 백엔드 서비스 = 부착물', '④ backing services'], ['⑤ 빌드·릴리스·실행 분리', '⑤ build, release, run'], ['⑥ 무상태 프로세스', '⑥ stateless processes'], ['⑦ 포트 바인딩', '⑦ port binding'], ['⑧ 프로세스로 확장', '⑧ scale by processes'], ['⑨ 빠른 시작·종료', '⑨ disposability'], ['⑩ 개발·운영 일치', '⑩ dev/prod parity'], ['⑪ 로그 = 이벤트 스트림', '⑪ logs as streams'], ['⑫ 관리 작업도 같은 환경', '⑫ admin processes']];
+  const HL = { 2: 3, 3: 3, 4: 2, 5: 4, 8: 4, 10: 4 };
+  F.forEach((t, i) => { box2(S, 'f' + i, 1 + (i % 4) * 7.6, 1 + Math.floor(i / 4) * 1.6, 7.4, 1.35, t, 'line', 1, { pct: 40 }); if (HL[i]) tsets(S, 'f' + i, [[HL[i], 'accent', 35]]); });
+  [['build', ['코드 → 이미지', 'code → image']], ['release', ['이미지 + 설정', 'image + config']], ['run', ['실행', 'run it']]].forEach(([k, t], i) => { box2(S, 'b' + i, 1 + i * 10.4, 6.2, 9, 1.5, [`${k}: ${t[0]}`, `${k}: ${t[1]}`], 'ok', 2, { pct: 30 }); if (i < 2) ar(S, 'ba' + i, [10.1 + i * 10.4, 6.95], [11.3 + i * 10.4, 6.95], 'ink-3', 2, { h: .08 }); });
+  T(S, 'bn', 1, 7.9, ['같은 이미지를 스테이징·운영에 그대로 → 설정만 다르게', 'promote the same image to staging and production → only config differs'], 'opx-xs opx-g', 2);
+  code(S, 'cb', 1, 9, 14.6, ['db = connect("10.0.0.5:5432",', '              "prod", "s3cr3t")'], [], { st: 3 }); T(S, 'cbx', 13.8, 9.15, '✗', 'opx-s opx-r', 3);
+  code(S, 'cg', 16.4, 9, 14.6, ['db = connect(env.DATABASE_URL)', ['# 운영·테스트는 값만 바꿔요', '# swap values per environment']], [], { st: 3 }); T(S, 'cgx', 29.9, 9.15, '✓', 'opx-s opx-g', 3);
+  T(S, 'k4', 1, 12.6, ['상태는 DB·캐시에, 로그는 stdout으로, 언제 죽여도 되게 → 컨테이너·쿠버네티스와 딱 맞아요', 'keep state in DBs and caches, log to stdout, be killable any time → a natural fit for containers and Kubernetes'], 'opx-xs opx-a', 4);
+  fin(S, 'z', 14, [['12-Factor App: 클라우드에서 쉽게 배포·확장·운영하기 위한 앱 설계 원칙 12가지 (Heroku, 2011)', 'the Twelve-Factor App: twelve principles for apps that deploy, scale and operate easily in the cloud (Heroku, 2011)', 'opx-xs opx-a'], ['핵심은 코드와 설정의 분리, 무상태 프로세스, 환경 간 일치예요', 'the core ideas: separate code from config, stateless processes and environment parity']]);
+  S.cap(1, '열두 가지 원칙', 'Twelve principles').cap(2, '빌드 · 릴리스 · 실행', 'Build, release, run').cap(3, '설정은 환경 변수로', 'Config in the environment').cap(4, '무상태와 로그', 'Statelessness and logs').cap(5, '12-Factor App', 'The Twelve-Factor App');
+  return S;
+}
+
+/* ================= containers ================= */
+function sMesh() {
+  const S = scene({ id: 'op-mesh', steps: 5, per: 1.6 });
+  const PX = [1, 11.6, 22.2];
+  ['A', 'B', 'C'].forEach((n, i) => { const x = PX[i]; frame(S, 'pod' + n, x, 2, 8.8, 3.4, 'ink-3', 0, { w: .1, r: .3 }); T(S, 'pl' + n, x + .3, 2.1, ['파드 ' + n, 'pod ' + n], 'opx-tiny', 0); box2(S, 'app' + n, x + .4, 2.9, 4, 2, ['앱 ' + n, 'app ' + n], 'accent', 0, { pct: 30 }); box2(S, 'sc' + n, x + 4.6, 2.9, 3.8, 2, ['사이드카', 'sidecar'], 'warn', 2, { pct: 35 }); });
+  [[0, 1], [1, 2]].forEach(([a, b], i) => { elb(S, 'd' + i, [[PX[a] + 2.4, 2.85], [PX[a] + 2.4, 1.3], [PX[b] + 2.4, 1.3], [PX[b] + 2.4, 2.85]], 'ink-3', 1, { h: .08, off: 2 }); });
+  T(S, 'dn', 1, .2, ['앱끼리 직접 호출 · 재시도·TLS·타임아웃을 언어마다 라이브러리로 구현', 'apps call each other directly · retries, TLS and timeouts reimplemented per language'], 'opx-xs opx-r', 1, { off: 2 });
+  [[0, 1], [1, 2]].forEach(([a, b], i) => elb(S, 's' + i, [[PX[a] + 6.5, 2.85], [PX[a] + 6.5, 1.3], [PX[b] + 6.5, 1.3], [PX[b] + 6.5, 2.85]], 'warn', 2, { h: .1 }));
+  T(S, 'sn', 1, .2, ['모든 트래픽이 사이드카 프록시(Envoy)를 거쳐요 · 앱 코드는 그대로', 'all traffic flows through sidecar proxies (Envoy) · app code unchanged'], 'opx-xs opx-w', 2);
+  box2(S, 'cp', 10.6, 6.8, 10.8, 1.6, ['컨트롤 플레인 (Istio, Linkerd)', 'control plane (Istio, Linkerd)'], 'ok', 3, { pct: 35 });
+  ['A', 'B', 'C'].forEach((n, i) => seg(S, 'cl' + n, [16, 6.75], [PX[i] + 6.5, 4.95], 3, 'ok', .07, { dash: 1 }));
+  [['mTLS', 'mTLS'], ['재시도·타임아웃', 'retries · timeouts'], ['서킷 브레이커', 'circuit breaking'], ['트래픽 90/10 분할', '90/10 traffic split'], ['메트릭·트레이스', 'metrics · traces']].forEach((t, i) => box2(S, 'f' + i, 1 + i * 6.05, 9.2, 5.85, 1.4, t, 'ok', 3, { pct: 25 }));
+  T(S, 'k4', 1, 11.2, ['대가: 홉마다 지연이 조금 늘고 운영할 구성 요소가 많아져요 · 사이드카 없는 eBPF·ambient 방식도 나왔어요', 'costs: a little latency per hop and more moving parts · sidecar-less eBPF and ambient modes now exist'], 'opx-xs opx-r', 4);
+  fin(S, 'z', 12.6, [['서비스 메시: 서비스 간 통신 기능(보안·신뢰성·관측)을 앱 밖의 프록시 계층으로 뽑아낸 것', 'a service mesh moves inter-service concerns (security, reliability, observability) into a proxy layer outside the app', 'opx-xs opx-a'], ['서비스가 수십 개 이상이고 언어가 섞였을 때 효과가 커요 · 작다면 라이브러리로 충분해요', 'it pays off with dozens of services in mixed languages · for a few, libraries are enough']]);
+  S.cap(1, '앱끼리 직접 통신', 'Apps talk directly').cap(2, '사이드카 프록시', 'Sidecar proxies').cap(3, '컨트롤 플레인이 설정', 'The control plane configures').cap(4, '대가와 대안', 'Costs and alternatives').cap(5, '서비스 메시', 'Service mesh');
+  return S;
+}
+
+/* ================= observability ================= */
+function sChaos() {
+  const S = scene({ id: 'op-chaos', steps: 5, per: 1.6 });
+  for (let i = 0; i < 4; i++) box2(S, 'n' + i, 1 + i * 4.8, 1, 4.4, 1.4, ['인스턴스 ' + (i + 1), 'instance ' + (i + 1)], 'accent', 0, { pct: 30 });
+  tsets(S, 'n1', [[2, 'danger', 35], [4, 'accent', 30]]); xm(S, 'kx', 7.6, 1.9, 2, { off: 4 }); T(S, 'kt', 1, 2.7, ['장애 주입: 인스턴스 2 강제 종료 (폭발 반경은 작게)', 'inject: kill instance 2 (keep the blast radius small)'], 'opx-xs opx-r', 2, { off: 4 });
+  const X = t => 1.5 + t * 1.8, Y = v => 9.2 - v * .05;
+  hl(S, 'ax', 1.5, 19.6, 9.4, 'ink-3', 0, { w: .06 }); seg(S, 'ay', [1.5, 3.8], [1.5, 9.4], 0, 'ink-3', .06); T(S, 'yl', 1.8, 3.6, ['p99 지연 (ms)', 'p99 latency (ms)'], 'opx-tiny', 0);
+  seg(S, 'th', [1.5, Y(60)], [19.6, Y(60)], 1, 'danger', .07, { dash: 1 }); T(S, 'thl', 15.4, Y(60) - .8, ['SLO 300ms', 'SLO 300 ms'], 'cz-mono opx-tiny opx-r', 1);
+  poly(S, 's1', [[X(0), Y(30)], [X(1), Y(32)], [X(2), Y(29)], [X(3), Y(31)], [X(4), Y(30)]], { st: 1, color: 'ok', h: .12 });
+  poly(S, 's3', [[X(4), Y(30)], [X(5), Y(95)], [X(6), Y(88)], [X(7), Y(40)], [X(8), Y(31)], [X(10), Y(30)]], { st: 3, color: 'danger', h: .12, off: 4 });
+  poly(S, 's4', [[X(4), Y(30)], [X(5), Y(45)], [X(6), Y(36)], [X(7), Y(31)], [X(10), Y(30)]], { st: 4, color: 'ok', h: .12 });
+  T(S, 'ss', 21, 3.8, ['정상 상태: p99 150ms, 오류율 0.05%', 'steady: p99 150 ms, 0.05% errors'], 'opx-xs opx-g', 1);
+  T(S, 'hy', 21, 5, ['가설: 하나가 죽어도 SLO 안', 'hypothesis: lose one, stay in SLO'], 'opx-xs opx-a', 2);
+  T(S, 'f3', 21, 6.2, ['결과: 지연 급등 ✗', 'result: latency spikes ✗'], 'opx-xs opx-r', 3, { off: 4 }); T(S, 'f3b', 21, 7.2, ['헬스 체크가 늦고 재시도가 없었어요', 'slow health checks, no retries'], 'opx-xs opx-r', 3, { off: 4 });
+  T(S, 'f4', 21, 6.2, ['고친 뒤 재실험: SLO 안 ✓', 'after the fix, rerun: within SLO ✓'], 'opx-xs opx-g', 4); T(S, 'f4b', 21, 7.2, ['게임 데이·자동화로 반복해요', 'repeat in game days, automate'], 'opx-xs opx-g', 4);
+  fin(S, 'z', 10.8, [['카오스 엔지니어링: 일부러 작은 장애를 일으켜, 진짜 장애 전에 약점을 찾는 실험', 'chaos engineering injects small failures on purpose to find weaknesses before real outages do', 'opx-xs opx-a'], ['정상 상태 정의 → 가설 → 장애 주입 → 관찰 → 개선 · 폭발 반경을 작게 시작해 점점 넓혀요', 'define steady state → hypothesize → inject → observe → improve · start with a small blast radius'], ['넷플릭스 Chaos Monkey에서 시작 · 지연 주입, AZ 장애, 의존성 차단 등으로 확장', 'pioneered by Netflix’s Chaos Monkey · extended to latency, zone outages and dependency failures']]);
+  S.cap(1, '정상 상태 정의', 'Define the steady state').cap(2, '가설과 장애 주입', 'Hypothesis and injection').cap(3, '약점 발견', 'A weakness found').cap(4, '고치고 다시 실험', 'Fix and rerun').cap(5, '카오스 엔지니어링', 'Chaos engineering');
+  return S;
+}
+function sAlert() {
+  const S = scene({ id: 'op-alert', steps: 5, per: 1.6 });
+  T(S, 'nt', 1, .2, ['밤사이 알림 40개…', '40 alerts overnight…'], 'opx-xs opx-r', 1);
+  [['CPU 82%', 'line'], ['disk 70%', 'line'], ['pod restart', 'line'], ['GC pause 400ms', 'line'], ['queue depth 1200', 'line'], ['5xx 증가', 'danger']].forEach(([t, c], i) => box2(S, 'a' + i, 1 + (i % 2) * 7, 1.2 + Math.floor(i / 2) * 1.5, 6.6, 1.25, i === 5 ? ['결제 오류 급증', 'checkout errors up'] : t, c, 1, { pct: 35 }));
+  T(S, 'ft', 1, 5.8, ['대부분 할 일이 없어 무시 → 진짜도 놓쳐요', 'mostly nothing to do → real ones missed'], 'opx-xs opx-r', 1);
+  box2(S, 'pg', 16.4, 1.2, 14.6, 1.6, ['호출(page): 사용자에게 영향 · 지금 행동', 'page: users affected · act now'], 'danger', 2, { pct: 30 });
+  box2(S, 'tk', 16.4, 3.2, 14.6, 1.6, ['티켓: 근무 시간에 처리', 'ticket: handle in work hours'], 'warn', 2, { pct: 30 });
+  box2(S, 'db', 16.4, 5.2, 14.6, 1.4, ['대시보드: 원인 조사용 지표', 'dashboard: metrics for diagnosis'], 'line', 2, { pct: 40 });
+  tsets(S, 'a5', [[2, 'danger', 45]]); ['a0', 'a1', 'a2', 'a3', 'a4'].forEach(k => S.set(k, 2, { opacity: '.4' }));
+  elb(S, 'r5', [[14.7, 4.85], [15.4, 4.85], [15.4, 2], [16.3, 2]], 'danger', 2, { h: .08 });
+  T(S, 'sy', 16.4, 6.9, ['증상으로 호출, 원인 지표는 대시보드로', 'page on symptoms; causes go to dashboards'], 'opx-xs opx-a', 2);
+  const X = t => 2 + t * 1.9, Y = v => 12.6 - v * .045;
+  hl(S, 'bx', 2, 21, 12.6, 'ink-3', 3, { w: .06 }); T(S, 'byl', 1, 8, ['에러 예산 소진율', 'error-budget burn rate'], 'opx-tiny opx-a', 3);
+  seg(S, 'b1', [2, Y(14 * 4)], [21, Y(14 * 4)], 3, 'danger', .07, { dash: 1 }); T(S, 'b1l', 21.4, Y(56) - .3, ['14배 · 1시간 창 → 호출', '14× over 1 h → page'], 'opx-tiny opx-r', 3);
+  seg(S, 'b2', [2, Y(6 * 4)], [21, Y(24)], 3, 'warn', .07, { dash: 1 }); T(S, 'b2l', 21.4, Y(24) - .3, ['6배 · 6시간 창 → 티켓', '6× over 6 h → ticket'], 'opx-tiny opx-w', 3);
+  poly(S, 'bc', [[X(0), Y(4)], [X(2), Y(6)], [X(4), Y(5)], [X(5), Y(30)], [X(6), Y(70)], [X(7), Y(64)], [X(8), Y(20)], [X(10), Y(6)]], { st: 3, color: 'accent', h: .12 });
+  T(S, 'k4', 1, 13.2, ['알림마다 담당자 · 심각도 · 런북 링크 · “지금 무엇을 할지”가 있어야 해요 · 회고 때 알림도 점검', 'every alert needs an owner, a severity, a runbook link and a clear action · review alerts in postmortems'], 'opx-xs opx-a', 4);
+  fin(S, 'z', 14.6, [['좋은 알림: 드물고, 사용자 영향과 직결되고, 받는 즉시 할 일이 분명해요', 'good alerts are rare, tied to user impact and immediately actionable', 'opx-xs opx-a'], ['SLO 소진율 기반 다중 창 알림이 노이즈를 줄이고 큰 장애는 빨리 잡아요 (Google SRE)', 'multi-window SLO burn-rate alerts cut noise while catching big incidents fast (Google SRE)']]);
+  S.cap(1, '알림 피로', 'Alert fatigue').cap(2, '증상으로 호출', 'Page on symptoms').cap(3, '에러 예산 소진율', 'Error-budget burn rate').cap(4, '행동할 수 있는 알림', 'Actionable alerts').cap(5, '알림 설계', 'Alert design');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'op-git': [
+    item('op-bisect', 'git bisect', 'git bisect', '잘 되던 커밋과 망가진 커밋 사이를 이진 탐색해, 버그를 들여온 커밋을 찾아 주는 Git 기능이에요.', 'c1은 좋고 c16은 나쁘면 가운데 c8을 시험하고, 결과에 따라 남은 범위를 반씩 좁혀 4번 만에 범인 c11을 찾아요. 커밋 1,000개도 약 10번이면 끝나고(log₂ n), git bisect run에 테스트 스크립트를 주면 완전히 자동으로 돌아요. 작은 커밋을 자주 남겨야 찾아낸 커밋도 작아서 원인이 바로 보여요.', 'A Git feature that binary-searches between a known-good and a known-bad commit to find the one that introduced a bug.', 'With c1 good and c16 bad, test the middle c8 and halve the remaining range on each result, pinning the culprit c11 in four tests. Even 1,000 commits take about 10 tests (log₂ n), and git bisect run with a test script automates the whole search. Small, frequent commits keep the culprit small so the cause is obvious.', sBisect()),
+    item('op-undo', 'Git에서 되돌리기', 'Undoing things in Git', '이미 공유한 커밋은 revert로 “취소 커밋”을 새로 만들고, 내 로컬 커밋은 reset으로 브랜치 포인터를 옮겨요. 실수해도 reflog로 되살려요.', 'revert는 D를 취소하는 D′를 추가해 히스토리를 그대로 두므로 공유 브랜치에 안전해요. reset --hard C는 main을 C로 옮겨 D가 사라진 것처럼 보이는데, 이미 푸시했다면 다른 사람의 히스토리와 꼬여요. 실수로 지웠어도 reflog에 HEAD가 지나간 자리가 약 90일간 남아 git reset --hard HEAD@{1}로 복구할 수 있어요. 파일 하나는 git restore, 마지막 커밋 수정은 --amend를 써요.', 'Undo shared commits with revert, which adds an undo commit; move a local branch pointer with reset; and recover mistakes with the reflog.', 'revert adds D′ undoing D while keeping history intact, so it is safe on shared branches. reset --hard C moves main back to C and D seems to vanish, which tangles others’ history if it was already pushed. Even then, the reflog keeps where HEAD has been for about 90 days, so git reset --hard HEAD@{1} brings it back. Use git restore for a single file and --amend for the last commit.', sUndo())
+  ],
+  'op-delivery': [
+    item('op-gitops', 'GitOps', 'GitOps', 'Git에 둔 원하는 상태를 클러스터 안의 컨트롤러가 스스로 당겨 와 맞추는 배포 방식이에요. 모든 변경은 PR로, 롤백은 git revert로 해요.', '개발자가 replicas를 2에서 3으로 바꾸는 PR을 병합하면, Argo CD 같은 컨트롤러가 Git과 실제 상태를 비교해 파드를 3개로 맞춰요. 누가 kubectl로 손수 5개로 바꿔도 Git 기준으로 되돌리는 자가 치유가 일어나요. CI가 클러스터 권한을 가질 필요가 없고 모든 변경이 Git 이력과 리뷰로 남아요. Argo CD와 Flux가 대표 도구예요.', 'A deployment approach where a controller inside the cluster pulls the desired state from Git and converges to it; changes go through PRs and rollbacks are git reverts.', 'When a developer merges a PR changing replicas from 2 to 3, a controller such as Argo CD diffs Git against the live state and scales to three pods. If someone hand-edits it to five with kubectl, the controller self-heals back to what Git says. CI needs no cluster credentials, and every change stays in Git history and review. Argo CD and Flux are the main tools.', sGitops()),
+    item('op-12factor', '12-Factor App', 'The Twelve-Factor App', '클라우드에서 쉽게 배포·확장·운영할 수 있는 앱을 만들기 위한 12가지 설계 원칙이에요 (Heroku, 2011).', '핵심은 빌드(코드 → 이미지)·릴리스(이미지 + 설정)·실행의 분리로, 같은 이미지를 스테이징과 운영에 그대로 올리고 설정만 환경 변수로 바꿔요. DB 주소·비밀번호를 코드에 박지 않고 DATABASE_URL처럼 주입하며, 백엔드 서비스는 갈아 끼울 수 있는 부착물로 다뤄요. 프로세스는 무상태로 두고 상태는 DB·캐시에, 로그는 stdout으로 흘려보내고, 언제 죽여도 빠르게 다시 뜨게 만들어 컨테이너·쿠버네티스와 잘 맞아요.', 'Twelve design principles for apps that deploy, scale and operate easily in the cloud (Heroku, 2011).', 'The heart is separating build (code → image), release (image + config) and run, so one image is promoted to staging and production with only environment variables changing. Database addresses and passwords are injected, e.g. DATABASE_URL, rather than hard-coded, and backing services are swappable attached resources. Processes stay stateless with state in databases and caches, logs stream to stdout, and instances start and stop fast, a natural fit for containers and Kubernetes.', s12f())
+  ],
+  'op-k8s-sec': [
+    item('op-mesh', '서비스 메시', 'Service mesh', '서비스 사이 통신에 필요한 보안·신뢰성·관측 기능을 각 파드 옆의 사이드카 프록시로 뽑아내, 앱 코드를 바꾸지 않고 제공하는 인프라 계층이에요.', '서비스끼리 직접 호출하면 재시도, TLS, 타임아웃을 언어마다 라이브러리로 다시 구현해야 해요. 서비스 메시는 모든 트래픽이 Envoy 같은 사이드카를 거치게 하고, Istio·Linkerd의 컨트롤 플레인이 mTLS, 재시도·타임아웃, 서킷 브레이커, 90/10 트래픽 분할, 메트릭·트레이스를 설정해요. 대신 홉마다 지연이 늘고 구성 요소가 많아져서, 서비스가 많고 언어가 섞였을 때 효과가 커요. 사이드카 없는 eBPF·ambient 방식도 나왔어요.', 'An infrastructure layer that moves inter-service security, reliability and observability into sidecar proxies beside each pod, without changing app code.', 'When services call each other directly, retries, TLS and timeouts get reimplemented per language. A mesh routes all traffic through sidecars such as Envoy, and a control plane like Istio or Linkerd configures mTLS, retries and timeouts, circuit breaking, 90/10 traffic splits and metrics and traces. It adds a little latency per hop and more moving parts, so it pays off with many services in mixed languages; sidecar-less eBPF and ambient modes have also appeared.', sMesh())
+  ],
+  'op-obs': [
+    item('op-chaos', '카오스 엔지니어링', 'Chaos engineering', '운영 환경과 비슷한 곳에 일부러 작은 장애를 일으켜, 진짜 장애가 나기 전에 시스템의 약점을 찾는 실험이에요.', '먼저 정상 상태(p99 지연, 오류율)를 정의하고 “인스턴스 하나가 죽어도 SLO 안”이라는 가설을 세운 뒤, 폭발 반경을 작게 해 인스턴스를 강제 종료해요. 지연이 급등하면 느린 헬스 체크나 재시도 부재 같은 약점이 드러난 것이니 고치고 다시 실험해요. 넷플릭스 Chaos Monkey에서 시작해 지연 주입, 가용 영역 장애, 의존성 차단으로 넓어졌고, 게임 데이와 자동화로 반복해요.', 'Deliberately injecting small failures into production-like systems to find weaknesses before real outages do.', 'Define the steady state (p99 latency, error rate), hypothesize that losing one instance stays within the SLO, then kill an instance with a small blast radius. A latency spike exposes weaknesses such as slow health checks or missing retries, which you fix and test again. It began with Netflix’s Chaos Monkey and grew to latency injection, zone outages and dependency failures, repeated through game days and automation.', sChaos()),
+    item('op-alert', '알림 설계', 'Alert design', '사람을 깨우는 알림은 드물고, 사용자 영향과 직결되고, 받는 즉시 할 일이 분명해야 해요. 그렇지 않으면 알림 피로로 진짜 알림을 놓쳐요.', 'CPU 82%, 디스크 70% 같은 원인 지표로 호출하면 대부분 행동할 게 없어 무시되고 결국 결제 오류 급증 같은 진짜 신호도 묻혀요. 사용자 영향(증상)으로만 호출하고, 급하지 않은 것은 티켓, 원인 지표는 대시보드로 보내요. SLO 에러 예산 소진율로 1시간 창에서 14배면 호출, 6시간 창에서 6배면 티켓처럼 다중 창 알림을 쓰면 노이즈는 줄고 큰 장애는 빨리 잡아요. 알림마다 담당자, 심각도, 런북 링크가 있어야 해요.', 'Alerts that wake people should be rare, tied to user impact and immediately actionable; otherwise alert fatigue buries the real ones.', 'Paging on causes like CPU at 82% or disk at 70% mostly produces nothing to do, so people ignore pages and miss real signals such as a spike in checkout errors. Page only on symptoms (user impact), send non-urgent issues to tickets and causes to dashboards. Multi-window SLO burn-rate alerts, e.g. page at 14× over one hour and ticket at 6× over six hours, cut noise while catching big incidents fast. Every alert needs an owner, a severity and a runbook link.', sAlert())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('op-git', 'Git', 'Git', 'Git과 버전 관리', 'Git and version control',
     '변경 이력을 남기고, 갈라서 작업하고, 다시 합치는 방법이에요.', 'Recording history, branching off and merging back.', [
@@ -494,7 +758,7 @@ window.UX = page([
     item('op-rebase', '리베이스', 'Rebase', '내 브랜치의 커밋들을 다른 브랜치의 최신 커밋 뒤에 다시 적용해 히스토리를 한 줄로 만들어요.', '커밋 해시가 바뀌므로 이미 공유한 브랜치에는 쓰지 마세요. 내 로컬 브랜치를 최신 main에 맞출 때 유용해요.', 'Replays your branch’s commits on top of another branch’s latest commit, producing a straight history.', 'It rewrites commit hashes, so never rebase shared branches; great for updating your own branch onto the latest main.', sRebase()),
     item('op-conflict', '머지 충돌', 'Merge conflicts', '두 브랜치가 같은 부분을 다르게 바꾸면 git이 자동으로 합치지 못하고 충돌 표시를 남겨요.', '표시(<<<<<<<, =======, >>>>>>>)를 지우고 올바른 결과를 직접 정한 뒤 커밋해요. 자주 머지할수록 충돌이 작아요.', 'When two branches change the same lines differently, git can’t merge automatically and leaves conflict markers.', 'Remove the markers, decide the correct result yourself, then commit; merging often keeps conflicts small.', sConflict()),
     item('op-flow', '브랜치 전략', 'Branching strategies', 'Git Flow는 main·develop·release 등 오래 사는 브랜치를 역할별로 두고, 트렁크 기반은 main 하나에 짧은 브랜치를 자주 합쳐요.', '여러 버전을 동시에 유지하는 제품은 Git Flow가, 매일 배포하는 웹 서비스는 트렁크 기반 + 기능 플래그가 잘 맞아요.', 'Git Flow keeps long-lived branches per role (main, develop, release); trunk-based development merges short branches into one main frequently.', 'Products maintaining several versions suit Git Flow; web services deploying daily suit trunk-based plus feature flags.', sFlow())
-  ]),
+  ].concat(XT.add['op-git'] || [])),
   sec('op-delivery', 'CI/CD', 'CI/CD', 'CI/CD와 인프라', 'CI/CD and infrastructure',
     '코드를 자동으로 검증하고 안전하게 내보내는 파이프라인이에요.', 'Pipelines that verify code automatically and ship it safely.', [
     item('op-ci', '지속적 통합 (CI)', 'Continuous integration', '푸시할 때마다 빌드·테스트·린트·보안 검사를 자동으로 돌려, 깨진 코드가 main에 들어오지 못하게 해요.', 'GitHub Actions, GitLab CI, Jenkins가 대표적이에요. 파이프라인은 10분 안쪽으로 빠르게, 실패하면 머지를 막도록 설정하세요.', 'Every push runs build, tests, lint and security checks automatically so broken code never reaches main.', 'GitHub Actions, GitLab CI and Jenkins are common; keep pipelines under about 10 minutes and make failures block merges.', sCI()),
@@ -502,7 +766,7 @@ window.UX = page([
     item('op-iac', '코드형 인프라 (IaC)', 'Infrastructure as code', '서버·네트워크·DB 같은 인프라를 코드로 선언하고, 도구가 실제 상태와 비교해 차이만큼 만들거나 고쳐요.', 'Terraform, Pulumi, CloudFormation이 대표적이에요. 콘솔에서 손으로 바꾸면 코드와 어긋나는 드리프트가 생기니 피하세요.', 'Declare servers, networks and databases in code; the tool compares it with reality and applies just the difference.', 'Terraform, Pulumi and CloudFormation are typical; avoid manual console edits, which cause drift from the code.', sIaC()),
     item('op-flag', '기능 플래그', 'Feature flags', '코드는 배포해 두고, 기능을 켤지 말지와 대상 비율을 설정으로 바꿔요. 배포와 출시를 분리해요.', '점진 출시, A/B 테스트, 장애 시 킬 스위치로 써요. LaunchDarkly, Unleash 등이 있고, 다 쓴 플래그는 꼭 코드에서 지우세요.', 'Ship the code dark and toggle who sees a feature through configuration, separating deploy from release.', 'Use them for gradual rollouts, A/B tests and kill switches (LaunchDarkly, Unleash); remove stale flags from the code.', sFlag()),
     item('op-cloud', 'IaaS · PaaS · SaaS', 'IaaS · PaaS · SaaS', '클라우드가 어디까지 관리해 주는지에 따라 나뉘어요. IaaS는 가상 서버, PaaS는 코드 실행 환경, SaaS는 완성된 서비스예요.', '직접 관리할수록 자유도가 높고 운영 부담도 커요. 서버리스(Lambda)는 PaaS보다 한 단계 더 맡기는 형태예요.', 'Cloud models differ by how much the provider runs: IaaS gives virtual machines, PaaS a place to run code, SaaS finished software.', 'More control means more operational work; serverless functions (Lambda) hand off even more than PaaS.', sCloud())
-  ]),
+  ].concat(XT.add['op-delivery'] || [])),
   sec('op-k8s-sec', '컨테이너', 'Containers', '컨테이너와 쿠버네티스', 'Containers and Kubernetes',
     '어디서나 똑같이 실행되는 패키지와, 그걸 여러 대에서 굴리는 방법이에요.', 'Packages that run the same everywhere, and running them across many machines.', [
     item('op-image', '컨테이너 이미지와 레이어', 'Container images and layers', 'Dockerfile의 명령마다 레이어가 쌓여 이미지가 돼요. 바뀌지 않은 레이어는 캐시로 재사용해요.', '의존성 설치를 소스 복사보다 먼저 두면 빌드가 빨라요. 작은 베이스 이미지(alpine, distroless)와 멀티 스테이지 빌드로 크기를 줄여요.', 'Each Dockerfile instruction adds a layer to the image, and unchanged layers are reused from cache.', 'Install dependencies before copying source for faster builds; slim base images and multi-stage builds cut size.', sImage()),
@@ -510,13 +774,13 @@ window.UX = page([
     item('op-hpa', '오토스케일링', 'Autoscaling', 'CPU·요청 수 같은 지표가 목표를 넘으면 파드를 늘리고, 줄면 다시 줄여요(HPA).', '최소·최대 개수를 꼭 정하세요. 너무 자주 오르내리지 않게 안정화 시간을 둬요. 노드가 부족하면 클러스터 오토스케일러가 노드를 추가해요.', 'When a metric such as CPU or request rate exceeds its target, pods are added, and removed again as it drops (HPA).', 'Always set minimum and maximum counts and a stabilization window; the cluster autoscaler adds nodes when they run out.', sHPA()),
     item('op-svc', '서비스와 인그레스', 'Services and Ingress', '서비스는 계속 바뀌는 파드들에 고정된 이름과 내부 로드 밸런싱을 주고, 인그레스는 외부 요청을 경로별로 서비스에 나눠 줘요.', '서비스끼리는 http://서비스이름 으로 불러요. 인그레스에서 TLS 인증서와 도메인·경로 라우팅을 관리해요.', 'A Service gives ever-changing pods a stable name and internal load balancing; an Ingress routes outside requests to services by path.', 'Services call each other by name (http://service-name); TLS certificates and host/path routing live in the Ingress.', sSvc()),
     item('op-probe', '헬스 체크 (프로브)', 'Health probes', 'readiness는 트래픽을 받을 준비가 됐는지, liveness는 프로세스가 살아 있는지 확인해요. 실패하면 트래픽을 빼거나 재시작해요.', 'readiness에 DB 같은 외부 의존을 넣으면 DB 장애 때 전부 빠질 수 있어요. 느린 앱은 startup 프로브로 시작 시간을 따로 줘요.', 'Readiness checks whether a pod can take traffic; liveness checks whether it’s still alive. Failures remove traffic or trigger a restart.', 'Putting external dependencies like the DB in readiness can pull every pod at once; give slow apps a separate startup probe.', sProbe())
-  ]),
+  ].concat(XT.add['op-k8s-sec'] || [])),
   sec('op-release', '배포 전략', 'Releases', '배포 전략', 'Release strategies',
     '새 버전을 사용자에게 안전하게 내보내는 방법이에요.', 'Ways to put a new version in front of users safely.', [
     item('op-rolling', '롤링 업데이트', 'Rolling update', '파드를 하나씩 새 버전으로 교체해 중단 없이 배포해요.', '쿠버네티스 기본 방식이에요. 중간엔 두 버전이 함께 돌아서 API와 DB 스키마가 양쪽과 호환돼야 해요.', 'Replaces pods with the new version one at a time, with no downtime.', 'The Kubernetes default; both versions run together mid-rollout, so APIs and schemas must work with both.', sRolling()),
     item('op-bluegreen', '블루그린 배포', 'Blue-green deployment', '운영 환경(blue) 옆에 같은 환경(green)을 만들어 새 버전을 올리고, 검증 후 트래픽을 한 번에 전환해요.', '롤백이 라우터 전환 한 번이라 빨라요. 대신 인프라가 두 배 필요하고, DB 마이그레이션은 양쪽과 호환되게 해야 해요.', 'Run an identical green environment beside live blue, deploy there, verify, then switch all traffic at once.', 'Rollback is one router flip, but you need double infrastructure and backward-compatible database migrations.', sBlueGreen()),
     item('op-canary', '카나리 배포', 'Canary release', '새 버전에 트래픽 일부(예: 5%)만 보내 지표를 비교하고, 괜찮으면 비율을 점점 늘려요.', '문제가 생겨도 일부 사용자만 영향을 받아요. 비교할 지표(오류율, 지연)를 미리 정하고 자동 롤백을 걸어 두세요(Argo Rollouts, Flagger).', 'Send a small share of traffic (say 5%) to the new version, compare metrics, then increase the share step by step.', 'Problems only reach a few users; define the metrics (error rate, latency) up front and automate rollback (Argo Rollouts, Flagger).', sCanary())
-  ]),
+  ].concat(XT.add['op-release'] || [])),
   sec('op-obs', '관측성', 'Observability', '관측성과 운영', 'Observability and operations',
     '시스템이 지금 어떤 상태인지 알고, 문제가 생기면 빨리 고치는 방법이에요.', 'Knowing what a system is doing, and fixing it fast when it misbehaves.', [
     item('op-pillars', '로그 · 메트릭 · 트레이스', 'Logs, metrics, traces', '로그는 개별 사건 기록, 메트릭은 숫자 추세, 트레이스는 한 요청이 거쳐 간 경로와 시간이에요.', '로그는 JSON 같은 구조화된 형식으로 남기세요. 메트릭으로 알림을 걸고, 트레이스로 위치를 찾고, 로그로 원인을 봐요.', 'Logs record individual events, metrics track numeric trends, and traces show one request’s path and timing.', 'Write structured (JSON) logs; alert on metrics, locate with traces and explain with logs.', sPillars()),
@@ -524,8 +788,9 @@ window.UX = page([
     item('op-percentile', '지연 백분위수 (p50 · p99)', 'Latency percentiles (p50 · p99)', '응답 시간을 정렬했을 때 50%, 99% 위치의 값이에요. 평균은 느린 꼬리를 가려요.', '목표와 알림은 p95·p99로 잡아요. 페이지 하나가 요청 수십 개를 부르면 대부분의 사용자가 p99를 겪어요.', 'The values at the 50th and 99th positions of sorted response times; averages hide the slow tail.', 'Set targets and alerts on p95/p99; when a page makes dozens of calls, most users hit the p99.', sPct()),
     item('op-slo', 'SLI · SLO · 에러 예산', 'SLI, SLO and error budgets', 'SLI는 사용자 경험을 재는 지표, SLO는 그 목표치, 에러 예산은 목표가 허용하는 실패량이에요.', '예산이 남으면 과감하게 출시하고, 바닥나면 안정화를 우선해요. 99.9%는 한 달에 약 43분, 99.99%는 약 4분이에요.', 'An SLI measures user experience, an SLO is its target, and the error budget is the failure the target allows.', 'Ship boldly while budget remains and prioritize reliability when it runs out; 99.9% is about 43 minutes a month, 99.99% about 4.', sSLO()),
     item('op-incident', '장애 대응과 회고', 'Incident response and postmortems', '감지 → 분류·선언 → 완화 → 복구 → 회고 순서로 움직여요. 원인 분석보다 피해를 먼저 멈춰요.', '대응 책임자와 소통 채널을 정해 두세요. 회고는 비난 없이(blameless) 시스템과 절차를 고치는 데 집중해요.', 'Move through detect, triage, mitigate, resolve and review; stop the damage before hunting for root cause.', 'Name an incident lead and a comms channel up front; run blameless postmortems that fix systems and processes.', sIncident())
-  ])
-]);
+  ].concat(XT.add['op-obs'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .op-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .op-p .in{font-family:inherit;font-size:.72em;font-weight:700;line-height:1.25;text-align:center}
