@@ -1,0 +1,117 @@
+# 수치해석 · Numerical analysis
+
+> [!NOTE]
+> [페이지 바로가기 · Open the atlas](https://starrykss.github.io/CS_Study/numerical-analysis/) · [← 통합 포털 · Portal](https://starrykss.github.io/CS_Study/) · [← 저장소 처음으로](../README.md)
+
+부동소수점과 기계 엡실론, 파국적 상쇄와 조건수에서 시작해 이분법·뉴턴·할선법, 피벗팅과 반복법, 거듭제곱법과 경사 하강법, 다항식 보간과 스플라인, 수치 미분과 적분, 오일러·RK4와 안정성까지. 공식마다 수치 예제를 붙이고, 오차가 어떻게 생기고 줄어드는지 그림으로 보여줘요.
+
+Floating point and machine epsilon, catastrophic cancellation and conditioning; bisection, Newton and secant methods; pivoting and iterative solvers, power iteration and gradient descent; polynomial interpolation and splines; numerical differentiation and integration; Euler, RK4 and stability. Each formula comes with a worked number, and the pictures show how error appears and shrinks.
+
+**6개 주제 · 25개 개념** — 모든 개념에 반복 재생되는 모션 예시가 있어요. 아래 표는 페이지 내용을 글로 옮긴 거예요.
+
+## 목차 · Contents
+
+- [오차와 부동소수점 · Errors and floating point](#nu-err) (5)
+- [방정식의 근 · Root finding](#nu-root) (5)
+- [선형 시스템과 최적화 · Linear systems and optimization](#nu-lin) (4)
+- [보간 · Interpolation](#nu-interp) (3)
+- [수치 미분과 적분 · Numerical differentiation and integration](#nu-int) (4)
+- [미분방정식 · Differential equations](#nu-ode) (4)
+
+<a id="nu-err"></a>
+
+## 오차와 부동소수점 · Errors and floating point
+
+컴퓨터가 실수를 다루는 방식과 그 한계예요.  
+*How computers handle real numbers, and where that breaks.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **부동소수점 수**<br><sub>Floating-point numbers</sub> | 실수를 부호·지수·가수로 나눠 2진 과학적 표기법으로 저장해요. 대부분의 소수는 정확히 표현되지 않아 반올림돼요.<br><sub>Real numbers are stored in binary scientific notation as sign, exponent and fraction. Most decimals can’t be represented exactly, so they’re rounded.</sub> | IEEE 754 double = 부호 1 + 지수 11 + 가수 52비트, 값 = (−1)ˢ × 1.f × 2^(e − 1023). 0.1은 2진수로 무한 소수라 0.1 + 0.2 = 0.30000000000000004. 그래서 실수는 ==가 아니라 허용 오차로 비교하고, 돈은 정수(최소 단위)나 decimal로 다뤄요. 0, 무한대, NaN, 비정규 수는 특별한 비트 패턴이에요.<br><sub>An IEEE 754 double is 1 sign bit, 11 exponent bits and 52 fraction bits: (−1)ˢ × 1.f × 2^(e − 1023). 0.1 is an infinite binary fraction, hence 0.1 + 0.2 = 0.30000000000000004. Compare floats with a tolerance rather than ==, and keep money in integer cents or a decimal type. Zero, infinities, NaN and subnormals get special bit patterns.</sub> |
+| **기계 엡실론과 반올림**<br><sub>Machine epsilon and rounding</sub> | 표현 가능한 수 사이의 간격은 수의 크기에 비례해요. 1 바로 다음 수까지의 간격이 기계 엡실론이고, 반올림의 상대 오차는 그 절반 이하예요.<br><sub>The gap between representable numbers grows with their size. The gap just above 1 is machine epsilon, and rounding’s relative error is at most half of it.</sub> | double의 ε = 2⁻⁵² ≈ 2.2 × 10⁻¹⁶ (유효숫자 약 16자리). 큰 수일수록 간격이 넓어 2⁵³을 넘는 정수는 홀수를 표현하지 못해요(자바스크립트 Number.MAX\_SAFE\_INTEGER). 큰 수에 작은 수를 더하면 사라지므로 합계는 작은 수부터 더하거나 카한 합산을 써요.<br><sub>For doubles ε = 2⁻⁵² ≈ 2.2 × 10⁻¹⁶, about 16 significant digits. The gaps widen with magnitude, so above 2⁵³ odd integers vanish (JavaScript’s Number.MAX\_SAFE\_INTEGER). Adding a small number to a large one can change nothing, so sum small values first or use Kahan summation.</sub> |
+| **파국적 상쇄**<br><sub>Catastrophic cancellation</sub> | 거의 같은 두 수를 빼면 앞자리가 지워지고 반올림 오차만 남아 상대 오차가 폭발해요. 식을 바꿔 뺄셈을 피하는 게 해결책이에요.<br><sub>Subtracting two nearly equal numbers erases the leading digits and leaves rounding noise, so the relative error explodes. The cure is to rewrite the formula without the subtraction.</sub> | 예: x = 10¹⁵에서 √(x + 1) − √x를 그대로 계산하면 18% 틀리지만 1/(√(x + 1) + √x)로 바꾸면 끝자리까지 정확해요. 근의 공식(b² ≫ 4ac), 작은 x의 1 − cos x, 분산 E[x²] − E[x]²도 같은 함정. log1p, expm1, 웰퍼드 알고리즘이 그래서 있어요.<br><sub>At x = 10¹⁵, √(x + 1) − √x computed directly is 18% off, while 1/(√(x + 1) + √x) is right to the last digit. The quadratic formula (b² ≫ 4ac), 1 − cos x for small x and the variance E[x²] − E[x]² hide the same trap; that is why log1p, expm1 and Welford’s algorithm exist.</sub> |
+| **조건수**<br><sub>Condition number</sub> | 입력이 조금 바뀔 때 답이 얼마나 크게 바뀌는지를 나타내요. 조건수가 크면 아무리 좋은 알고리즘도 정확한 답을 낼 수 없어요.<br><sub>How much the answer moves when the input moves a little. With a large condition number no algorithm can deliver an accurate answer.</sub> | 행렬의 조건수 κ(A) = ‖A‖·‖A⁻¹‖ = σ\_max / σ\_min. 상대 오차가 최대 κ배로 커져 대략 log₁₀κ 자리를 잃어요. 거의 평행한 두 직선은 κ ≈ 42, 10×10 힐베르트 행렬은 약 10¹³. 조건은 문제 자체의 성질이고, 안정성은 알고리즘의 성질이에요.<br><sub>For a matrix, κ(A) = ‖A‖·‖A⁻¹‖ = σ\_max / σ\_min. Relative errors can grow κ-fold, losing about log₁₀κ digits. Two nearly parallel lines give κ ≈ 42; the 10×10 Hilbert matrix about 10¹³. Conditioning belongs to the problem; stability belongs to the algorithm.</sub> |
+| **절단 오차와 반올림 오차**<br><sub>Truncation versus rounding error</sub> | 무한 과정을 유한하게 자르는 데서 생기는 절단 오차와 유한 자릿수 때문에 생기는 반올림 오차는 서로 반대로 움직여요.<br><sub>Truncation error comes from cutting an infinite process short; rounding error from finite digits. Shrinking a step trades one for the other.</sub> | 전진 차분의 오차 ≈ (h/2)\|f″\| + ε\|f\|/h → 최적 h ≈ √ε ≈ 10⁻⁸에서 약 8자리. 중앙 차분은 h ≈ ε^(1/3) ≈ 10⁻⁵에서 약 11자리. h를 무작정 줄이면 오히려 나빠져요. 자동 미분(PyTorch, JAX)은 차분이 아니라 연쇄 법칙을 그대로 계산해 이 문제가 없어요.<br><sub>A forward difference errs by about (h/2)\|f″\| + ε\|f\|/h, so the best h ≈ √ε ≈ 10⁻⁸ gives about 8 digits; a central difference reaches about 11 digits at h ≈ ε^(1/3) ≈ 10⁻⁵. Shrinking h further makes things worse. Automatic differentiation (PyTorch, JAX) applies the chain rule exactly and sidesteps the issue.</sub> |
+
+<a id="nu-root"></a>
+
+## 방정식의 근 · Root finding
+
+식을 0으로 만드는 값을 반복으로 찾아가요.  
+*Homing in on where a function hits zero.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **이분법**<br><sub>Bisection</sub> | 부호가 다른 두 점 사이에는 근이 있어요. 중점의 부호를 보고 근이 있는 절반만 남기는 일을 반복해요.<br><sub>A continuous function that changes sign has a root in between. Check the midpoint’s sign and keep the half that still brackets the root.</sub> | 예: x² − 2 = 0, [1, 2] → [1, 1.5] → [1.25, 1.5] → … n번 후 폭 2⁻ⁿ, 10자리에 약 34번. 연속이고 f(a)·f(b) < 0이면 반드시 수렴해요(중간값 정리). 느리지만 안전해서 다른 방법의 안전장치로 써요. git bisect, 이진 탐색과 같은 원리예요.<br><sub>For x² − 2 = 0: [1, 2] → [1, 1.5] → [1.25, 1.5] → … After n steps the width is 2⁻ⁿ, so 10 digits take about 34 steps. If f is continuous and f(a)·f(b) < 0 it always converges (intermediate value theorem). Slow but safe, it backs up faster methods. git bisect and binary search share the idea.</sub> |
+| **뉴턴 방법**<br><sub>Newton’s method</sub> | 현재 점에서 접선을 그어 그 접선이 0이 되는 곳으로 이동해요. 근 근처에서는 맞는 자릿수가 매번 두 배로 늘어요.<br><sub>Draw the tangent at the current point and move to where it hits zero. Near the root the number of correct digits doubles every step.</sub> | xₙ₊₁ = xₙ − f(xₙ)/f′(xₙ). √2: 2 → 1.5 → 1.41667 → 1.4142157 → 1.41421356237 (맞는 자리 1, 3, 6, 12). 이차 수렴이지만 도함수가 필요하고, f′ ≈ 0이거나 시작점이 멀면 발산·진동해요. 하드웨어 나눗셈·제곱근, 최적화의 뉴턴 단계, 비선형 연립방정식(야코비 행렬)에 써요.<br><sub>xₙ₊₁ = xₙ − f(xₙ)/f′(xₙ). For √2: 2 → 1.5 → 1.41667 → 1.4142157 → 1.41421356237, with 1, 3, 6, 12 correct digits. Quadratic convergence, but it needs f′ and can diverge or cycle when f′ ≈ 0 or the start is far. Used for hardware division and square roots, Newton steps in optimization, and nonlinear systems via the Jacobian.</sub> |
+| **할선법**<br><sub>Secant method</sub> | 도함수 대신 최근 두 점을 잇는 직선(할선)을 써요. 함숫값만으로 뉴턴에 가까운 속도를 내요.<br><sub>Replace the derivative with the line through the last two points. Function values alone give nearly Newton-like speed.</sub> | xₙ₊₁ = xₙ − f(xₙ)(xₙ − xₙ₋₁)/(f(xₙ) − f(xₙ₋₁)). 수렴 차수는 황금비 ≈ 1.618이고, 한 걸음에 함숫값 계산이 한 번이라 실제로는 뉴턴보다 빠를 때도 많아요. 실무 표준인 브렌트 방법(scipy.optimize.brentq)은 이분법·할선법·역이차보간을 섞어 안전하고 빨라요.<br><sub>xₙ₊₁ = xₙ − f(xₙ)(xₙ − xₙ₋₁)/(f(xₙ) − f(xₙ₋₁)). Its order is the golden ratio ≈ 1.618, and with one function evaluation per step it often beats Newton in wall time. Brent’s method (scipy.optimize.brentq), the practical default, mixes bisection, secant and inverse quadratic interpolation for speed with a safety net.</sub> |
+| **고정점 반복**<br><sub>Fixed-point iteration</sub> | x = g(x) 꼴로 바꿔 결과를 다시 넣는 걸 반복해요. 고정점에서 \|g′\| < 1이면 수렴해요.<br><sub>Rewrite the equation as x = g(x) and keep feeding the output back in. It converges when \|g′\| < 1 at the fixed point.</sub> | 예: x = cos x → 0.2, 0.980, 0.557, 0.849, … → 0.739085. 오차가 매번 \|g′(x\*)\| ≈ 0.67배로 줄어요(선형 수렴). 뉴턴 방법도 g(x) = x − f/f′인 고정점 반복이에요. PageRank, 강화학습의 가치 반복, 연립방정식의 반복 해법이 모두 이 구조예요.<br><sub>x = cos x gives 0.2, 0.980, 0.557, 0.849, … → 0.739085, the error shrinking by \|g′(x\*)\| ≈ 0.67 each step (linear convergence). Newton’s method is itself fixed-point iteration with g(x) = x − f/f′. PageRank, value iteration in reinforcement learning and iterative linear solvers share this shape.</sub> |
+| **수렴 속도**<br><sub>Rates of convergence</sub> | 오차가 eₙ₊₁ ≈ C·eₙᵖ로 줄어들 때 p를 수렴 차수라 해요. 같은 정확도까지 필요한 반복 횟수가 크게 달라져요.<br><sub>If the error shrinks like eₙ₊₁ ≈ C·eₙᵖ, p is the order of convergence. It decides how many steps a given accuracy costs.</sub> | 선형(p = 1): 이분법·고정점 반복, 반복마다 일정 비율. 초선형(p ≈ 1.618): 할선법. 이차(p = 2): 뉴턴, 맞는 자리가 두 배씩. √2를 10⁻¹⁵까지 구하는 데 이분법 약 50번, 할선법과 뉴턴은 몇 번이면 충분해요. 대신 빠른 방법일수록 좋은 시작점과 도함수 같은 추가 정보가 필요해요.<br><sub>Linear (p = 1): bisection and fixed-point iteration, a constant factor per step. Superlinear (p ≈ 1.618): secant. Quadratic (p = 2): Newton, doubling correct digits. Reaching 10⁻¹⁵ on √2 takes bisection about 50 steps but secant and Newton only a handful. Faster methods ask for better starts and extra information such as derivatives.</sub> |
+
+<a id="nu-lin"></a>
+
+## 선형 시스템과 최적화 · Linear systems and optimization
+
+큰 연립방정식과 최솟값 문제를 안정적으로 푸는 법이에요.  
+*Solving large systems and minimization problems reliably.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **피벗팅과 가우스 소거**<br><sub>Gaussian elimination with pivoting</sub> | 소거할 때 작은 수로 나누면 곱수가 커져 반올림 오차가 증폭돼요. 각 열에서 절댓값이 가장 큰 원소를 피벗으로 고르면 안정해져요.<br><sub>Dividing by a tiny pivot creates huge multipliers that amplify rounding. Choosing the largest entry in each column as the pivot keeps elimination stable.</sub> | 예: 0.0001x + y = 1, x + y = 2를 유효숫자 3자리로 풀면 피벗 없이 x = 0(오답), 행을 바꾸면 x = 1.00(정답). 부분 피벗팅은 행 교환, 완전 피벗팅은 행·열 교환. 비용 약 2n³/3. LAPACK의 getrf, NumPy·MATLAB의 solve가 기본으로 해요(PA = LU).<br><sub>Solving 0.0001x + y = 1, x + y = 2 with 3-digit rounding gives x = 0 without pivoting but x = 1.00 after a row swap. Partial pivoting swaps rows; complete pivoting swaps rows and columns. Cost is about 2n³/3. LAPACK’s getrf and the solve routines in NumPy and MATLAB do it by default (PA = LU).</sub> |
+| **반복법 (야코비, 가우스-자이델)**<br><sub>Iterative solvers (Jacobi, Gauss–Seidel)</sub> | 각 식을 한 변수에 대해 풀어 두고, 추정값을 넣어 갱신하는 걸 반복해요. 행렬을 분해하지 않아 거대한 희소 행렬에 적합해요.<br><sub>Solve each equation for one unknown and keep plugging in the latest estimates. With no factorization, it suits huge sparse systems.</sub> | 야코비는 이전 값만 쓰고, 가우스-자이델은 방금 구한 값을 바로 써서 보통 두 배쯤 빨라요. 대각 우세 행렬이면 수렴이 보장돼요. 예: 4x + y = 6, x + 3y = 7 → (1, 2). 실무에서는 켤레 기울기법(CG), GMRES, 멀티그리드가 PDE·유한요소·그래프 문제의 수백만 미지수를 풀어요.<br><sub>Jacobi uses only old values; Gauss–Seidel uses fresh ones immediately and is typically about twice as fast. Diagonally dominant matrices guarantee convergence. Example: 4x + y = 6, x + 3y = 7 → (1, 2). In practice conjugate gradients, GMRES and multigrid solve millions of unknowns from PDEs, finite elements and graphs.</sub> |
+| **거듭제곱법**<br><sub>Power iteration</sub> | 벡터에 행렬을 곱하고 정규화하기를 반복하면 가장 큰 고윳값의 고유벡터 방향으로 수렴해요.<br><sub>Multiply a vector by the matrix and normalize, over and over: it swings toward the eigenvector of the largest eigenvalue.</sub> | 예: A = [[2, 1], [1, 2]], v₀ = (1, 0) → (0.894, 0.447) → (0.781, 0.625) → … → (0.707, 0.707), λ = 3. 수렴 속도는 \|λ₂/λ₁\|(여기선 1/3). 레일리 몫 vᵀAv로 고윳값을 추정해요. PageRank가 대표적이고, 역반복·QR 알고리즘·란초스 방법으로 확장돼요.<br><sub>With A = [[2, 1], [1, 2]] and v₀ = (1, 0): (0.894, 0.447) → (0.781, 0.625) → … → (0.707, 0.707), λ = 3. The rate is \|λ₂/λ₁\|, here 1/3, and the Rayleigh quotient vᵀAv estimates the eigenvalue. PageRank is the famous case; inverse iteration, the QR algorithm and Lanczos build on it.</sub> |
+| **경사 하강법과 조건**<br><sub>Gradient descent and conditioning</sub> | 기울기의 반대 방향으로 조금씩 내려가 최솟값을 찾아요. 방향마다 곡률이 크게 다르면(조건수가 크면) 지그재그하며 느려져요.<br><sub>Step against the gradient to slide toward a minimum. When curvature differs wildly by direction (a large condition number), it zigzags and crawls.</sub> | xₖ₊₁ = xₖ − η∇f(xₖ). f = x² + 10y²(조건수 10)에서 η가 크면 y 방향으로 튀고 x 방향으로는 기어가요. 수렴 속도는 대략 (κ − 1)/(κ + 1). 해결책: 특성 스케일링, 모멘텀, Adam, 뉴턴·준뉴턴(L-BFGS) 방법. 신경망 학습의 기본 반복이에요.<br><sub>xₖ₊₁ = xₖ − η∇f(xₖ). On f = x² + 10y² (condition number 10) a large η bounces across y while x crawls; the rate is roughly (κ − 1)/(κ + 1). Remedies: feature scaling, momentum, Adam, and Newton or quasi-Newton (L-BFGS) steps. It is the core loop of neural-network training.</sub> |
+
+<a id="nu-interp"></a>
+
+## 보간 · Interpolation
+
+점들 사이를 매끄럽게 채우는 곡선이에요.  
+*Curves that fill in between data points.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **다항식 보간**<br><sub>Polynomial interpolation</sub> | n + 1개의 점을 모두 지나는 n차 이하 다항식은 하나뿐이에요. 각 점에서만 1이 되는 기저 다항식을 더해 만들어요.<br><sub>Exactly one polynomial of degree at most n passes through n + 1 points. Build it from basis polynomials that are 1 at one point and 0 at the rest.</sub> | 라그랑주 형태 p(x) = Σ yᵢLᵢ(x), Lᵢ(x) = Π(x − xⱼ)/(xᵢ − xⱼ). 뉴턴 분할 차분 형태는 점을 추가하기 쉬워요. 실제 계산은 수치적으로 안정한 무게중심(barycentric) 공식을 써요. 수치 적분·미분 공식, 키프레임 애니메이션, 표 보간의 기초예요.<br><sub>Lagrange form p(x) = Σ yᵢLᵢ(x) with Lᵢ(x) = Π(x − xⱼ)/(xᵢ − xⱼ). The Newton divided-difference form makes adding points easy, and the barycentric formula is the numerically stable way to evaluate it. It underlies quadrature and differentiation rules, keyframe animation and table lookup.</sub> |
+| **룽게 현상**<br><sub>Runge’s phenomenon</sub> | 같은 간격의 점에서 고차 다항식으로 보간하면 양 끝에서 크게 출렁여요. 점을 늘릴수록 오히려 나빠져요.<br><sub>Interpolating with a high-degree polynomial at equally spaced points makes it swing wildly near the ends, and adding points makes it worse.</sub> | 예: 1/(1 + 25x²)을 11개 등간격 점으로 보간하면 끝에서 오차 약 1.9. 끝 쪽에 점을 몰아 둔 체비쇼프 노드 xₖ = cos((2k + 1)π/2n)을 쓰면 오차가 약 0.11로 줄고, 점을 늘릴수록 수렴해요. 아니면 낮은 차수 조각을 이어 붙이는 스플라인을 써요.<br><sub>Fitting 1/(1 + 25x²) at 11 equally spaced points leaves an error of about 1.9 near the ends. Chebyshev nodes xₖ = cos((2k + 1)π/2n), bunched toward the ends, cut it to about 0.11 and converge as points are added. Otherwise use splines, gluing low-degree pieces.</sub> |
+| **3차 스플라인**<br><sub>Cubic splines</sub> | 구간마다 3차식을 두고 이음매에서 값·기울기·곡률이 같도록 이어 붙여요. 출렁임 없이 부드러운 곡선이 돼요.<br><sub>Put a cubic on each interval and glue them so value, slope and curvature match at the joints: a smooth curve with no wild swings.</sub> | 양 끝의 2계 도함수를 0으로 두는 자연 스플라인은 삼중대각 연립방정식 하나로 O(n)에 구해요. 휘어짐 에너지를 최소로 하는 가장 매끈한 보간이에요. 폰트 윤곽(베지어, B-스플라인), CAD, 애니메이션 경로, 차트 라이브러리의 부드러운 선, scipy의 CubicSpline.<br><sub>The natural spline, with zero second derivative at the ends, comes from one tridiagonal system solved in O(n). It is the smoothest interpolant in the sense of minimal bending energy. Font outlines (Bézier, B-splines), CAD, animation paths, smooth chart lines and scipy’s CubicSpline all build on it.</sub> |
+
+<a id="nu-int"></a>
+
+## 수치 미분과 적분 · Numerical differentiation and integration
+
+함숫값만으로 기울기와 넓이를 구해요.  
+*Slopes and areas from function values alone.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **수치 미분 (유한 차분)**<br><sub>Numerical differentiation</sub> | 가까운 두 점의 기울기로 도함수를 근사해요. 양쪽 점을 쓰는 중앙 차분이 한쪽만 쓰는 전진 차분보다 훨씬 정확해요.<br><sub>Approximate a derivative by the slope between nearby points. Central differences, using both sides, beat one-sided forward differences by far.</sub> | 전진 (f(x + h) − f(x))/h: 오차 O(h). 중앙 (f(x + h) − f(x − h))/2h: 오차 O(h²). eˣ의 x = 1에서 h = 0.5면 전진 오차 0.81, 중앙 0.12. 2계 도함수는 (f(x + h) − 2f(x) + f(x − h))/h². 열·파동 시뮬레이션의 격자 계산, 신경망의 기울기 검사에 써요.<br><sub>Forward (f(x + h) − f(x))/h has O(h) error; central (f(x + h) − f(x − h))/2h has O(h²). For eˣ at x = 1 with h = 0.5 the errors are 0.81 and 0.12. The second derivative is (f(x + h) − 2f(x) + f(x − h))/h². Used on simulation grids for heat and waves, and for gradient checks in neural networks.</sub> |
+| **사다리꼴 공식**<br><sub>Trapezoid rule</sub> | 구간을 잘게 나눠 곡선을 직선으로 잇고 사다리꼴 넓이를 더해요. 간격을 절반으로 줄이면 오차가 4분의 1이 돼요.<br><sub>Chop the interval, join the curve with straight lines and add up the trapezoids. Halving the width quarters the error.</sub> | T = h(f₀/2 + f₁ + … + fₙ₋₁ + fₙ/2), 오차 O(h²). ∫₀^π sin x dx = 2를 n = 4로 1.896, n = 8로 1.974. 두 결과를 (4T₂ₙ − Tₙ)/3로 섞으면 2.0003(리처드슨 외삽, 롬베르크 적분). 표로 된 측정값에 바로 쓸 수 있고(numpy.trapezoid), 주기 함수에는 특히 정확해요.<br><sub>T = h(f₀/2 + f₁ + … + fₙ₋₁ + fₙ/2) with O(h²) error. ∫₀^π sin x dx = 2 gives 1.896 with n = 4 and 1.974 with n = 8; combining them as (4T₂ₙ − Tₙ)/3 gives 2.0003 (Richardson extrapolation, Romberg integration). It works directly on tabulated data (numpy.trapezoid) and is remarkably accurate for periodic functions.</sub> |
+| **심프슨 공식**<br><sub>Simpson’s rule</sub> | 세 점을 지나는 포물선 아래 넓이로 근사해요. 같은 점을 쓰면서 사다리꼴보다 훨씬 정확해요.<br><sub>Use the area under the parabola through each three points. With the same samples it is far more accurate than trapezoids.</sub> | S = (h/3)(f₀ + 4f₁ + 2f₂ + 4f₃ + … + fₙ), n은 짝수, 오차 O(h⁴). ∫₀^π sin x dx를 n = 4로 2.0046, n = 8로 2.00027. 3차식까지 정확해요. scipy.integrate.quad 같은 적응형 적분기는 오차가 큰 구간만 더 잘게 나눠요(가우스-크론로드).<br><sub>S = (h/3)(f₀ + 4f₁ + 2f₂ + 4f₃ + … + fₙ) for even n, with O(h⁴) error. ∫₀^π sin x dx comes out 2.0046 with n = 4 and 2.00027 with n = 8, and cubics are integrated exactly. Adaptive integrators such as scipy.integrate.quad subdivide only where the error is large (Gauss–Kronrod).</sub> |
+| **가우스 구적법**<br><sub>Gaussian quadrature</sub> | 점의 위치까지 최적으로 골라, n개의 점으로 2n − 1차 다항식까지 정확히 적분해요.<br><sub>Choose where to sample as well as the weights, and n points integrate polynomials up to degree 2n − 1 exactly.</sub> | 두 점 공식: ∫₋₁¹ f ≈ f(−1/√3) + f(1/√3), 3차식까지 정확. 예: x³ + x² + 1 → 2.667(참값 8/3), 양 끝점 사다리꼴은 4.0. 점은 르장드르 다항식의 근이에요. 함수를 아무 곳에서나 계산할 수 있을 때 가장 효율적이라 유한요소법·물리 시뮬레이션·렌더링에서 표준으로 써요.<br><sub>Two points: ∫₋₁¹ f ≈ f(−1/√3) + f(1/√3), exact through cubics. For x³ + x² + 1 it gives 2.667 = 8/3, while the endpoint trapezoid gives 4.0. The nodes are roots of Legendre polynomials. When f can be evaluated anywhere it is the most efficient choice, standard in finite elements, physics codes and rendering.</sub> |
+
+<a id="nu-ode"></a>
+
+## 미분방정식 · Differential equations
+
+변화율로부터 시간에 따른 값을 한 걸음씩 계산해요.  
+*Stepping forward in time from rates of change.*
+
+| 개념 | 설명 | 공식과 예제 · Formula & example |
+| --- | --- | --- |
+| **오일러 방법**<br><sub>Euler’s method</sub> | 미분방정식 y′ = f(t, y)에서 현재 기울기 방향으로 h만큼 직선으로 가는 걸 반복해 해를 따라가요.<br><sub>For y′ = f(t, y), repeatedly step a distance h along the current slope to trace the solution.</sub> | yₙ₊₁ = yₙ + h·f(tₙ, yₙ). y′ = y, y(0) = 1을 t = 2까지: h = 0.5 → 5.06, h = 0.25 → 5.96, 참값 e² = 7.39. 전역 오차 O(h)라 정확도를 얻으려면 걸음이 아주 많이 필요해요. 단순해서 게임 루프, 간단한 시뮬레이션, 다른 방법을 이해하는 출발점이에요.<br><sub>yₙ₊₁ = yₙ + h·f(tₙ, yₙ). Solving y′ = y, y(0) = 1 to t = 2 gives 5.06 with h = 0.5 and 5.96 with h = 0.25 against e² = 7.39. Global error is O(h), so accuracy demands many steps. Its simplicity makes it the default in game loops, quick simulations and as the starting point for better methods.</sub> |
+| **룽게-쿠타 방법 (RK4)**<br><sub>Runge–Kutta (RK4)</sub> | 한 걸음 안에서 기울기를 네 번 재서 가중 평균으로 나아가요. 같은 간격에서 오일러보다 훨씬 정확해요.<br><sub>Sample the slope four times within each step and advance by their weighted average: far more accurate than Euler at the same step size.</sub> | k₁ = f(t, y), k₂ = f(t + h/2, y + hk₁/2), k₃ = f(t + h/2, y + hk₂/2), k₄ = f(t + h, y + hk₃), yₙ₊₁ = yₙ + h(k₁ + 2k₂ + 2k₃ + k₄)/6. 전역 오차 O(h⁴). y′ = y를 h = 0.5로 t = 2까지 풀면 7.384(참값 7.389). scipy solve\_ivp·MATLAB ode45는 오차를 추정하며 h를 조절하는 RK45(도르만드-프린스)를 써요.<br><sub>k₁ = f(t, y), k₂ = f(t + h/2, y + hk₁/2), k₃ = f(t + h/2, y + hk₂/2), k₄ = f(t + h, y + hk₃), yₙ₊₁ = yₙ + h(k₁ + 2k₂ + 2k₃ + k₄)/6, with O(h⁴) global error. For y′ = y with h = 0.5 it reaches 7.384 at t = 2 against 7.389. scipy’s solve\_ivp and MATLAB’s ode45 use RK45 (Dormand–Prince), adjusting h from an error estimate.</sub> |
+| **안정성과 강성**<br><sub>Stability and stiffness</sub> | 명시적 방법은 걸음이 너무 크면 오차가 매번 증폭돼 폭발해요. 빠른 성분이 섞인 강성 문제는 암시적 방법이 필요해요.<br><sub>With too large a step, an explicit method amplifies the error every step and blows up. Stiff problems, mixing fast and slow parts, need implicit methods.</sub> | y′ = −10y에 명시적 오일러를 쓰면 yₙ₊₁ = (1 − 10h)yₙ → h > 0.2면 \|1 − 10h\| > 1이라 발산. 암시적 오일러 yₙ₊₁ = yₙ/(1 + 10h)는 모든 h에서 안정. 대신 매 걸음 방정식을 풀어야 해요. 화학 반응, 회로 시뮬레이터(SPICE), 접촉이 많은 물리 시뮬레이션은 BDF 같은 암시적 방법을 써요.<br><sub>Explicit Euler on y′ = −10y gives yₙ₊₁ = (1 − 10h)yₙ, which diverges once h > 0.2 because \|1 − 10h\| > 1. Implicit Euler, yₙ₊₁ = yₙ/(1 + 10h), is stable for every h at the price of solving an equation each step. Chemical kinetics, circuit simulators (SPICE) and contact-rich physics use implicit methods such as BDF.</sub> |
+| **시뮬레이션과 에너지 보존**<br><sub>Simulation and energy conservation</sub> | 물리 시뮬레이션을 오래 돌리면 적분법의 성질이 드러나요. 명시적 오일러는 에너지가 계속 늘지만, 반암시적 오일러는 궤도에 머물러요.<br><sub>Run a physics simulation long enough and the integrator’s character shows: explicit Euler keeps gaining energy, while semi-implicit Euler stays in orbit.</sub> | 용수철 x″ = −x에서 명시적 오일러는 매 걸음 에너지가 (1 + h²)배. 속도를 먼저 갱신하고 새 속도로 위치를 갱신하는 반암시적(심플렉틱) 오일러는 같은 비용으로 에너지가 일정 범위에 머물러요. Box2D 같은 게임 물리 엔진은 반암시적 오일러, 분자 동역학·천 시뮬레이션은 베를레 적분을 써요.<br><sub>For a spring x″ = −x, explicit Euler multiplies the energy by (1 + h²) every step. Semi-implicit (symplectic) Euler, updating velocity first and then position with the new velocity, keeps energy bounded at the same cost. Game physics engines such as Box2D use semi-implicit Euler; molecular dynamics and cloth use Verlet integration.</sub> |
+
+## 파일 · Files
+
+| 파일 | 내용 |
+| --- | --- |
+| `index.html` | 과목 페이지 (주제 이동, 검색, 한/영 전환, 다크 모드, 상세 보기) |
+| `content.js` | 이 과목의 개념 설명과 모션 장면 |
+
+공통 엔진과 스타일은 [`../assets`](../assets)에 있어요.
+
+---
+
+Made by [@starrykss](https://github.com/starrykss)
