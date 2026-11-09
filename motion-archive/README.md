@@ -2,6 +2,9 @@
 
 ## UI/UX 도감
 
+> [!NOTE] 
+> [페이지 바로가기](https://starrykss.github.io/UI-UX_Study/motion-archive/)
+
 이름은 몰라도 보면 아는 UI·UX 개념을, 개념마다 직접 움직이는 예시와 함께 정리한 정적 웹사이트예요.
 An animated field guide to UI/UX concepts. Every concept comes with a live CSS motion example.
 
