@@ -339,15 +339,16 @@ const CSSX = `
 .pax-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
 .pax-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
 
+const gs = (S, k, a, b, st, color, h, r, o) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L * r, uy = dy / L * r; seg(S, k, [a[0] + ux, a[1] + uy], [b[0] - ux, b[1] - uy], st, color, h, o || {}); };
 /* ================= paradigms extras ================= */
 function sLogic() {
   const S = scene({ id: 'pa-logic', steps: 5, per: 1.6 });
   code(S, 'c', 1, .8, 16, ['parent(tom, bob).', 'parent(bob, ann).', 'parent(bob, liz).', 'grand(X, Z) :-', '    parent(X, Y), parent(Y, Z).', '?- grand(tom, Who).'], [[0, 1], [3, 2], [5, 3]], { hoff: 5 });
   const N = { tom: [24.5, 1.8], bob: [24.5, 5.8], ann: [21, 9.8], liz: [28, 9.8] };
   Object.entries(N).forEach(([k, [x, y]]) => stt(S, 'n' + k, x, y, k, 'accent', 1, { r: 1.1 }));
-  trn(S, 'e1', N.tom, N.bob, 'parent', 1, { ld: 1.6 }); trn(S, 'e2', N.bob, N.ann, '', 1); trn(S, 'e3', N.bob, N.liz, '', 1);
+  trn(S, 'e1', N.tom, N.bob, 'parent', 1, { ld: 1.6 }); gs(S, 'e2', N.bob, N.ann, 1, 'ink-3', .1, 1.1); gs(S, 'e3', N.bob, N.liz, 1, 'ink-3', .1, 1.1);
   tsets(S, 'ntom', [[3, 'warn', 40]]); tsets(S, 'nbob', [[3, 'warn', 40]]); tsets(S, 'nann', [[4, 'ok', 45]]); tsets(S, 'nliz', [[4, 'ok', 45]]);
-  trn(S, 'g1', N.tom, N.bob, '', 3, { color: 'warn' }); trn(S, 'g2', N.bob, N.ann, '', 4, { color: 'ok' }); trn(S, 'g3', N.bob, N.liz, '', 4, { color: 'ok' });
+  trn(S, 'g1', N.tom, N.bob, '', 3, { color: 'warn' }); gs(S, 'g2', N.bob, N.ann, 4, 'ok', .2, 1.1); gs(S, 'g3', N.bob, N.liz, 4, 'ok', .2, 1.1);
   T(S, 'r1', 19, 12, 'X = tom → parent(tom, Y) → Y = bob', 'cz-mono pax-xs pax-w', 3);
   T(S, 'r2', 19, 13, 'Who = ann ;', 'cz-mono pax-xs pax-g', 4); T(S, 'r3', 19, 14, ['Who = liz      (백트래킹)', 'Who = liz      (backtracking)'], 'cz-mono pax-xs pax-g', 4);
   notes(S, 'n', 10.2, [['사실: 참인 관계를 선언만 해요', 'facts: just declare what is true'], ['규칙: 오른쪽이 모두 참이면 왼쪽도 참', 'rule: the head holds if every goal in the body holds'], ['질의: 변수에 값을 맞춰 보며(단일화) 증명을 찾아요', 'query: unification tries bindings to build a proof'], ['답을 찾은 뒤 되돌아가(백트래킹) 다른 답도 찾아요', 'then it backtracks to find the other answers']], 'pax-s');
