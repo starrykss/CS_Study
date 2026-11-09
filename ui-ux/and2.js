@@ -113,11 +113,12 @@ X.css += `
 .an-perm .pd .n5{background:none;color:var(--accent)}
 
 .an-share .dm{animation:alt-d 5s infinite}
-.an-share .ss2{position:absolute;left:0;right:0;bottom:0;padding:.6em .8em 1.2em;display:flex;flex-direction:column;gap:.7em;background:var(--stage);border-radius:1.6em 1.6em 0 0;z-index:3;animation:ish-s2 5s cubic-bezier(.2,.8,.2,1) infinite}
+.an-share .ss2{position:absolute;left:0;right:0;bottom:0;padding:.6em .8em 1.2em;display:flex;flex-direction:column;gap:.7em;background:var(--stage);border-radius:1.6em 1.6em 0 0;z-index:3;animation:ash-s2 5s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes ash-s2{0%,10%{transform:translateY(100%)}22%,84%{transform:none}94%,100%{transform:translateY(100%)}}
 .an-share .gr2{display:block;width:2.4em;height:.3em;border-radius:1em;background:var(--ink-3);opacity:.6;margin:0 auto}
 .an-share .pv3{display:flex;align-items:center;gap:.6em;padding:.5em;border-radius:.8em;background:var(--ui);font-size:.6em}
 .an-share .pv3 i{width:3em;height:3em;border-radius:.5em;background:var(--accent-soft);flex:none}
-.an-share .pv3 b{margin-left:auto;padding:.4em .8em;border-radius:1em;border:.1em solid var(--line);font-weight:500}
+.an-share .pv3 b{margin-left:auto;flex:none;white-space:nowrap;padding:.4em .8em;border-radius:1em;border:.1em solid var(--line);font-weight:500}
 .an-share .rw6{display:flex;justify-content:space-between}
 .an-share .rw6 span{display:flex;flex-direction:column;align-items:center;gap:.25em;font-size:.48em;color:var(--ink-2)}
 .an-share .rw6 i{width:4.2em;height:4.2em;border-radius:50%;background:var(--accent-soft)}

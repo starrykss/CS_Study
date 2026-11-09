@@ -1,0 +1,104 @@
+# 운영체제 · Operating systems
+
+> [!NOTE]
+> [페이지 바로가기 · Open the atlas](https://starrykss.github.io/CS_Study/operating-systems/) · [← 통합 포털 · Portal](https://starrykss.github.io/CS_Study/) · [← 저장소 처음으로](../README.md)
+
+프로세스와 스레드, 문맥 교환, CPU 스케줄링, 경쟁 상태와 뮤텍스·세마포어, 교착 상태, 가상 메모리와 페이징, 페이지 교체, 시스템 콜, 파일 시스템, 메모리 레이아웃까지 다뤄요.
+
+Processes and threads, context switches, CPU scheduling, race conditions, mutexes and semaphores, deadlock, virtual memory and paging, page replacement, system calls, file systems and memory layout.
+
+**5개 주제 · 23개 개념** — 모든 개념에 반복 재생되는 모션 예시가 있어요. 아래 표는 페이지 내용을 글로 옮긴 거예요.
+
+## 목차 · Contents
+
+- [프로세스와 스레드 · Processes and threads](#os-proc) (6)
+- [CPU 스케줄링 · CPU scheduling](#os-sched) (3)
+- [동기화와 교착 상태 · Synchronization and deadlock](#os-sync) (5)
+- [메모리 관리 · Memory management](#os-mem) (5)
+- [파일, 입출력, 가상화 · Files, I/O and virtualization](#os-file) (4)
+
+<a id="os-proc"></a>
+
+## 프로세스와 스레드 · Processes and threads
+
+운영체제가 프로그램을 실행하고 나누어 관리하는 단위예요.  
+*The units an operating system uses to run and separate programs.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **프로세스 상태**<br>Process states | 프로세스는 생성 → 준비 → 실행 → (대기) → 종료 상태를 오가요. 실행 중이던 프로세스도 시간이 다 되거나 I/O를 기다리면 CPU를 내놓아요.<br><sub>A process moves between new, ready, running, waiting and exit. A running process gives up the CPU when its time runs out or it waits for I/O.</sub> | 서버가 느릴 때 CPU를 쓰는 중(실행)인지, I/O를 기다리는 중(대기)인지 구분하는 것이 성능 분석의 첫걸음이에요. top의 R/S/D 상태가 이것이에요.<br><sub>When a server is slow, first tell whether it is busy computing (running) or waiting on I/O (blocked). The R/S/D states in top are exactly these.</sub> |
+| **프로세스 vs 스레드**<br>Process vs thread | 프로세스는 독립된 메모리를 가진 실행 단위이고, 스레드는 한 프로세스 안에서 메모리를 공유하며 따로 실행되는 흐름이에요.<br><sub>A process is an execution unit with its own memory; threads are separate flows of execution that share one process’s memory.</sub> | 스레드는 만들고 전환하기 가볍지만 공유 데이터 때문에 동기화 버그가 생겨요. 크롬이 탭마다 프로세스를 쓰는 건 한 탭이 죽어도 나머지를 지키기 위해서예요.<br><sub>Threads are cheap to create and switch but shared data invites synchronization bugs. Chrome uses a process per tab so one crash cannot take down the rest.</sub> |
+| **메모리 구조**<br>Process memory layout | 프로세스의 메모리는 코드, 데이터(전역 변수), 힙(동적 할당), 스택(함수 호출) 영역으로 나뉘어요.<br><sub>A process’s memory is split into code, data (globals), heap (dynamic allocation) and stack (function calls).</sub> | 재귀가 너무 깊으면 스택 오버플로, 할당한 힙을 안 풀면 메모리 누수가 생겨요. GC 언어도 힙을 관리하는 방식만 다를 뿐 구조는 같아요.<br><sub>Deep recursion overflows the stack; heap memory never freed leaks. Garbage-collected languages manage the heap differently but use the same layout.</sub> |
+| **컨텍스트 스위칭**<br>Context switch | CPU가 다른 프로세스로 넘어갈 때 지금 프로세스의 레지스터 상태를 PCB에 저장하고, 다음 프로세스의 상태를 불러와요.<br><sub>To switch to another process, the CPU saves the current registers to its PCB and loads the next process’s state.</sub> | 전환 자체는 일을 하지 않는 비용이라 스레드가 너무 많으면 오히려 느려져요. 스레드 풀 크기를 코어 수에 맞추는 이유예요.<br><sub>Switching does no useful work, so too many threads slow things down. That is why thread pools are sized to the core count.</sub> |
+| **시스템 콜**<br>System call | 앱이 파일·네트워크·메모리 같은 자원을 쓰려면 시스템 콜로 커널 모드에 들어가 운영체제에게 대신 해 달라고 요청해요.<br><sub>To use files, the network or memory, an app enters kernel mode through a system call and asks the OS to do it.</sub> | 모드 전환은 비싸서, 작은 read/write를 여러 번 하는 대신 버퍼에 모아 한 번에 해요. strace로 프로그램의 시스템 콜을 볼 수 있어요.<br><sub>Mode switches are expensive, so many small reads and writes are buffered into one. strace shows a program’s system calls.</sub> |
+| **프로세스 간 통신**<br>IPC | 프로세스는 메모리가 분리되어 있어서 파이프, 소켓, 메시지 큐, 공유 메모리 같은 방법으로 데이터를 주고받아요.<br><sub>Processes have separate memory, so they exchange data through pipes, sockets, message queues or shared memory.</sub> | 셸의 \| (파이프), 도커 컨테이너 간 소켓, Redis 같은 메시지 브로커가 모두 IPC의 확장이에요.<br><sub>The shell’s \| pipe, sockets between containers and message brokers like Redis all extend IPC.</sub> |
+
+<a id="os-sched"></a>
+
+## CPU 스케줄링 · CPU scheduling
+
+CPU 하나를 여러 프로세스가 나눠 쓰는 순서를 정하는 방법이에요. 막대는 시간 축 위의 실행 구간이에요.  
+*How processes take turns on the CPU. Bars show who runs when.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **FCFS와 SJF**<br>FCFS vs SJF | FCFS는 먼저 온 순서대로, SJF는 실행 시간이 짧은 작업부터 처리해요.<br><sub>FCFS serves jobs in arrival order; SJF runs the shortest job first.</sub> | 긴 작업 하나가 앞을 막으면 모두가 기다리는 현상(호위 효과)은 API 서버의 느린 요청 하나가 큐 전체를 막는 것과 같아요. 느린 작업을 별도 큐로 분리하세요.<br><sub>One long job blocking everyone (the convoy effect) is the same as one slow request clogging an API queue. Put slow work in its own queue.</sub> |
+| **라운드 로빈**<br>Round robin | 모든 프로세스가 정해진 시간(타임 퀀텀)씩 돌아가며 CPU를 써요. 시간이 끝나면 준비 큐 맨 뒤로 가요.<br><sub>Each process gets the CPU for a fixed time slice (quantum) in turn, then goes to the back of the ready queue.</sub> | 응답 시간이 고르게 짧아 대화형 시스템에 맞아요. 퀀텀이 너무 작으면 전환 비용이 커지고, 너무 크면 FCFS와 같아져요.<br><sub>Response times are evenly short, which suits interactive systems. Too small a quantum adds switching cost; too large becomes FCFS.</sub> |
+| **다단계 피드백 큐**<br>Multilevel feedback queue | 우선순위가 다른 여러 큐를 두고, CPU를 오래 쓰는 작업은 아래 큐로 내리고 금방 양보하는 작업은 위에 남겨요.<br><sub>Several queues of different priority: jobs that use lots of CPU sink, while jobs that yield quickly stay on top.</sub> | 실행 시간을 몰라도 대화형 작업을 빠르게 처리해요. 리눅스 CFS, 윈도우 스케줄러가 비슷한 아이디어를 써요. 아래 큐의 기아는 주기적인 우선순위 상승으로 막아요.<br><sub>It keeps interactive work snappy without knowing job lengths. Linux CFS and the Windows scheduler use similar ideas; periodic boosts stop starvation.</sub> |
+
+<a id="os-sync"></a>
+
+## 동기화와 교착 상태 · Synchronization and deadlock
+
+여러 스레드가 같은 데이터를 건드릴 때 생기는 문제와 해결 도구예요.  
+*What goes wrong when threads share data, and the tools that fix it.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **경쟁 상태**<br>Race condition | 두 스레드가 같은 값을 동시에 읽고 고치면 실행 순서에 따라 결과가 달라지고, 업데이트 하나가 사라질 수 있어요.<br><sub>When two threads read and modify the same value at once, the result depends on timing and an update can be lost.</sub> | count++도 읽기·더하기·쓰기 세 단계라 안전하지 않아요. 재고 차감, 좋아요 수 같은 곳에서 자주 터지고 재현이 어려워요. 원자적 연산이나 락을 쓰세요.<br><sub>Even count++ is read, add, write. It bites stock counters and like counts and is hard to reproduce. Use atomic operations or locks.</sub> |
+| **뮤텍스**<br>Mutex | 임계 구역에 한 번에 한 스레드만 들어가도록 잠금(lock)을 걸고, 끝나면 풀어요(unlock).<br><sub>A lock lets only one thread into the critical section at a time; it is released afterwards.</sub> | 잠금 구간은 최대한 짧게 하고 예외가 나도 반드시 풀리게 try-finally나 with 문을 쓰세요. 분산 환경에선 Redis 분산 락 등을 써요.<br><sub>Keep locked sections short and make sure they unlock even on errors (try/finally, with). Distributed systems use things like Redis locks.</sub> |
+| **세마포어**<br>Semaphore | 남은 자원 개수를 세는 카운터로, 정해진 수만큼만 동시에 들어갈 수 있게 해요. wait()로 줄이고 signal()로 늘려요.<br><sub>A counter of free resources that lets only a set number in at once: wait() decrements, signal() increments.</sub> | DB 커넥션 풀, 동시 다운로드 개수 제한, API 동시 호출 수 제한에 써요. 개수가 1이면 뮤텍스와 같아요.<br><sub>Used for DB connection pools and capping concurrent downloads or API calls. With a count of 1 it acts like a mutex.</sub> |
+| **생산자-소비자**<br>Producer–consumer | 한쪽은 버퍼에 데이터를 넣고 다른 쪽은 꺼내요. 버퍼가 가득 차면 생산자가, 비면 소비자가 기다려요.<br><sub>One side puts data into a buffer and the other takes it out; producers wait when it is full, consumers when it is empty.</sub> | 로그 수집, 작업 큐, 카프카 같은 메시지 큐가 모두 이 구조예요. 속도가 다른 두 시스템 사이에서 완충 역할을 해요.<br><sub>Log pipelines, job queues and message queues like Kafka all use this shape to buffer between systems running at different speeds.</sub> |
+| **교착 상태**<br>Deadlock | 둘 이상의 프로세스가 서로가 가진 자원을 기다리며 영원히 멈춘 상태예요. 상호 배제, 점유 대기, 비선점, 순환 대기가 모두 성립할 때 생겨요.<br><sub>Two or more processes wait forever for resources the others hold. It needs mutual exclusion, hold-and-wait, no preemption and circular wait.</sub> | DB 트랜잭션이 서로의 행을 잠그며 자주 생겨요. 잠그는 순서를 통일하고, 타임아웃을 두는 것이 실무 해법이에요.<br><sub>Common when database transactions lock each other’s rows. In practice: lock in a consistent order and use timeouts.</sub> |
+
+<a id="os-mem"></a>
+
+## 메모리 관리 · Memory management
+
+한정된 물리 메모리를 여러 프로세스에게 안전하게 나눠 주는 방법이에요.  
+*How limited physical memory is shared safely among processes.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **페이징과 가상 메모리**<br>Paging · Virtual memory | 메모리를 같은 크기의 페이지로 나누고, 페이지 테이블로 가상 주소를 물리 주소로 바꿔요. 프로그램은 자기만의 넓은 메모리를 쓰는 것처럼 느껴요.<br><sub>Memory is cut into equal pages and a page table maps virtual addresses to physical ones, so each program sees its own large memory.</sub> | 프로세스끼리 메모리가 격리되고, 실제 메모리보다 큰 프로그램도 돌릴 수 있어요. 컨테이너 메모리 제한, OOM도 이 위에서 동작해요.<br><sub>It isolates processes and lets programs exceed physical RAM. Container memory limits and the OOM killer sit on top of it.</sub> |
+| **TLB**<br>TLB · Translation lookaside buffer | 최근에 쓴 주소 변환 결과를 저장해 두는 CPU 안의 작은 캐시예요. 히트하면 페이지 테이블을 읽지 않아도 돼요.<br><sub>A small cache inside the CPU holding recent address translations. On a hit the page table is not read at all.</sub> | 거대한 메모리를 쓰는 DB는 2MB 이상 큰 페이지(Huge Pages)를 써서 TLB 미스를 줄여요.<br><sub>Databases with huge memory use 2 MB+ huge pages to cut TLB misses.</sub> |
+| **페이지 폴트**<br>Page fault | 접근한 페이지가 메모리에 없으면 운영체제가 디스크에서 읽어와 빈 프레임에 올린 뒤 명령을 다시 실행해요.<br><sub>If a page is not in memory, the OS loads it from disk into a free frame and retries the instruction.</sub> | 메모리가 부족해 폴트가 계속 나면 일보다 디스크 교체만 하는 스래싱이 생겨요. 서버가 갑자기 느려지면 스왑 사용량을 확인하세요.<br><sub>With too little memory, constant faults cause thrashing: all swapping, no work. When a server suddenly slows, check swap usage.</sub> |
+| **페이지 교체 (LRU)**<br>Page replacement · LRU | 메모리가 꽉 찼을 때 어떤 페이지를 내보낼지 정해요. LRU는 가장 오랫동안 쓰이지 않은 페이지를 내보내요.<br><sub>Decides which page to evict when memory is full. LRU evicts the page unused for the longest time.</sub> | 최근에 쓴 것을 곧 다시 쓴다는 지역성 덕분에 잘 맞아요. 캐시 서버의 eviction 정책(LRU, LFU)도 같은 문제예요.<br><sub>It works because recently used data tends to be reused soon. Cache servers face the same choice in their eviction policies (LRU, LFU).</sub> |
+| **단편화**<br>Fragmentation | 메모리를 할당하고 해제하다 보면 작은 빈 공간이 흩어져, 합은 충분한데 큰 덩어리를 못 넣게 돼요(외부 단편화).<br><sub>Repeated allocation and freeing scatter small holes: enough free memory in total, but no single block big enough (external fragmentation).</sub> | 페이징은 고정 크기 조각을 써서 외부 단편화를 없애지만, 페이지 안의 남는 공간(내부 단편화)이 생겨요. 메모리 할당기(jemalloc 등)가 이 문제와 싸워요.<br><sub>Paging removes external fragmentation with fixed-size pieces but wastes space inside pages (internal fragmentation). Allocators like jemalloc fight this.</sub> |
+
+<a id="os-file"></a>
+
+## 파일, 입출력, 가상화 · Files, I/O and virtualization
+
+데이터를 저장하고 장치와 통신하고 환경을 격리하는 방법이에요.  
+*How data is stored, devices are talked to and environments are isolated.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **파일 시스템과 inode**<br>File system · inode | 유닉스 계열 파일 시스템은 파일의 정보와 데이터 블록 위치를 inode에 저장하고, 디렉터리는 이름과 inode 번호만 연결해요.<br><sub>Unix file systems keep a file’s metadata and block locations in an inode; directories only map names to inode numbers.</sub> | 디스크 공간이 남아도 inode가 바닥나면 파일을 못 만들어요(df -i). 하드 링크는 같은 inode를 가리키는 이름이고, 심볼릭 링크는 경로를 담은 파일이에요.<br><sub>You can run out of inodes with disk space left (df -i). A hard link is another name for the same inode; a symlink is a file holding a path.</sub> |
+| **인터럽트**<br>Interrupt | 장치가 CPU에 "일이 생겼다"고 신호를 보내면, CPU는 하던 일을 저장하고 핸들러를 실행한 뒤 돌아와요.<br><sub>A device signals the CPU that something happened; the CPU saves its work, runs a handler and returns.</sub> | 키보드, 네트워크 카드, 타이머가 모두 인터럽트를 써요. 타이머 인터럽트가 있어서 운영체제가 프로세스를 강제로 바꿀 수 있어요.<br><sub>Keyboards, network cards and timers all use interrupts. The timer interrupt is what lets the OS preempt processes.</sub> |
+| **블로킹 vs 비동기 I/O**<br>Blocking vs async I/O | 블로킹 I/O는 응답이 올 때까지 스레드가 멈추고, 비동기 I/O는 요청만 보내 두고 다른 일을 하다가 완료되면 처리해요.<br><sub>Blocking I/O halts the thread until the reply arrives; async I/O fires the request, does other work and handles completion later.</sub> | Node.js, Nginx, 파이썬 asyncio는 스레드 하나로 수만 개의 연결을 처리해요(epoll·kqueue). 대신 CPU를 오래 쓰는 작업이 끼면 전체가 멈춰요.<br><sub>Node.js, Nginx and Python asyncio serve tens of thousands of connections on one thread (epoll, kqueue), but one CPU-heavy task stalls them all.</sub> |
+| **가상 머신 vs 컨테이너**<br>VM vs container | VM은 하이퍼바이저 위에 운영체제를 통째로 올리고, 컨테이너는 호스트의 커널을 함께 쓰며 프로세스만 격리해요.<br><sub>A VM runs a whole OS on a hypervisor; a container shares the host kernel and only isolates processes.</sub> | 컨테이너는 수 초 안에 뜨고 가벼워서 배포 단위로 쓰여요(Docker, Kubernetes). 보안 격리가 더 필요하면 VM이나 gVisor 같은 샌드박스를 써요.<br><sub>Containers start in seconds and are light, so they are the unit of deployment (Docker, Kubernetes). For stronger isolation use VMs or sandboxes like gVisor.</sub> |
+
+## 파일 · Files
+
+| 파일 | 내용 |
+| --- | --- |
+| `index.html` | 과목 페이지 (주제 이동, 검색, 한/영 전환, 다크 모드, 상세 보기) |
+| `content.js` | 이 과목의 개념 설명과 모션 장면 |
+
+공통 엔진과 스타일은 [`../assets`](../assets)에 있어요.
+
+---
+
+Made by [@starrykss](https://github.com/starrykss)

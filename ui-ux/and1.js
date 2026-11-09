@@ -70,21 +70,22 @@ X.css += `
 
 .an-nbar .scr{padding-bottom:5em}
 .an-nbar .m3n span i{transition:none}
-.an-nbar .m3n .s0 i{animation:nbr-a 6s steps(1) infinite}.an-nbar .m3n .s2 i{animation:nbr-b 6s steps(1) infinite}
 .an-nbar .m3n .s0{animation:nbr-ta 6s steps(1) infinite}.an-nbar .m3n .s2{animation:nbr-tb 6s steps(1) infinite}
 .an-nbar .pill{position:absolute;top:.6em;left:12.5%;width:3em;height:1.76em;margin-left:-1.5em;border-radius:1em;background:var(--accent-soft);animation:nbr-p 6s cubic-bezier(.3,.7,.2,1) infinite}
 .an-nbar .m3n span{z-index:1}
 .an-nbar .m3n span i{background:none!important}
+@keyframes atb-s{0%,18%{transform:none}46%,80%{transform:translateY(-4.2em)}96%,100%{transform:none}}
+@keyframes atb-t{0%,30%{opacity:0}44%,80%{opacity:1}92%,100%{opacity:0}}
 @keyframes nbr-p{0%,46%{transform:translateX(0) scaleX(1)}48%{transform:translateX(0) scaleX(.2)}50%{transform:translateX(5.4em) scaleX(.2)}56%,96%{transform:translateX(5.4em) scaleX(1)}98%{transform:translateX(5.4em) scaleX(.2)}99%{transform:translateX(0) scaleX(.2)}100%{transform:none}}
 @keyframes nbr-ta{0%{color:var(--ink);font-weight:700}50%{color:var(--ink-2);font-weight:400}}
 @keyframes nbr-tb{0%{color:var(--ink-2);font-weight:400}50%{color:var(--ink);font-weight:700}}
 .an-nbar .tap{left:62.5%;top:93%;animation-duration:6s;animation-delay:.12s}
 
 .an-tab .bar5{position:absolute;left:0;right:0;top:0;padding:1.5em 1em .5em;z-index:2;background:var(--ui);animation:atb-b 4s cubic-bezier(.4,0,.2,1) infinite}
-.an-tab .bar5 .m3t b{opacity:0;animation:ion-t 4s cubic-bezier(.4,0,.2,1) infinite}
+.an-tab .bar5 .m3t b{opacity:0;animation:atb-t 4s cubic-bezier(.4,0,.2,1) infinite}
 .an-tab .big{font-size:1.7em;font-weight:400;line-height:1.2;padding:.2em 0 .3em;overflow:hidden;animation:atb-l 4s cubic-bezier(.4,0,.2,1) infinite}
 .an-tab .scr{padding-top:7.4em}
-.an-tab .mv{display:flex;flex-direction:column;gap:.6em;animation:ion-s 4s cubic-bezier(.4,0,.2,1) infinite}
+.an-tab .mv{display:flex;flex-direction:column;gap:.6em;animation:atb-s 4s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes atb-b{0%,30%{background:var(--ui)}44%,80%{background:var(--stage)}92%,100%{background:var(--ui)}}
 @keyframes atb-l{0%,24%{max-height:2.4em;opacity:1}40%,84%{max-height:0;opacity:0;padding:0}94%,100%{max-height:2.4em;opacity:1}}
 

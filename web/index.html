@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>웹 기술 · 개발자 지식 도감</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/ux.css">
+</head>
+<body data-page="web">
+<header class="top wrap"><a class="brand" href="../index.html" data-en="&larr; Developer Atlas">&larr; 개발자 지식 도감</a><nav class="pages" aria-label="과목"><a href="../data-structures/index.html" data-en="Data structures">자료구조</a><a href="../algorithms/index.html" data-en="Algorithms">알고리즘</a><a href="../discrete-math/index.html" data-en="Discrete mathematics">이산수학</a><a href="../theory-of-computation/index.html" data-en="Theory of computation">계산 이론</a><a href="../digital-logic/index.html" data-en="Digital logic">디지털 논리</a><a href="../computer-architecture/index.html" data-en="Computer architecture">컴퓨터 구조</a><a href="../operating-systems/index.html" data-en="Operating systems">운영체제</a><a href="../computer-networks/index.html" data-en="Computer networks">컴퓨터 네트워크</a><a href="../programming-languages/index.html" data-en="Programming languages">프로그래밍 언어</a><a href="../programming-paradigms/index.html" data-en="Paradigms &amp; practices">프로그래밍 패러다임·방법론</a><a href="../design-patterns/index.html" data-en="Design patterns">디자인 패턴</a><a href="../software-engineering/index.html" data-en="Software engineering">소프트웨어 공학</a><a href="../databases/index.html" data-en="Databases">데이터베이스</a><a href="../security/index.html" data-en="Security">정보 보안</a><a href="../distributed-systems/index.html" data-en="Distributed systems &amp; design">분산 시스템·시스템 설계</a><a href="../devops-cloud/index.html" data-en="DevOps &amp; cloud">DevOps·클라우드</a><a href="../web/index.html" aria-current="page" data-en="Web technology">웹 기술</a><a href="../ai-ml/index.html" data-en="AI &amp; machine learning">인공지능·머신러닝</a></nav></header>
+
+<header class="hero wrap">
+  <p class="eyebrow" data-en="Data &amp; infrastructure · Web technology">데이터·인프라 · Web technology</p>
+  <h1 data-en="How the browser&lt;br&gt;&lt;mark&gt;paints a page&lt;/mark&gt;">브라우저가<br><mark>화면을 그리기까지</mark></h1>
+  <p class="lede" data-en="What happens after you type a URL, the rendering pipeline, reflow and repaint, cookies and storage, CORS, HTTP caching, CSR, SSR and SSG, hydration, Core Web Vitals and service workers.">주소창에 URL을 친 뒤 일어나는 일, 렌더링 파이프라인, 리플로우와 리페인트, 쿠키와 스토리지, CORS, HTTP 캐싱, CSR·SSR·SSG, 하이드레이션, 코어 웹 바이탈, 서비스 워커까지 다뤄요.</p>
+  <dl class="meta">
+    <div><dt data-en="Concepts">개념</dt><dd id="n-items">0</dd></div>
+    <div><dt data-en="Topics">분류</dt><dd id="n-cats">0</dd></div>
+  </dl>
+</header>
+
+<nav class="bar" aria-label="분류와 검색">
+  <div class="bar-in wrap">
+    <button class="chip" id="c-all" type="button" aria-pressed="true">전체</button>
+    <button class="chip pk" id="pk" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="pop"><span class="pk-l" id="pk-l">주제 선택</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="pop" id="pop" hidden><div class="pop-h"><b id="pop-t">주제를 골라 보세요</b></div><div class="pop-g" id="pop-g"></div></div>
+    <label class="search" for="q"><span class="sr" id="q-l">개념 검색</span><input id="q" type="search" placeholder="렌더링, CORS, SSR…" data-q-ko="렌더링, CORS, SSR…" data-q-en="Rendering, CORS, SSR…" autocomplete="off"></label>
+    <button class="ib lg" id="lg" type="button" aria-label="Switch to English"><span>EN</span></button>
+    <button class="ib tt" id="tt" type="button" aria-label="다크 모드로 보기"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </div>
+</nav>
+
+<main id="list" class="wrap"></main>
+<p class="empty wrap" id="empty" hidden data-en="Nothing matches. Try the Korean or English name.">찾는 개념이 없어요. 한글 이름이나 영어 이름으로 다시 검색해 보세요.</p>
+
+<footer class="foot wrap">
+  <div class="foot-t">
+    <p data-en="Every example is a CSS animation and only plays while its card is on screen.">예시는 모두 CSS 애니메이션이에요. 카드가 화면에 보일 때만 재생돼요.</p>
+    <p data-en="With Reduce Motion turned on, examples stay still and only move on hover or when a card is opened.">기기에서 '동작 줄이기'를 켜면 멈춘 상태로 보이고, 마우스를 올리거나 카드를 열 때만 움직여요.</p>
+  </div>
+  <p class="made">Made by <a href="https://github.com/starrykss" target="_blank" rel="noopener noreferrer">@starrykss</a></p>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="d-t">
+    <div class="d-st"><div class="stage"><div class="sc" id="d-sc"></div></div></div>
+    <div class="d-b">
+      <div class="d-top">
+        <p class="eyebrow" id="d-cat"></p>
+        <button class="ib" id="d-x" type="button" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <h3 id="d-t"></h3>
+      <p class="d-e" id="d-e"></p>
+      <p class="d-d" id="d-d"></p>
+      <div class="d-u"><b id="d-ul">언제 쓰나요</b><span id="d-u"></span></div>
+      <div class="d-nav">
+        <button class="ib" id="d-p" type="button" aria-label="이전 개념"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="d-pos" id="d-pos"></span>
+        <button class="ib" id="d-n" type="button" aria-label="다음 개념"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/cs0.js"></script>
+<script src="content.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
