@@ -528,6 +528,285 @@ function sTrain() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'aix-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono aix-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono aix-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c aix-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono aix-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c aix-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'aix-s aix-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono aix-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono aix-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono aix-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono aix-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono aix-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'aix-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'aix-xs', 5));
+
+
+const CSSX = `
+.aix-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.aix-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.aix-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.aix-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.aix-r .in{color:var(--danger);font-weight:800}
+.aix-g .in{color:var(--ok);font-weight:800}
+.aix-a .in{color:var(--accent);font-weight:800}
+.aix-w .in{color:var(--warn);font-weight:800}
+.aix-c .in{font-size:.6em;font-weight:700}
+.aix-c2 .in{font-size:.5em;font-weight:700}
+.aix-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.aix-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'aix-xs', i + 1, { off: i < list.length - 1 ? i + 2 : 0 }));
+
+/* ================= basics ================= */
+function sTree() {
+  const S = scene({ id: 'ai-tree', steps: 5, per: 1.6 });
+  frame(S, 'pf', 1, 1, 13, 10, 'ink-3', 0, { w: .08, r: .1 });
+  const PX = x => 1 + x * 1.3, PY = y => 11 - y * 1.0;
+  const A = [[1, 2], [2, 6], [2.5, 4], [3, 8], [3.8, 3], [1.5, 8.5], [4.2, 6.5], [6, 1.5], [7.5, 2.2], [8.8, 1], [6.8, .8]], B = [[6.5, 5], [7.2, 8], [8.5, 6.5], [9.2, 9], [7.8, 4], [9.5, 4.8], [6.2, 7.5]];
+  A.forEach(([x, y], i) => pt(S, 'a' + i, PX(x), PY(y), 0, C.cur, .3)); B.forEach(([x, y], i) => pt(S, 'b' + i, PX(x), PY(y), 0, C.badf, .3));
+  seg(S, 's1', [PX(5), 1], [PX(5), 11], 2, 'ink-2', .1); T(S, 's1l', PX(5) + .2, 1.2, 'x < 5', 'cz-mono aix-xs', 2);
+  seg(S, 's2', [PX(5), PY(3)], [14, PY(3)], 3, 'ink-2', .1); T(S, 's2l', PX(8.4), PY(3) - .85, 'y < 3', 'cz-mono aix-xs', 3);
+  rect(S, 'rA', 1.05, 1.05, PX(5) - 1.1, 9.9, 'accent', 10, 2, { r: 0 }); rect(S, 'rB', PX(5) + .05, 1.05, 14 - PX(5) - .1, PY(3) - 1.1, 'danger', 10, 3, { r: 0 }); rect(S, 'rC', PX(5) + .05, PY(3) + .05, 14 - PX(5) - .1, 11 - PY(3) - .1, 'accent', 10, 3, { r: 0 });
+  box2(S, 'n0', 20, 1, 6.4, 1.4, 'x < 5 ?', 'line', 2, { pct: 40 });
+  box2(S, 'n1', 16.2, 4.2, 5.6, 1.4, ['파랑 (Gini 0.08)', 'blue (Gini 0.08)'], 'accent', 2, { pct: 30 }); seg(S, 'e1', [23.2, 2.45], [19, 4.15], 2, 'ink-3', .07); T(S, 'e1l', 18.6, 2.9, ['예', 'yes'], 'aix-tiny', 2);
+  box2(S, 'n2', 24.4, 4.2, 6.4, 1.4, 'y < 3 ?', 'line', 3, { pct: 40 }); seg(S, 'e2', [23.2, 2.45], [27.6, 4.15], 3, 'ink-3', .07); T(S, 'e2l', 26.4, 2.9, ['아니오', 'no'], 'aix-tiny', 3);
+  box2(S, 'n3', 21.4, 7.4, 4.6, 1.4, ['파랑', 'blue'], 'accent', 3, { pct: 30 }); box2(S, 'n4', 26.6, 7.4, 4.4, 1.4, ['빨강', 'red'], 'danger', 3, { pct: 30 }); seg(S, 'e3', [27.6, 5.65], [23.7, 7.35], 3, 'ink-3', .07); seg(S, 'e4', [27.6, 5.65], [28.8, 7.35], 3, 'ink-3', .07);
+  [['tree 1 → A', 'accent'], ['tree 2 → B', 'danger'], ['tree 3 → A', 'accent']].forEach(([t, c], i) => box2(S, 'f' + i, 16.2 + i * 5.1, 9.4, 4.8, 1.3, t, c, 4, { pct: 30 }));
+  T(S, 'fv', 16.2, 10.9, ['랜덤 포레스트: 다수결 → A', 'random forest: majority → A'], 'aix-xs aix-a', 4);
+  stepT(S, 'k', 1, 12.1, [['두 종류의 점을 나누는 규칙을 찾고 싶어요', 'we want rules that separate two kinds of points'], ['질문 하나로 공간을 둘로 · 불순도(Gini = 1 − Σp²)가 가장 많이 줄어드는 질문을 골라요', 'one question splits the space · pick the one that most reduces impurity (Gini = 1 − Σp²)'], ['한쪽을 다시 나누면 순수한 잎이 돼요 · 너무 깊으면 과적합', 'split again for pure leaves · too deep means overfitting']], 'aix-xs aix-a');
+  fin(S, 'z', 13.3, [['결정 트리: “예/아니오 질문”을 이어 붙인 해석하기 쉬운 모델', 'a decision tree chains yes/no questions into an easy-to-read model', 'aix-xs aix-a'], ['랜덤 포레스트는 서로 다른 표본·특성으로 만든 나무들의 투표예요', 'random forests vote over trees built on different samples and features'], ['부스팅(XGBoost, LightGBM)은 앞 나무들의 오차를 다음 나무가 고쳐 나가요', 'boosting (XGBoost, LightGBM) adds trees that fix the earlier trees’ errors'], ['표 형태(정형) 데이터에선 지금도 딥러닝보다 강한 경우가 많아요', 'on tabular data they still often beat deep learning']]);
+  S.cap(1, '두 종류의 데이터', 'Two classes of data').cap(2, '첫 번째 질문', 'The first question').cap(3, '한 번 더 나누기', 'Split once more').cap(4, '나무 여러 그루의 투표', 'A vote of many trees').cap(5, '결정 트리와 앙상블', 'Decision trees and ensembles');
+  return S;
+}
+function sQlearn() {
+  const S = scene({ id: 'ai-qlearn', steps: 5, per: 1.6 });
+  const CW = 3.2, X = c => 1 + c * CW, Y = r => 1.2 + r * CW;
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { const k = `g${r}_${c}`, wall = r === 1 && c === 1, goal = r === 0 && c === 3, pit = r === 1 && c === 3; box2(S, k, X(c), Y(r), CW - .1, CW - .1, goal ? 'G +10' : pit ? ['함정 −10', 'pit −10'] : wall ? ['벽', 'wall'] : '', goal ? 'ok' : pit ? 'danger' : wall ? 'ink-2' : 'line', 0, { pct: goal || pit ? 40 : wall ? 60 : 35 }); }
+  T(S, 'st', X(0) + .2, Y(2) + .2, 'S', 'cz-mono aix-s aix-a', 0);
+  elb(S, 'ep', [[X(0) + 1.6, Y(2) + 1.6], [X(2) + 1.6, Y(2) + 1.6], [X(2) + 1.6, Y(1) + 1.6], [X(3) + .4, Y(1) + 1.6]], 'danger', 2, { h: .1, off: 3 });
+  T(S, 'qv', X(2) + .3, Y(1) + .25, 'Q(→) = −5', 'cz-mono aix-tiny aix-r', 2, { off: 3 });
+  const POL = [[0, 0, '→', '6.6'], [0, 1, '→', '7.3'], [0, 2, '→', '8.1'], [1, 0, '↑', '5.9'], [1, 2, '↑', '7.3'], [2, 0, '↑', '5.3'], [2, 1, '→', '5.9'], [2, 2, '↑', '6.6'], [2, 3, '←', '5.9']];
+  POL.forEach(([r, c, a, v], i) => { T(S, 'pa' + i, X(c), Y(r) + .7, a, 'cz-tc aix-l aix-g', 3, { w: CW - .1 }); T(S, 'pv' + i, X(c), Y(r) + 2.1, v, 'cz-tc cz-mono aix-tiny', 3, { w: CW - .1 }); });
+  code(S, 'cd', 15.4, 1.2, 15.6, ["Q(s,a) ← Q(s,a) + α·[ r + γ·max Q(s′,·) − Q(s,a) ]"], [], { st: 1 });
+  T(S, 'c1', 15.4, 3.3, ['α 학습률 · γ 할인율(미래 보상의 가치)', 'α learning rate · γ discount (value of future reward)'], 'aix-xs', 1);
+  T(S, 'c2', 15.4, 4.6, ['처음엔 아무렇게나 → 함정에 빠지면 그 행동의 Q가 내려가요', 'random at first → falling in the pit lowers that action’s Q'], 'aix-xs aix-r', 2, { off: 3 });
+  T(S, 'c3', 15.4, 4.6, ['수많은 에피소드 뒤: 보상이 거꾸로 퍼져 정책(화살표)이 목표로', 'many episodes later, reward flows back: arrows lead to G'], 'aix-xs aix-g', 3);
+  T(S, 'c4', 15.4, 6, ['ε-탐욕: 가끔은 일부러 새로운 행동 (탐험 vs 활용)', 'ε-greedy: sometimes try something new (explore vs exploit)'], 'aix-xs aix-a', 4);
+  T(S, 'c5', 15.4, 7.2, ['상태가 너무 많으면 표 대신 신경망으로 Q를 근사 (DQN, 아타리 게임)', 'too many states → approximate Q with a network (DQN, Atari)'], 'aix-xs', 4);
+  fin(S, 'z', 11.6, [['강화 학습: 정답 대신 보상을 받으며 시행착오로 “어떤 상태에서 무엇을 할지(정책)”를 배워요', 'reinforcement learning learns a policy, what to do in each state, from rewards by trial and error', 'aix-xs aix-a'], ['Q-러닝은 각 (상태, 행동)의 미래 보상 기대치 Q를 벨만 방정식으로 갱신해요', 'Q-learning updates the expected future reward Q of each (state, action) with the Bellman equation'], ['알파고, 로봇 제어, LLM의 RLHF가 강화 학습을 써요', 'AlphaGo, robot control and RLHF for LLMs all use reinforcement learning']]);
+  S.cap(1, '격자 세계와 보상', 'A grid world and rewards').cap(2, '실패에서 배우기', 'Learning from failure').cap(3, '정책이 생겨요', 'A policy emerges').cap(4, '탐험과 확장', 'Exploration and scaling up').cap(5, 'Q-러닝', 'Q-learning');
+  return S;
+}
+
+/* ================= evaluation ================= */
+function sCv() {
+  const S = scene({ id: 'ai-cv', steps: 5, per: 1.6 });
+  const SC = ['0.86', '0.81', '0.85', '0.83', '0.84'];
+  T(S, 't1', 1, .3, ['검증 세트를 한 번만 떼면 운에 따라 점수가 흔들려요', 'a single validation split makes the score depend on luck'], 'aix-xs aix-r', 1, { off: 2 });
+  for (let r = 0; r < 5; r++) for (let j = 0; j < 5; j++) { const k = `f${r}_${j}`, v = r === j; box2(S, k, 1 + j * 4.2, 1.4 + r * 1.35, 4, 1.15, v ? ['검증', 'validate'] : ['학습', 'train'], v ? 'warn' : 'accent', r === 0 ? 1 : 2, { pct: v ? 40 : 22 }); }
+  for (let r = 0; r < 5; r++) T(S, 's' + r, 22, 1.65 + r * 1.35, SC[r], 'cz-mono aix-xs', 2);
+  rect(S, 'test', 25.4, 1.4, 5.6, 6.55, 'ink-3', 20, 1, { r: .2, html: ['테스트 🔒', 'test 🔒'], cls: 'cz-c aix-c2' }); T(S, 'testl', 25.4, 5.6, ['마지막에 한 번만', 'once, at the end'], 'cz-tc aix-tiny', 1, { w: 5.6 });
+  T(S, 'mean', 1, 8.4, ['평균 0.84 ± 0.02 → 더 믿을 만한 추정 · 하이퍼파라미터 고르는 데 써요', 'mean 0.84 ± 0.02 → a steadier estimate · use it to pick hyperparameters'], 'aix-xs aix-g', 3);
+  T(S, 'ts', 1, 9.6, ['시계열은 섞으면 안 돼요: 과거로 학습, 미래로 검증', 'time series must not be shuffled: train on the past, validate on the future'], 'aix-xs aix-a', 4);
+  [[1, 2], [2, 3], [3, 4]].forEach(([n, v], r) => { for (let j = 0; j < n; j++) box2(S, `t${r}_${j}`, 1 + j * 3.4, 10.6 + r * 1.1, 3.2, .95, ['학습', 'train'], 'accent', 4, { pct: 22 }); box2(S, `tv${r}`, 1 + n * 3.4, 10.6 + r * 1.1, 3.2, .95, ['검증', 'validate'], 'warn', 4, { pct: 40 }); });
+  T(S, 'lk', 1, 14.1, ['누수 주의: 정규화·특성 선택도 학습 폴드 안에서만', 'avoid leakage: fit scaling and feature selection inside training folds only'], 'aix-xs aix-r', 4);
+  fin(S, 'z', 15.5, [['k-겹 교차 검증: 데이터를 k등분해 돌아가며 검증해 성능을 더 안정적으로 추정해요', 'k-fold cross-validation rotates the validation fold for a steadier performance estimate', 'aix-xs aix-a'], ['계층화(클래스 비율 유지), 그룹·시계열 분할처럼 데이터 구조에 맞게 나눠요', 'split to match the data: stratified (keep class ratios), grouped or time-ordered']]);
+  S.cap(1, '한 번 나누면 운', 'One split is luck').cap(2, '돌아가며 검증', 'Rotate the validation fold').cap(3, '평균과 편차', 'Mean and spread').cap(4, '시계열과 누수', 'Time series and leakage').cap(5, '교차 검증', 'Cross-validation');
+  return S;
+}
+function sReg() {
+  const S = scene({ id: 'ai-reg', steps: 5, per: 1.6 });
+  const X = t => 1.4 + t * 1.25, Y = v => 5 - v * 2.6;
+  hl(S, 'ax', 1.2, 14.4, 8.4, 'ink-3', 0, { w: .06 });
+  const P = [[0, -.3], [1, .75], [2, .95], [3, .2], [4, -.65], [5, -1.05], [6, -.35], [7, .55], [8, 1.05], [9, .4], [10, -.5]];
+  P.forEach(([t, v], i) => pt(S, 'p' + i, X(t), Y(v), 0, C.cur, .25));
+  poly(S, 'ov', [[X(0), Y(-.3)], [X(.5), Y(.55)], [X(1), Y(.75)], [X(1.5), Y(1.3)], [X(2), Y(.95)], [X(2.5), Y(.2)], [X(3), Y(.2)], [X(3.5), Y(-.6)], [X(4), Y(-.65)], [X(4.5), Y(-1.2)], [X(5), Y(-1.05)], [X(5.5), Y(-.4)], [X(6), Y(-.35)], [X(6.5), Y(.3)], [X(7), Y(.55)], [X(7.5), Y(1.3)], [X(8), Y(1.05)], [X(8.5), Y(.9)], [X(9), Y(.4)], [X(9.5), Y(-.2)], [X(10), Y(-.5)]], { st: 1, color: 'danger', h: .1, off: 3 });
+  poly(S, 'sm', [...Array(21)].map((_, i) => { const t = i / 2; return [X(t), Y(Math.sin(t * 1.047 - .52) * .95)]; }), { st: 2, color: 'ok', h: .12 });
+  T(S, 'o1', 1, .2, ['규제 없음: 점을 다 지나가려고 출렁여요 (과적합)', 'no regularization: wiggles through every point (overfit)'], 'aix-xs aix-r', 1, { off: 2 });
+  T(S, 'o2', 1, .2, ['손실 + λ·‖w‖² → 큰 가중치에 벌점 → 부드러워져요', 'loss + λ·‖w‖² → penalize large weights → smoother'], 'aix-xs aix-g', 2);
+  T(S, 'wt', 16.4, .2, ['가중치 크기', 'weight sizes'], 'aix-xs aix-a', 3);
+  const W = [[3.2, 2.1, .4, 2.8, 1.5], [1.4, 1.0, .3, 1.2, .7], [1.8, 0, 0, 1.5, 0]];
+  [['없음', 'none', 'danger'], ['L2 (릿지)', 'L2 (ridge)', 'accent'], ['L1 (라소)', 'L1 (lasso)', 'ok']].forEach(([k, e, c], g) => { T(S, 'wl' + g, 16.4 + g * 5, 6.9, [k, e], 'cz-tc aix-tiny', 3, { w: 4.6 }); W[g].forEach((h, j) => rect(S, `w${g}_${j}`, 16.6 + g * 5 + j * .9, 6.6 - h * 1.6, .7, Math.max(h * 1.6, .06), c, 50, 3, { r: .05 })); });
+  T(S, 'wn', 16.4, 7.8, ['L2는 골고루 줄이고, L1은 일부를 0으로 (특성 선택)', 'L2 shrinks all; L1 zeroes some (feature selection)'], 'aix-xs', 3);
+  const N = [[3, [9.6, 11.2, 12.8]], [7.5, [9.2, 10.6, 12, 13.4]], [12, [10.4, 12.2]]];
+  N.forEach(([x, ys], l) => ys.forEach((y, j) => { stt(S, `n${l}_${j}`, x, y, '', 'accent', 4, { r: .45, pct: 30 }); }));
+  [[0, 1], [1, 3]].forEach(([l, j]) => { tsets(S, `n${l}_${j}`, [[4, 'line', 30]]); xm(S, `dx${l}${j}`, N[l][0], N[l][1][j] + .1, 4); });
+  const DROP = { '0_1': 1, '1_3': 1 }; N.slice(0, 2).forEach(([x, ys], l) => ys.forEach((y, j) => N[l + 1][1].forEach((y2, k) => DROP[l + '_' + j] || DROP[(l + 1) + '_' + k] || seg(S, `ce${l}_${j}_${k}`, [x + .45, y], [N[l + 1][0] - .45, y2], 4, 'line', .04))));
+  T(S, 'do', 15, 9.6, ['드롭아웃: 학습 때마다 뉴런 일부를 무작위로 끔', 'dropout: randomly switch off neurons on each training step'], 'aix-xs aix-a', 4); T(S, 'do2', 15, 10.6, ['특정 뉴런에 의존하지 못해 일반화가 좋아져요', 'no neuron can be relied on → better generalization'], 'aix-xs', 4); T(S, 'do3', 15, 11.6, ['추론 때는 전부 켜서 써요', 'at inference, all neurons are on'], 'aix-xs', 4);
+  fin(S, 'z', 14, [['정규화: 모델이 훈련 데이터에 과하게 맞추지 못하도록 복잡도에 벌점을 주는 기법', 'regularization penalizes complexity so a model can’t over-fit its training data', 'aix-xs aix-a'], ['L1·L2 가중치 벌점, 드롭아웃, 조기 종료, 데이터 증강이 대표적이에요 · λ는 교차 검증으로 골라요', 'L1/L2 penalties, dropout, early stopping and data augmentation are the usual tools · choose λ by cross-validation']]);
+  S.cap(1, '출렁이는 과적합', 'A wiggly overfit').cap(2, '가중치 벌점', 'A weight penalty').cap(3, 'L1과 L2', 'L1 vs L2').cap(4, '드롭아웃', 'Dropout').cap(5, '정규화', 'Regularization');
+  return S;
+}
+
+/* ================= deep learning ================= */
+function sAct() {
+  const S = scene({ id: 'ai-act', steps: 5, per: 1.6 });
+  const X = z => 7.5 + z * 1.1, Y = v => 7 - v * 4.2;
+  hl(S, 'ax', 1.4, 13.6, Y(0), 'ink-3', 0, { w: .06 }); seg(S, 'ay', [X(0), 1.4], [X(0), 8.2], 0, 'ink-3', .06);
+  const sg = z => 1 / (1 + Math.exp(-z));
+  poly(S, 'sg', [...Array(25)].map((_, i) => { const z = -5.5 + i * .46; return [X(z), Y(sg(z))]; }), { st: 1, color: 'accent', h: .12 });
+  poly(S, 'sd', [...Array(25)].map((_, i) => { const z = -5.5 + i * .46; return [X(z), Y(sg(z) * (1 - sg(z)))]; }), { st: 1, color: 'warn', h: .1 });
+  T(S, 'sgl', 1.2, .4, ['시그모이드 (파랑)와 기울기 (주황, 최대 0.25)', 'sigmoid (blue) and its gradient (orange, max 0.25)'], 'aix-xs aix-a', 1, { off: 3 });
+  poly(S, 'rl', [[X(-5.5), Y(0)], [X(0), Y(0)], [X(1.4), Y(1.4 / 1.1 * .26)]], { st: 3, color: 'ok', h: .14 });
+  T(S, 'rll', 1.2, .4, ['ReLU = max(0, z): 양수면 기울기 1', 'ReLU = max(0, z): gradient 1 for positive inputs'], 'aix-xs aix-g', 3);
+  T(S, 'bt', 16, .4, ['층을 거꾸로 지날 때 기울기 크기', 'gradient size, layer by layer backward'], 'aix-xs aix-a', 2);
+  for (let l = 0; l < 8; l++) { const h1 = Math.max(6 * Math.pow(.25, l / 1.6), .08); rect(S, 'gs' + l, 16.4 + l * 1.8, 7.6 - h1, 1.3, h1, 'warn', 50, 2, { r: .05, off: 3 }); rect(S, 'gr' + l, 16.4 + l * 1.8, 7.6 - 5.6 + l * .05, 1.3, 5.6 - l * .05, 'ok', 45, 3, { r: .05 }); T(S, 'gl' + l, 16.2 + l * 1.8, 7.8, 'L' + (8 - l), 'cz-tc cz-mono aix-tiny', 2, { w: 1.7 }); }
+  T(S, 'bs', 1, 8.8, ['시그모이드: 0.25씩 곱해져 앞쪽 층은 거의 0 → 기울기 소실', 'sigmoid: ×0.25 per layer, early layers get ~0 → vanishing gradients'], 'aix-xs aix-r', 2, { off: 3 });
+  T(S, 'br', 1, 8.8, ['ReLU: 크기가 유지돼 깊은 망도 학습 · 음수 입력은 0 (죽은 ReLU)', 'ReLU keeps the size, so deep nets train · negatives give 0 (dead ReLU)'], 'aix-xs aix-g', 3);
+  T(S, 'k4', 1, 10.1, ['요즘 트랜스포머는 GELU·SiLU를 쓰고, 잔차 연결(x + f(x))이 기울기의 지름길이 돼요', 'modern transformers use GELU/SiLU; residual connections (x + f(x)) give gradients a shortcut'], 'aix-xs aix-a', 4); T(S, 'k5', 1, 11.1, ['LayerNorm으로 값의 크기를 고르게, He·Xavier 초기화로 출발점을 잘 잡아요', 'LayerNorm keeps activations in range; He/Xavier init gives a good starting scale'], 'aix-xs', 4);
+  fin(S, 'z', 12.6, [['활성화 함수: 뉴런에 비선형성을 줘서 층을 쌓는 의미를 만들어요 (없으면 여러 층 = 한 층)', 'activation functions add non-linearity, which is what makes stacking layers useful', 'aix-xs aix-a'], ['역전파는 층마다 기울기를 곱하므로, 1보다 작으면 사라지고 크면 폭발해요', 'backprop multiplies gradients layer by layer: below 1 they vanish, above 1 they explode'], ['폭발엔 기울기 클리핑, 소실엔 ReLU·잔차 연결·정규화가 처방이에요', 'clip gradients for explosions; use ReLU, residuals and normalization for vanishing']]);
+  S.cap(1, '시그모이드와 기울기', 'Sigmoid and its gradient').cap(2, '기울기 소실', 'Vanishing gradients').cap(3, 'ReLU', 'ReLU').cap(4, '현대적 처방', 'Modern remedies').cap(5, '활성화 함수와 기울기 소실', 'Activations and vanishing gradients');
+  return S;
+}
+
+/* ================= LLM ================= */
+function sLora() {
+  const S = scene({ id: 'ai-lora', steps: 5, per: 1.6 });
+  rect(S, 'W', 1.5, 1.6, 7, 7, 'ink-3', 30, 0, { r: .2, html: ['W (4096 × 4096)', 'W (4096 × 4096)'], cls: 'cz-c aix-c2' });
+  tsets(S, 'W', [[1, 'danger', 30], [2, 'ink-3', 30]]); T(S, 'Wl', 1.5, 8.9, ['사전 학습된 가중치', 'pretrained weights'], 'aix-tiny', 0);
+  T(S, 'ft', 1.5, .4, ['전체 미세 조정: W 전체(행렬마다 1,677만 개)를 갱신 · GPU 메모리 많이 필요', 'full fine-tuning updates all of W (16.7M per matrix) · lots of GPU memory'], 'aix-xs aix-r', 1, { off: 2 });
+  T(S, 'lk', 1.9, 1.9, '🔒', 'aix-l', 2); T(S, 'fz', 1.5, .4, ['LoRA: W는 얼리고 작은 두 행렬 B·A만 학습', 'LoRA: freeze W and train only two small matrices B and A'], 'aix-xs aix-g', 2);
+  T(S, 'pl', 9.2, 4.5, '+', 'aix-l', 2);
+  rect(S, 'B', 10.6, 1.6, 1, 7, 'ok', 40, 2, { r: .15 }); T(S, 'Bl', 10, 8.9, 'B (4096 × 8)', 'cz-mono aix-tiny aix-g', 2);
+  T(S, 'mx', 11.9, 1.5, '×', 'aix-l', 2);
+  rect(S, 'A', 13, 1.6, 7, 1, 'ok', 40, 2, { r: .15 }); T(S, 'Al', 13, 2.8, 'A (8 × 4096)', 'cz-mono aix-tiny aix-g', 2);
+  T(S, 'eq', 20.6, 4.5, '=', 'aix-l', 2); rect(S, 'dW', 22, 1.6, 7, 7, 'ok', 12, 2, { r: .2, html: ['ΔW (낮은 랭크 r = 8)', 'ΔW (low rank r = 8)'], cls: 'cz-c aix-c2', css: 'border:.1em dashed var(--ok)' });
+  T(S, 'out', 13, 4.4, 'h = W·x + B·A·x', 'cz-mono aix-s aix-a', 2);
+  T(S, 'pc', 1, 10, ['학습할 파라미터 (행렬 하나)', 'trainable parameters (one matrix)'], 'aix-xs aix-a', 3);
+  rect(S, 'p1', 1, 10.9, 24, 1, 'danger', 40, 3, { r: .2, html: ['전체 16,777,216', 'full 16,777,216'], cls: 'cz-c aix-c2' }); rect(S, 'p2', 1, 12.1, .4, 1, 'ok', 70, 3, { r: .1 }); T(S, 'p2l', 1.8, 12.2, ['LoRA 65,536 (0.4%)', 'LoRA 65,536 (0.4%)'], 'cz-mono aix-xs aix-g', 3);
+  T(S, 'k4', 1, 13.5, ['작업마다 작은 어댑터만 바꿔 끼워요 · QLoRA는 W를 4비트로 양자화해 더 아껴요', 'swap small adapters per task · QLoRA quantizes W to 4 bits to save more'], 'aix-xs aix-a', 4); T(S, 'k5', 1, 14.5, ['새 지식을 넣을 땐 RAG, 말투·형식을 바꿀 땐 미세 조정이 잘 맞아요', 'new knowledge suits RAG; tone and format suit fine-tuning'], 'aix-xs', 4);
+  fin(S, 'z', 15.9, [['LoRA: 큰 모델은 그대로 두고 저랭크 행렬 두 개로 변화량만 학습하는 효율적 미세 조정', 'LoRA fine-tunes efficiently by learning only a low-rank update with two small matrices', 'aix-xs aix-a'], ['미세 조정으로 바뀌는 방향은 랭크가 낮다는 관찰에서 출발해요 · 추론 때는 W에 합쳐 속도 손해가 없어요', 'it rests on the observation that fine-tuning updates are low-rank · merged into W at inference, it costs no speed']]);
+  S.cap(1, '전체 미세 조정의 부담', 'The cost of full fine-tuning').cap(2, 'W는 얼리고 B·A만', 'Freeze W, train B·A').cap(3, '파라미터 비교', 'Parameter counts').cap(4, '어댑터와 QLoRA', 'Adapters and QLoRA').cap(5, '미세 조정과 LoRA', 'Fine-tuning and LoRA');
+  return S;
+}
+function sAgent() {
+  const S = scene({ id: 'ai-agent', steps: 5, per: 1.6 });
+  box2(S, 'user', 1, 1.4, 5, 1.6, ['사용자', 'user'], 'line', 0, { pct: 40 }); box2(S, 'llm', 10.5, 1.4, 7, 1.6, 'LLM', 'accent', 0, { pct: 35 });
+  [['weather', 1.2], ['search', 2.8], ['run_code', 4.4]].forEach(([t, y], i) => box2(S, 't' + i, 23.4, y, 7.6, 1.3, t + '()', 'warn', 0, { pct: 30 }));
+  T(S, 'tl', 23.4, .3, ['도구 (런타임이 실행)', 'tools (run by the runtime)'], 'aix-tiny aix-w', 0);
+  ar(S, 'u1', [6.1, 1.95], [10.4, 1.95], 'ink-3', 1, { h: .1 });
+  ar(S, 'c1', [17.6, 1.85], [23.3, 1.85], 'warn', 2, { h: .1 }); T(S, 'c1l', 17.8, .9, ['도구 호출', 'tool call'], 'aix-tiny aix-w', 2);
+  ar(S, 'c2', [23.3, 2.55], [17.6, 2.55], 'ok', 3, { h: .1 }); T(S, 'c2l', 17.8, 3.2, ['관찰 결과', 'observation'], 'aix-tiny aix-g', 3);
+  ar(S, 'u2', [10.4, 2.55], [6.1, 2.55], 'accent', 3, { h: .1 });
+  code(S, 'tr', 1, 6, 30, [['user: 서울 날씨 어때? 우산 챙길까?', 'user: weather in Seoul? should I take an umbrella?'], 'assistant → tool_call weather({"city": "Seoul"})', 'tool → {"rain_prob": 0.8, "temp": 14}', ['assistant: 비 올 확률 80%예요. 우산 챙기세요.', 'assistant: 80% chance of rain, take an umbrella.']], [[0, 1], [1, 2], [3, 3], [2, 4]], { hoff: 5 });
+  T(S, 'lp', 1, 4.3, ['생각 → 도구 호출 → 관찰 → … → 최종 답 (루프)', 'think → call a tool → observe → … → final answer (a loop)'], 'aix-xs aix-a', 2);
+  [['도구 결과는 데이터일 뿐: 그 안의 “지시”를 따르면 프롬프트 인젝션', 'tool output is data: obeying “instructions” inside it is prompt injection'], ['권한 최소화 · 위험한 행동은 사람 승인 · 단계 수 제한 · 모든 호출 기록', 'least privilege · human approval for risky actions · step limits · log every call']].forEach((t, i) => T(S, 'r' + i, 1, 12 + i * 1.1, t, 'aix-xs' + (i ? '' : ' aix-r'), 4));
+  fin(S, 'z', 14.4, [['에이전트: LLM이 도구를 골라 부르고 결과를 보며 여러 단계를 스스로 이어 가는 구조', 'an agent lets an LLM choose and call tools, read the results and chain several steps itself', 'aix-xs aix-a'], ['모델은 구조화된 호출(JSON)만 내고, 실제 실행과 권한 관리는 런타임이 맡아요', 'the model only emits structured calls (JSON); the runtime executes them and enforces permissions']]);
+  S.cap(1, '질문이 들어와요', 'A question arrives').cap(2, '도구를 부르기로 결정', 'Decide to call a tool').cap(3, '결과를 보고 답하기', 'Answer from the result').cap(4, '안전장치', 'Guardrails').cap(5, 'LLM 에이전트와 도구 사용', 'LLM agents and tool use');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'ai-basics': [
+    item('ai-tree', '결정 트리와 앙상블', 'Decision trees and ensembles', '“x < 5인가?” 같은 예/아니오 질문을 이어 붙여 데이터를 나누는 모델이에요. 여러 나무를 모으면(앙상블) 훨씬 강해져요.', '각 단계에서 불순도(Gini = 1 − Σp²)가 가장 많이 줄어드는 특성과 임계값으로 공간을 둘로 나누고, 순수해질 때까지 반복해요. 해석하기 쉽지만 너무 깊으면 과적합해요. 랜덤 포레스트는 서로 다른 표본과 특성으로 만든 나무들의 다수결, 그래디언트 부스팅(XGBoost, LightGBM)은 앞 나무들의 오차를 다음 나무가 고쳐 나가요. 표 형태 데이터에선 지금도 딥러닝보다 강한 경우가 많아요.', 'A model that splits data with a chain of yes/no questions such as “x < 5?”; combining many trees (an ensemble) makes it far stronger.', 'At each step it splits on the feature and threshold that most reduce impurity (Gini = 1 − Σp²), repeating until leaves are pure. Trees are easy to read but overfit when too deep. Random forests take a majority vote over trees built on different samples and features, while gradient boosting (XGBoost, LightGBM) adds trees that fix the previous ones’ errors. On tabular data they still often beat deep learning.', sTree()),
+    item('ai-qlearn', 'Q-러닝 (강화 학습)', 'Q-learning (reinforcement learning)', '정답 대신 보상을 받으며 시행착오로 “어떤 상태에서 무엇을 할지(정책)”를 배우는 강화 학습의 대표 알고리즘이에요.', '격자 세계에서 에이전트는 각 (상태, 행동)의 미래 보상 기대치 Q를 Q ← Q + α[r + γ·max Q(s′) − Q]로 갱신해요. 처음엔 함정에 빠지며 그 행동의 Q가 내려가고, 에피소드가 쌓이면 목표의 보상이 거꾸로 퍼져 목표로 향하는 정책이 생겨요. ε-탐욕으로 탐험과 활용을 섞고, 상태가 많으면 신경망으로 Q를 근사해요(DQN). 알파고, 로봇 제어, LLM의 RLHF가 강화 학습을 써요.', 'The classic reinforcement-learning algorithm: learn by trial and error from rewards, rather than labels, which action to take in each state (a policy).', 'In a grid world the agent updates the expected future reward Q of each (state, action) with Q ← Q + α[r + γ·max Q(s′) − Q]. Early on, falling into the pit lowers that action’s Q; over many episodes the goal’s reward propagates back and a policy pointing to the goal emerges. ε-greedy mixes exploration and exploitation, and with many states a neural network approximates Q (DQN). AlphaGo, robot control and RLHF for LLMs all use reinforcement learning.', sQlearn())
+  ],
+  'ai-eval': [
+    item('ai-cv', '교차 검증', 'Cross-validation', '데이터를 k등분해 돌아가며 한 조각으로 검증하고 나머지로 학습해, 성능을 운에 덜 흔들리게 추정하는 방법이에요.', '검증 세트를 한 번만 떼면 어떤 데이터가 걸렸는지에 따라 점수가 흔들려요. 5-겹 교차 검증은 다섯 번 돌아가며 0.86, 0.81 … 같은 점수를 얻어 평균 0.84 ± 0.02처럼 보고, 하이퍼파라미터를 고르는 데 써요. 테스트 세트는 따로 떼어 마지막에 한 번만 봐요. 시계열은 섞지 말고 과거로 학습·미래로 검증하고, 정규화나 특성 선택도 학습 폴드 안에서만 해야 정보 누수가 없어요.', 'Split the data into k folds and rotate which one is used for validation, giving a performance estimate less swayed by luck.', 'With a single validation split, the score depends on which examples landed in it. Five-fold cross-validation rotates through five splits, reporting scores like 0.86, 0.81, … as a mean of 0.84 ± 0.02, and guides hyperparameter choice. The test set stays locked away until one final check. Time series must not be shuffled: train on the past and validate on the future, and fit scaling or feature selection inside training folds only to avoid leakage.', sCv()),
+    item('ai-reg', '정규화와 드롭아웃', 'Regularization and dropout', '모델이 훈련 데이터에 과하게 맞추지 못하도록 복잡도에 벌점을 주는 기법들이에요. L1·L2 벌점, 드롭아웃, 조기 종료가 대표적이에요.', '벌점이 없으면 모델이 잡음까지 따라가며 출렁여요. 손실에 λ·‖w‖²(L2, 릿지)를 더하면 큰 가중치가 억제돼 곡선이 부드러워지고, λ·‖w‖₁(L1, 라소)은 일부 가중치를 정확히 0으로 만들어 특성 선택 효과가 있어요. 드롭아웃은 학습 단계마다 뉴런 일부를 무작위로 꺼서 특정 뉴런에 기대지 못하게 하고, 추론 때는 모두 켜요. λ 같은 강도는 교차 검증으로 골라요.', 'Techniques that penalize complexity so a model can’t over-fit its training data: L1/L2 penalties, dropout and early stopping are the staples.', 'Without a penalty the model chases noise and wiggles. Adding λ·‖w‖² (L2, ridge) to the loss restrains large weights and smooths the fit, while λ·‖w‖₁ (L1, lasso) drives some weights exactly to zero, selecting features. Dropout randomly switches off some neurons at each training step so none can be relied on, with all of them active at inference. Choose strengths like λ by cross-validation.', sReg())
+  ],
+  'ai-deep': [
+    item('ai-act', '활성화 함수와 기울기 소실', 'Activations and vanishing gradients', '활성화 함수는 뉴런에 비선형성을 줘요. 그런데 시그모이드처럼 기울기가 작으면, 역전파 때 층을 지날수록 기울기가 사라져 깊은 망이 학습되지 않아요.', '시그모이드의 기울기는 최대 0.25라서 층마다 곱해지면 앞쪽 층에는 거의 0이 도착해요(기울기 소실). ReLU = max(0, z)는 양수에서 기울기 1이라 크기가 유지돼 깊은 망을 학습할 수 있지만, 음수 입력만 받으면 죽은 ReLU가 돼요. 요즘 트랜스포머는 GELU·SiLU를 쓰고, 잔차 연결(x + f(x))이 기울기의 지름길이 되며, LayerNorm과 He 초기화도 함께 써요. 기울기 폭발은 클리핑으로 막아요.', 'Activation functions give neurons non-linearity, but with small gradients like the sigmoid’s, backpropagated gradients fade layer by layer and deep networks stop learning.', 'The sigmoid’s gradient peaks at 0.25, so multiplied across layers almost nothing reaches the early ones: vanishing gradients. ReLU = max(0, z) has gradient 1 for positive inputs, preserving magnitude so deep nets can train, though units that only see negatives die. Modern transformers use GELU or SiLU, residual connections (x + f(x)) give gradients a shortcut, and LayerNorm and He initialization help; exploding gradients are clipped.', sAct())
+  ],
+  'ai-llm': [
+    item('ai-lora', '미세 조정과 LoRA', 'Fine-tuning and LoRA', '사전 학습된 큰 모델을 내 작업에 맞게 추가 학습하는 게 미세 조정이에요. LoRA는 원래 가중치는 얼리고 작은 저랭크 행렬 두 개만 학습해 비용을 크게 줄여요.', '4096 × 4096 가중치 행렬 하나를 통째로 갱신하면 파라미터가 1,677만 개지만, LoRA는 W를 고정하고 ΔW = B·A(4096 × 8, 8 × 4096)만 학습해 65,536개(0.4%)면 돼요. 출력은 W·x + B·A·x이고, 추론 때는 ΔW를 W에 합쳐 속도 손해가 없어요. 작업마다 작은 어댑터만 바꿔 끼우고, QLoRA는 W를 4비트로 양자화해 더 아껴요. 새로운 지식은 RAG, 말투·형식은 미세 조정이 잘 맞아요.', 'Fine-tuning further trains a pretrained model for your task; LoRA freezes the original weights and trains just two small low-rank matrices, slashing the cost.', 'Updating a single 4096 × 4096 weight matrix means 16.7 million parameters, but LoRA freezes W and learns only ΔW = B·A (4096 × 8 and 8 × 4096): 65,536 parameters, 0.4%. The output is W·x + B·A·x, and at inference ΔW merges into W at no speed cost. Small adapters are swapped per task, and QLoRA saves more by quantizing W to 4 bits. New knowledge suits RAG; tone and format suit fine-tuning.', sLora()),
+    item('ai-agent', 'LLM 에이전트와 도구 사용', 'LLM agents and tool use', 'LLM이 필요한 도구를 골라 호출하고, 결과를 보고 다음 행동을 정하는 일을 반복해 여러 단계의 작업을 해내는 구조예요.', '“서울 날씨 어때? 우산 챙길까?”라는 질문에 모델은 weather({"city": "Seoul"}) 같은 구조화된 호출(JSON)을 내고, 런타임이 실제로 실행해 {"rain_prob": 0.8}을 돌려주면 그걸 읽고 답해요. 생각 → 호출 → 관찰을 끝날 때까지 반복해요. 도구 결과는 데이터일 뿐이라 그 안의 “지시”를 따르면 프롬프트 인젝션이 되니, 권한을 최소화하고 위험한 행동은 사람 승인을 받고, 단계 수를 제한하고 모든 호출을 기록해요.', 'A setup where an LLM picks and calls tools, reads the results and decides the next action, repeating to complete multi-step tasks.', 'Asked “weather in Seoul? should I take an umbrella?”, the model emits a structured call (JSON) such as weather({"city": "Seoul"}); the runtime executes it and returns {"rain_prob": 0.8}, which the model reads to answer. Think → call → observe repeats until done. Tool output is only data, and obeying “instructions” inside it is prompt injection, so keep privileges minimal, require human approval for risky actions, cap the number of steps and log every call.', sAgent())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('ai-basics', '기초', 'Basics', '머신러닝 기초', 'Machine learning basics',
     '데이터로부터 규칙을 배우는 기본 방식과 도구예요.', 'The core ways and tools for learning rules from data.', [
@@ -538,21 +817,21 @@ window.UX = page([
     item('ai-classify', '분류와 결정 경계', 'Classification and decision boundaries', '입력이 어느 종류(클래스)인지 예측해요. 모델은 특징 공간을 나누는 경계를 학습하고, 확률도 함께 내요.', '스팸 필터, 사기 탐지, 이미지 분류가 모두 분류 문제예요. 로지스틱 회귀, 결정 트리, 그래디언트 부스팅(XGBoost)이 실무 단골이에요.', 'Predict which class an input belongs to; the model learns a boundary through feature space and outputs probabilities.', 'Spam filters, fraud detection and image labelling are all classification; logistic regression, decision trees and gradient boosting (XGBoost) are workhorses.', sClassify()),
     item('ai-kmeans', 'K-평균 군집화', 'K-means clustering', '중심 K개를 정하고, 점을 가장 가까운 중심에 배정한 뒤 중심을 평균으로 옮기는 과정을 반복해 데이터를 묶어요.', '고객 세분화, 문서 묶기, 이미지 색 줄이기에 써요. K는 사람이 정하고(엘보 방법), 시작 위치에 따라 결과가 달라질 수 있어요.', 'Pick K centres, assign each point to the nearest one, move centres to the mean, and repeat to form groups.', 'Used for customer segments, document grouping and colour reduction; you choose K (e.g. the elbow method) and results depend on the start.', sKMeans()),
     item('ai-split', '학습 · 검증 · 테스트 분리', 'Train, validation and test splits', '데이터를 학습용, 검증용(설정 고르기), 테스트용(최종 평가)으로 나눠 처음 보는 데이터에 대한 실력을 재요.', '테스트 데이터가 학습에 섞이는 데이터 누수를 조심하세요. 시간 순서가 있는 데이터는 무작위가 아니라 시간으로 나눠요.', 'Split data into training, validation (for choosing settings) and test (for the final grade) to measure performance on unseen data.', 'Watch for data leakage into training; split time-ordered data by time, not at random.', sSplit())
-  ]),
+  ].concat(XT.add['ai-basics'] || [])),
   sec('ai-eval', '평가', 'Evaluation', '일반화와 평가', 'Generalization and evaluation',
     '처음 보는 데이터에서도 잘 맞히는지 확인하고 측정하는 방법이에요.', 'Checking and measuring how well a model handles unseen data.', [
     item('ai-overfit', '과적합 vs 과소적합', 'Overfitting vs underfitting', '너무 단순하면 패턴을 못 잡고(과소적합), 너무 복잡하면 잡음까지 외워 새 데이터에서 틀려요(과적합).', '학습 점수만 높고 검증 점수가 낮으면 과적합이에요. 데이터를 늘리거나 모델을 단순하게, 정규화를 강하게 하세요.', 'Too simple misses the pattern (underfitting); too complex memorizes noise and fails on new data (overfitting).', 'High training but low validation scores signal overfitting; add data, simplify the model or regularize more.', sOverfit()),
     item('ai-early', '학습 곡선과 조기 종료', 'Learning curves and early stopping', '에폭마다 학습·검증 손실을 그려 보면 과적합이 시작되는 지점이 보여요. 검증 손실이 가장 낮을 때 학습을 멈춰요.', '드롭아웃, 가중치 감소(L2), 데이터 증강도 과적합을 줄여요. 학습 곡선은 모든 실험에서 기본으로 확인하세요.', 'Plotting training and validation loss per epoch shows where overfitting begins; stop when validation loss is lowest.', 'Dropout, weight decay (L2) and data augmentation also curb overfitting; always check learning curves.', sEarly()),
     item('ai-confusion', '혼동 행렬 · 정밀도 · 재현율', 'Confusion matrix, precision, recall', '예측과 실제를 2×2 표(TP·FP·FN·TN)로 정리하고, 정밀도(양성 판정의 정확도)와 재현율(실제 양성을 찾은 비율)을 계산해요.', '양성이 드문 데이터에선 정확도가 속여요. 둘을 함께 보는 F1 점수와, 클래스별 지표를 확인하세요.', 'Tabulate predictions against reality (TP, FP, FN, TN), then compute precision (how right the positives are) and recall (how many real positives were found).', 'Accuracy misleads when positives are rare; look at F1, which balances both, and at per-class metrics.', sConfusion()),
     item('ai-pr', '임계값과 정밀도-재현율 트레이드오프', 'Thresholds and the precision–recall trade-off', '모델 점수를 양성으로 판정하는 기준선(임계값)을 올리면 정밀도가, 내리면 재현율이 올라가요.', '오탐과 미탐 중 무엇이 더 비싼지로 임계값을 정하세요. PR 곡선과 ROC 곡선으로 전체 모양을 비교해요.', 'Raising the score threshold for a positive call boosts precision; lowering it boosts recall.', 'Pick the threshold by which mistake costs more, false alarms or misses; compare models with PR and ROC curves.', sPR())
-  ]),
+  ].concat(XT.add['ai-eval'] || [])),
   sec('ai-deep', '딥러닝', 'Deep learning', '신경망과 딥러닝', 'Neural networks and deep learning',
     '뉴런을 층층이 쌓아 복잡한 패턴을 학습하는 방법이에요.', 'Stacking layers of neurons to learn complex patterns.', [
     item('ai-neuron', '인공 뉴런 (퍼셉트론)', 'Artificial neuron', '입력에 가중치를 곱해 더하고 편향을 더한 뒤 활성화 함수를 통과시켜 출력해요.', '활성화 함수는 ReLU가 가장 흔하고, 확률이 필요한 마지막 층엔 시그모이드·소프트맥스를 써요. 비선형 함수가 있어야 복잡한 패턴을 표현해요.', 'Multiply inputs by weights, add them up with a bias, and pass the result through an activation function.', 'ReLU is the most common activation, with sigmoid or softmax on output layers that need probabilities; non-linearity is what lets networks model complex patterns.', sNeuron()),
     item('ai-mlp', '신경망과 순전파', 'Neural networks and the forward pass', '뉴런을 여러 층으로 연결해 입력층 → 은닉층 → 출력층으로 값을 계산해 나가요.', '층이 깊을수록 더 추상적인 특징을 배워요. 표 형식 데이터는 여전히 그래디언트 부스팅이 강한 경우가 많아요.', 'Neurons are wired in layers, and values are computed from the input layer through hidden layers to the output.', 'Deeper layers learn more abstract features; on tabular data, gradient boosting often still wins.', sMLP()),
     item('ai-backprop', '역전파', 'Backpropagation', '출력의 오차를 뒤에서부터 연쇄 법칙으로 나눠 각 가중치의 기울기를 구하고, 경사 하강법으로 가중치를 고쳐요.', 'PyTorch, JAX 같은 프레임워크가 자동 미분으로 대신 계산해요. 기울기가 너무 작아지거나 커지는 문제는 정규화 층·잔차 연결로 막아요.', 'Propagate the output error backwards with the chain rule to get each weight’s gradient, then update weights with gradient descent.', 'Frameworks like PyTorch and JAX do it with automatic differentiation; normalization layers and residual connections tame vanishing or exploding gradients.', sBackprop()),
     item('ai-cnn', '합성곱 신경망 (CNN)', 'Convolutional neural networks', '작은 필터를 이미지 위로 밀며 곱하고 더해, 경계·질감 같은 지역 패턴을 찾는 특징 맵을 만들어요.', '이미지 분류, 물체 탐지, 의료 영상에 많이 써요. 요즘은 비전 트랜스포머(ViT)와 함께 쓰거나 비교해 골라요.', 'Slide small filters across an image, multiplying and summing, to build feature maps that detect local patterns such as edges and textures.', 'Common in image classification, object detection and medical imaging; today often combined with or compared against vision transformers (ViT).', sCNN())
-  ]),
+  ].concat(XT.add['ai-deep'] || [])),
   sec('ai-llm', '언어 모델', 'Language models', '언어 모델과 LLM', 'Language models and LLMs',
     '글을 숫자로 바꾸고, 문맥을 이해하고, 다음 말을 만들어 내는 방법이에요.', 'Turning text into numbers, modelling context, and generating what comes next.', [
     item('ai-token', '토큰화', 'Tokenization', '글을 모델이 다루는 작은 조각(토큰)으로 자르고 각 조각에 번호를 붙여요.', '컨텍스트 창, API 요금, 응답 속도 모두 토큰 수로 계산돼요. 한국어는 같은 내용에 토큰이 더 드는 편이에요.', 'Split text into small pieces (tokens) the model works with, and give each piece an ID.', 'Context windows, API pricing and speed are all measured in tokens; some languages need more tokens for the same content.', sToken()),
@@ -563,8 +842,9 @@ window.UX = page([
     item('ai-vector', '벡터 검색', 'Vector search', '문서를 임베딩 벡터로 저장해 두고, 질문 벡터와 가장 가까운 문서를 찾아요. 단어가 달라도 뜻으로 찾아요.', 'pgvector, FAISS, Pinecone 같은 도구가 근사 최근접 탐색(HNSW)으로 빠르게 찾아요. 키워드 검색(BM25)과 섞는 하이브리드 검색이 실무에서 강해요.', 'Store documents as embedding vectors and find the ones closest to the question’s vector, matching meaning rather than exact words.', 'Tools like pgvector, FAISS and Pinecone use approximate nearest-neighbour indexes (HNSW); hybrid search mixing in keyword search (BM25) works well in practice.', sVector()),
     item('ai-rag', 'RAG (검색 증강 생성)', 'RAG (retrieval-augmented generation)', '질문과 관련된 문서를 검색해 프롬프트에 함께 넣고, LLM이 그 문서에 근거해 답하게 해요.', '재학습 없이 최신·사내 지식을 쓸 수 있고 출처를 보여 줄 수 있어요. 품질은 문서 쪼개기(청킹)와 검색 정확도에 크게 좌우돼요.', 'Retrieve documents relevant to the question, put them in the prompt, and have the LLM answer from them.', 'Brings in fresh or private knowledge without retraining and enables citations; quality depends heavily on chunking and retrieval accuracy.', sRAG()),
     item('ai-train', 'LLM 학습 단계', 'How LLMs are trained', '방대한 글로 다음 토큰 예측을 배우는 사전학습, 지시를 따르게 하는 미세조정, 더 나은 답을 고르는 선호 학습을 거쳐요.', '사전학습이 비용의 대부분이에요. 회사에서는 보통 처음부터 학습하지 않고 프롬프트, RAG, 미세조정 순서로 검토해요.', 'Pretraining on vast text to predict the next token, instruction tuning to follow requests, and preference tuning to favour better answers.', 'Pretraining is most of the cost; companies usually try prompting, then RAG, then fine-tuning rather than training from scratch.', sTrain())
-  ])
-]);
+  ].concat(XT.add['ai-llm'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .ai-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .ai-p .in{font-family:inherit;font-size:.72em;font-weight:700;line-height:1.25;text-align:center}

@@ -236,6 +236,7 @@ window.CZ_CSS = `
 .cz-pill{border-radius:2em;display:grid!important;place-items:center}
 .cz-pill .in{font-size:.68em;font-weight:700;white-space:nowrap}
 .cz-ar{height:.14em;background:var(--ink-2);border-color:var(--ink-2)}
+.cz .cz-ar.r,.cz .cz-ar.l{border-radius:0;border-width:0;box-shadow:none}
 .cz-ar::after{content:"";position:absolute;top:50%;width:.55em;height:.55em;border-style:solid;border-color:inherit;border-width:.14em .14em 0 0;margin-top:-.29em}
 .cz-ar.r::after{right:0;transform:rotate(45deg)}
 .cz-ar.l::after{left:0;transform:rotate(-135deg)}
