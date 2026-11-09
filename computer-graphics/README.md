@@ -1,0 +1,106 @@
+# 컴퓨터 그래픽스 · Computer graphics
+
+> [!NOTE]
+> [페이지 바로가기 · Open the atlas](https://starrykss.github.io/CS_Study/computer-graphics/) · [← 통합 포털 · Portal](https://starrykss.github.io/CS_Study/) · [← 저장소 처음으로](../README.md)
+
+래스터와 벡터, 색 공간과 감마, 변환 행렬과 MVP·원근 투영·쿼터니언에서 시작해 선·삼각형 래스터화, Z-버퍼, 안티앨리어싱, 텍스처와 밉맵, 램버트·퐁 조명과 셰이딩, 노멀 맵·그림자·PBR, GPU 파이프라인과 셰이더·컬링·V-Sync, 그리고 레이 트레이싱·BVH·베지어 곡선까지. 게임과 3D가 화면에 그려지는 과정을 직접 보여줘요.
+
+Raster and vector, color spaces and gamma, transformation matrices, MVP, perspective and quaternions; line and triangle rasterization, the Z-buffer, anti-aliasing, textures and mipmaps; Lambert and Phong lighting and shading, normal maps, shadows and PBR; the GPU pipeline, shaders, culling and V-Sync; then ray tracing, BVHs and Bézier curves. Watch how games and 3D reach the screen.
+
+**5개 주제 · 25개 개념** — 모든 개념에 반복 재생되는 모션 예시가 있어요. 아래 표는 페이지 내용을 글로 옮긴 거예요.
+
+## 목차 · Contents
+
+- [좌표와 변환 · Coordinates and transforms](#gx-coord) (6)
+- [래스터화 · Rasterization](#gx-rast) (6)
+- [조명과 셰이딩 · Lighting and shading](#gx-light) (6)
+- [GPU 파이프라인 · The GPU pipeline](#gx-gpu) (4)
+- [고급 렌더링 · Advanced rendering](#gx-adv) (3)
+
+<a id="gx-coord"></a>
+
+## 좌표와 변환 · Coordinates and transforms
+
+점을 움직이고 3D를 2D 화면으로 옮기는 수학이에요.  
+*The math that moves points and flattens 3D onto a 2D screen.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **래스터와 벡터**<br><sub>Raster and vector</sub> | 래스터 그래픽은 픽셀마다 색을, 벡터 그래픽은 도형을 수식으로 저장해요. 확대하면 래스터는 계단이 보이고 벡터는 매끈해요.<br><sub>Raster graphics store a color per pixel; vector graphics store shapes as math. Zoom in and rasters show stairs while vectors stay smooth.</sub> | 사진·영상은 래스터(JPEG, PNG, WebP), 로고·아이콘·글꼴은 벡터(SVG, 트루타입·OpenType). 벡터는 해상도와 무관하지만 복잡한 사진은 표현하기 어려워요. 화면에 그릴 때는 결국 모든 것을 픽셀로 바꿔요(래스터화).<br><sub>Photos and video are raster (JPEG, PNG, WebP); logos, icons and fonts are vector (SVG, TrueType and OpenType). Vectors are resolution-independent but poor at photographic detail. Everything becomes pixels on its way to the screen (rasterization).</sub> |
+| **색 공간과 감마**<br><sub>Color spaces and gamma</sub> | 화면의 색은 빨강·초록·파랑 빛의 세기로 만들어요(RGB). 사람에게는 색상·채도·명도(HSV, HSL)가 더 직관적이에요.<br><sub>Screen colors mix red, green and blue light (RGB). Hue, saturation and value (HSV, HSL) are more intuitive for people.</sub> | #FF8800 = R 255, G 136, B 0. sRGB 값은 감마로 눌려 있어 값 128이 빛의 약 22%예요. 그래서 조명 계산과 블렌딩은 선형 공간에서 하고 마지막에 감마를 다시 적용해요. 채널당 8비트 = 약 1,677만 색, HDR은 10비트 이상, 알파는 투명도.<br><sub>#FF8800 is R 255, G 136, B 0. sRGB values are gamma-encoded, so 128 is only about 22% of the light; lighting and blending should happen in linear space with gamma reapplied at the end. 8 bits per channel gives about 16.7 million colors; HDR uses 10 or more; alpha carries transparency.</sub> |
+| **변환 행렬**<br><sub>Transformation matrices</sub> | 크기·회전·이동을 행렬로 표현하면 여러 변환을 곱해 하나로 합치고 모든 점에 한 번에 적용할 수 있어요.<br><sub>Express scale, rotation and translation as matrices so several transforms multiply into one and apply to every point at once.</sub> | 회전 [[cos θ, −sin θ], [sin θ, cos θ]]. 이동은 2×2로 안 되어 (x, y, 1) 동차 좌표와 3×3(3D는 4×4) 행렬을 써요. M = T·R·S는 오른쪽부터 적용되고, 순서를 바꾸면 결과가 달라져요. CSS transform, SVG, 게임 엔진의 Transform이 모두 이 방식이에요.<br><sub>Rotation is [[cos θ, −sin θ], [sin θ, cos θ]]. Translation needs homogeneous coordinates (x, y, 1) and a 3×3 matrix (4×4 in 3D). M = T·R·S applies right to left, and changing the order changes the result. CSS transforms, SVG and game-engine Transforms all work this way.</sub> |
+| **좌표 변환 파이프라인 (MVP)**<br><sub>The MVP pipeline</sub> | 모델 → 월드 → 카메라 → 클립 → 화면 좌표로 차례로 바꿔요. 모델·뷰·투영 행렬 셋을 곱해 정점마다 한 번에 적용해요.<br><sub>Points travel model → world → camera → clip → screen space. The model, view and projection matrices multiply into one product applied per vertex.</sub> | 모델 행렬은 물체를 장면에 배치, 뷰 행렬은 카메라 기준으로, 투영 행렬은 원근을 담아요. w로 나눈 NDC(−1~1) 밖은 잘라내고 뷰포트 변환으로 픽셀 좌표가 돼요. 정점 셰이더: gl\_Position = P · V · M · 정점.<br><sub>The model matrix places an object in the scene, the view matrix re-expresses it relative to the camera, and the projection matrix adds perspective. After dividing by w, anything outside NDC (−1 to 1) is clipped and the viewport transform yields pixels. Vertex shader: gl\_Position = P · V · M · vertex.</sub> |
+| **원근 투영**<br><sub>Perspective projection</sub> | 먼 물체일수록 작게 보이도록 좌표를 거리(z)로 나눠요. near·far 평면 사이의 절두체만 그려요.<br><sub>Divide coordinates by distance (z) so farther things look smaller; only the frustum between the near and far planes is drawn.</sub> | y' = y · n / z: 두 배 멀면 절반 크기. GPU는 투영 행렬로 w에 z를 담고 x/w, y/w로 나눠요(원근 나눗셈). 시야각(FOV)이 넓을수록 왜곡이 커져요. 평행(직교) 투영은 나누지 않아 크기가 일정해 CAD·2D UI·전략 게임에 써요.<br><sub>y' = y · n / z: twice as far means half the size. The GPU stores z in w via the projection matrix and divides x/w and y/w (the perspective divide). A wider field of view distorts more. Orthographic projection skips the divide and keeps sizes constant, suiting CAD, 2D UI and strategy games.</sub> |
+| **회전 보간과 쿼터니언**<br><sub>Rotation interpolation and quaternions</sub> | 두 방향 사이를 부드럽게 돌리려면 각도를 고르게 나누는 slerp를 써요. 3D 회전은 쿼터니언으로 저장해 짐벌 락을 피해요.<br><sub>To turn smoothly between two orientations, use slerp, which splits the angle evenly. Store 3D rotations as quaternions to avoid gimbal lock.</sub> | 끝점을 직선으로 섞는 lerp는 가운데가 빨라지는 등 속도가 고르지 않아요. 오일러 각(x·y·z 회전)은 두 축이 겹치면 한 방향의 자유를 잃어요(짐벌 락). 쿼터니언은 숫자 4개로 회전을 표현하고 합성·보간이 안정적이라 유니티·언리얼 Transform과 애니메이션 블렌딩에 써요.<br><sub>Lerping the endpoints moves unevenly, rushing through the middle. Euler angles (x, y, z rotations) lose a degree of freedom when two axes line up (gimbal lock). Quaternions encode a rotation in four numbers that compose and interpolate stably, which is why Unity and Unreal transforms and animation blending use them.</sub> |
+
+<a id="gx-rast"></a>
+
+## 래스터화 · Rasterization
+
+도형을 픽셀로 바꾸고 표면에 이미지를 입히는 과정이에요.  
+*Turning shapes into pixels and wrapping images onto surfaces.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **선 그리기 (브레젠험)**<br><sub>Line drawing (Bresenham)</sub> | 열마다 직선에 가장 가까운 픽셀을 골라 선을 그려요. 오차를 누적해 정수 덧셈만으로 판단해요.<br><sub>Draw a line by choosing, in each column, the pixel nearest the true line, deciding with an accumulated error and integer additions only.</sub> | (0, 0) → (12, 5): x를 한 칸씩 늘리며 오차에 2·dy를 더하고, 0을 넘으면 y도 한 칸 올리고 2·dx를 빼요. 1962년 플로터용으로 만들어져 지금도 임베디드·픽셀 아트에 써요. 부드러운 선은 우(Wu)의 안티앨리어싱 선, GPU는 삼각형처럼 픽셀 단위로 판정해요.<br><sub>For (0, 0) → (12, 5), step x by one and add 2·dy to the error; when it passes zero, step y and subtract 2·dx. Designed in 1962 for plotters, it still serves embedded displays and pixel art. Smooth lines use Wu’s antialiased variant; GPUs test pixels as they do for triangles.</sub> |
+| **삼각형 래스터화**<br><sub>Triangle rasterization</sub> | 픽셀 중심이 삼각형의 세 변 모두의 안쪽에 있으면 칠해요. 무게중심 좌표로 꼭짓점 값(색, UV, 깊이)을 섞어요.<br><sub>Fill a pixel when its center lies inside all three edges of the triangle, blending vertex values (color, UV, depth) with barycentric weights.</sub> | 변 함수 E(p) = (b − a) × (p − a)의 부호로 안쪽을 판정해 감싸는 사각형 안의 픽셀을 검사해요. 무게중심 좌표 w₀ + w₁ + w₂ = 1로 보간. 맞닿은 변은 top-left 규칙으로 한 번만 칠해요. 모든 3D 모델이 삼각형으로 쪼개지는 이유가 이 단순함이에요.<br><sub>The sign of the edge function E(p) = (b − a) × (p − a) tells inside from outside for each pixel in the bounding box. Barycentric weights with w₀ + w₁ + w₂ = 1 drive interpolation, and the top-left rule fills shared edges once. This simplicity is why every 3D model is cut into triangles.</sub> |
+| **Z-버퍼 (깊이 테스트)**<br><sub>The Z-buffer</sub> | 픽셀마다 지금까지 그린 가장 가까운 깊이를 기억해, 더 가까울 때만 색을 덮어써요. 그리는 순서와 상관없이 앞의 물체가 보여요.<br><sub>Each pixel remembers the nearest depth drawn so far and is overwritten only by something nearer, so front objects win in any draw order.</sub> | 깊이 버퍼는 보통 픽셀당 24~32비트. near가 너무 작으면 먼 곳의 정밀도가 떨어져 면이 깜빡이는 z-파이팅이 생겨요(역Z로 완화). 반투명 물체는 깊이 버퍼만으로 안 되어 뒤에서 앞으로 정렬해 그려요.<br><sub>Depth buffers typically hold 24–32 bits per pixel. A tiny near plane wastes precision far away, causing flickering z-fighting (reversed-Z helps). Translucent objects still need back-to-front sorting because a depth buffer alone can’t blend them.</sub> |
+| **안티앨리어싱**<br><sub>Anti-aliasing</sub> | 픽셀 하나에 점 하나만 보면 경계가 계단처럼 보여요. 여러 지점을 샘플링해 덮인 비율만큼 색을 섞으면 부드러워요.<br><sub>One sample per pixel gives stair-stepped edges; sampling several points and blending by coverage smooths them.</sub> | SSAA는 모든 샘플에서 색을 계산(비쌈), MSAA는 덮임만 여러 번 검사하고 색은 한 번, FXAA·SMAA·TAA는 다 그린 뒤 화면을 보고 경계를 다듬어요. 원인은 신호 처리의 앨리어싱(표본화 부족)과 같아요. DLSS·FSR 같은 업스케일러도 같은 문제를 다뤄요.<br><sub>SSAA shades every sample (costly), MSAA tests coverage several times but shades once, and FXAA, SMAA and TAA clean edges after the frame is drawn. The root cause is the same aliasing as in signal processing (undersampling). Upscalers such as DLSS and FSR tackle the same problem.</sub> |
+| **텍스처 매핑**<br><sub>Texture mapping</sub> | 꼭짓점마다 이미지의 좌표(UV)를 붙이고, 래스터화하며 보간한 UV로 픽셀마다 이미지의 색(텍셀)을 읽어 표면에 입혀요.<br><sub>Attach image coordinates (UVs) to each vertex; rasterization interpolates them and each pixel reads the image color (texel) there, wrapping the image onto the surface.</sub> | UV는 0~1 범위, 넘으면 반복(repeat)·끝값 유지(clamp)·거울 반복. 원근에서는 1/z로 보정한 보간이 필요해요. 여러 이미지를 한 장에 모은 텍스처 아틀라스로 드로우 콜을 줄여요. 3D 모델링 툴의 UV 펼치기가 이 좌표를 만드는 작업이에요.<br><sub>UVs run from 0 to 1; outside that they repeat, clamp or mirror. Perspective requires interpolation corrected by 1/z. Texture atlases pack many images into one to save draw calls, and UV unwrapping in modeling tools is how these coordinates get made.</sub> |
+| **밉맵과 텍스처 필터링**<br><sub>Mipmaps and texture filtering</sub> | 텍스처를 반씩 줄인 사본을 미리 만들어 두고, 멀리 있어 작게 보이는 곳에는 작은 사본을 써서 깨짐과 반짝임을 막아요.<br><sub>Precompute half-size copies of a texture and sample the small ones where a surface is far away, preventing breakup and shimmering.</sub> | 밉맵 전체는 원본의 약 1/3을 더 써요. 쌍선형(이웃 4텍셀), 삼선형(두 밉 단계 사이도 보간), 비스듬한 면에는 비등방성 필터링(16×). 밉맵이 없으면 먼 바닥에 모아레와 깜빡임이 생기고, 캐시 효율도 나빠져요.<br><sub>A full mip chain costs about a third more memory. Bilinear filtering uses four neighbors, trilinear also blends between two mip levels, and anisotropic filtering (16×) handles oblique surfaces. Without mipmaps, distant floors show moiré and flicker and the cache suffers.</sub> |
+
+<a id="gx-light"></a>
+
+## 조명과 셰이딩 · Lighting and shading
+
+빛과 표면의 관계를 계산해 입체감과 재질을 만들어요.  
+*Computing how light meets surfaces to create depth and material.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **확산 반사 (램버트)**<br><sub>Diffuse reflection (Lambert)</sub> | 표면의 밝기는 빛이 들어오는 각도의 코사인, 즉 법선 N과 빛 방향 L의 내적에 비례해요. 보는 방향과 상관없는 무광 표면이에요.<br><sub>A surface’s brightness follows the cosine of the light’s angle, the dot product of the normal N and the light direction L; matte surfaces look the same from any viewpoint.</sub> | 밝기 = max(0, N · L): 수직이면 1, 60°면 0.5, 90° 이상이면 0. 그림자 쪽이 새카맣지 않도록 주변광(ambient)을 조금 더해요. 종이·분필·흙 같은 무광 재질의 기본이고, 모든 조명 모델의 출발점이에요.<br><sub>Brightness = max(0, N · L): 1 straight on, 0.5 at 60°, 0 at 90° or beyond. A little ambient light keeps the far side from going black. It models matte materials such as paper, chalk and soil and starts every lighting model.</sub> |
+| **반사광 (퐁 모델)**<br><sub>Specular light (Phong)</sub> | 반사 방향 R이 눈의 방향 V와 가까울수록 밝은 하이라이트가 생겨요. 지수 n으로 재질의 매끈함을 조절해요.<br><sub>A bright highlight appears where the reflection direction R lines up with the view direction V; the exponent n sets how glossy the surface is.</sub> | 반사광 = (R · V)ⁿ, 블린-퐁은 중간 벡터 H로 (N · H)ⁿ. n이 클수록 작고 날카로운 하이라이트. 주변광 + 확산 + 반사광 = 퐁 반사 모델(1975)로, 오랫동안 실시간 그래픽의 표준이었고 지금은 물리 기반(PBR)으로 넘어갔어요.<br><sub>Specular = (R · V)ⁿ, or (N · H)ⁿ with the halfway vector H in Blinn–Phong. Larger n gives a smaller, sharper highlight. Ambient + diffuse + specular makes the Phong model (1975), long the real-time standard and now largely replaced by physically based rendering.</sub> |
+| **플랫·고러드·퐁 셰이딩**<br><sub>Flat, Gouraud and Phong shading</sub> | 조명을 면마다, 꼭짓점마다, 픽셀마다 계산하느냐의 차이예요. 픽셀 단위일수록 매끈하고 정확하지만 계산이 많아요.<br><sub>Light once per face, once per vertex, or once per pixel: the finer the grain, the smoother and more accurate, and the more work.</sub> | 플랫: 면마다 색 하나 → 각짐. 고러드: 꼭짓점에서 계산해 색을 보간 → 매끈하지만 하이라이트가 뭉개지거나 사라짐. 퐁 셰이딩: 법선을 보간해 픽셀마다 계산 → 정확. 지금 GPU는 거의 모두 픽셀 단위로 해요(퐁 반사 모델과 퐁 셰이딩은 다른 개념).<br><sub>Flat shading gives one color per face, so it looks faceted. Gouraud lights the vertices and interpolates colors: smooth, but highlights smear or vanish. Phong shading interpolates normals and lights every pixel, which is accurate. Modern GPUs light almost everything per pixel (Phong shading is distinct from the Phong reflection model).</sub> |
+| **노멀 매핑**<br><sub>Normal mapping</sub> | 기하는 그대로 두고, 픽셀마다 법선 방향만 이미지(노멀 맵)에서 읽어 조명을 계산해 세밀한 요철을 흉내 내요.<br><sub>Keep the geometry flat but read a per-pixel normal from an image (a normal map) for lighting, faking fine bumps.</sub> | 노멀 맵은 법선 xyz를 RGB로 저장해 파르스름해요. 수백만 폴리곤 조각 모델에서 구워(bake) 저폴리 모델에 입혀요. 빛을 옮기면 음영도 따라 움직여 진짜 요철처럼 보이지만 윤곽은 평평해요 → 높이가 필요하면 시차 매핑이나 테셀레이션.<br><sub>Normal maps store normal xyz as RGB, which is why they look bluish. They are baked from million-polygon sculpts onto low-poly models. Shading follows a moving light like real bumps, yet silhouettes stay flat; parallax mapping or tessellation adds real height.</sub> |
+| **그림자 매핑**<br><sub>Shadow mapping</sub> | 먼저 빛의 위치에서 장면의 깊이를 렌더해 두고, 화면을 그릴 때 각 점의 빛까지 거리가 그 깊이보다 멀면 그림자로 처리해요.<br><sub>Render depth from the light’s position first; while drawing the camera view, any point farther from the light than that depth is in shadow.</sub> | 2패스: 빛 시점 깊이 맵 → 비교. 정밀도 오차로 생기는 줄무늬(shadow acne)는 바이어스로, 각진 경계는 PCF로 부드럽게, 넓은 야외는 거리별로 나눈 캐스케이드 섀도 맵(CSM)을 써요. 레이 트레이싱 그림자는 이런 문제 없이 정확해요.<br><sub>Two passes: a depth map from the light, then the comparison. Precision stripes (shadow acne) need a bias, PCF softens jagged edges, and large outdoor scenes split the view into cascaded shadow maps. Ray-traced shadows avoid these problems at a higher cost.</sub> |
+| **물리 기반 렌더링 (PBR)**<br><sub>Physically based rendering</sub> | 색·금속성·거칠기 같은 물리적 재질 값으로, 에너지 보존과 프레넬 효과를 지키며 조명을 계산해요. 어떤 조명에서도 그럴듯해 보여요.<br><sub>Describe materials with physical values such as color, metalness and roughness, and light them with energy conservation and Fresnel; they then look right under any lighting.</sub> | 비금속은 확산 색 + 약한 흰 반사(약 4%), 금속은 확산이 없고 반사가 금속의 색을 띠어요. 거칠수록 하이라이트가 넓고 어두워지고(빛의 총량 보존), 비스듬히 볼수록 반사가 강해져요(프레넬). 언리얼·유니티·블렌더·glTF의 표준이에요(GGX 미세면 모델).<br><sub>Dielectrics have diffuse color plus a weak white reflection (~4%); metals have no diffuse and tint their reflections. Rougher surfaces spread highlights wider and dimmer (energy conservation), and grazing angles reflect more (Fresnel). It is the standard in Unreal, Unity, Blender and glTF (the GGX microfacet model).</sub> |
+
+<a id="gx-gpu"></a>
+
+## GPU 파이프라인 · The GPU pipeline
+
+그래픽 카드가 한 프레임을 그리는 흐름과 성능의 핵심이에요.  
+*How a graphics card draws a frame, and what makes it fast.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **그래픽스 파이프라인**<br><sub>The graphics pipeline</sub> | 정점 셰이더 → 조립·클리핑 → 래스터화 → 프래그먼트 셰이더 → 깊이·블렌딩 → 프레임 버퍼 순서로 한 프레임을 그려요. 셰이더 단계만 우리가 프로그래밍해요.<br><sub>A frame flows through vertex shader → assembly and clipping → rasterization → fragment shader → depth and blending → framebuffer; only the shader stages are yours to program.</sub> | 정점 3개 → 삼각형 1개 → 픽셀 조각 수백~수천 개로 데이터가 불어나요. 셰이더 언어: GLSL, HLSL, WGSL, Metal Shading Language. API: OpenGL, Vulkan, DirectX 12, Metal, WebGPU. 최근엔 메시 셰이더처럼 앞단도 더 프로그래밍 가능해지고 있어요.<br><sub>Three vertices become one triangle and then hundreds or thousands of fragments. Shading languages: GLSL, HLSL, WGSL, Metal Shading Language. APIs: OpenGL, Vulkan, DirectX 12, Metal, WebGPU. Newer mesh shaders make the front of the pipeline programmable too.</sub> |
+| **셰이더와 GPU 병렬성**<br><sub>Shaders and GPU parallelism</sub> | 셰이더는 픽셀(또는 정점) 하나를 처리하는 작은 프로그램이고, GPU는 같은 프로그램을 수천 개 코어에서 동시에 돌려요.<br><sub>A shader is a tiny program for one pixel (or vertex), and the GPU runs it on thousands of cores at once.</sub> | 32개(엔비디아 워프)나 32·64개(AMD 웨이브)씩 묶어 같은 명령을 함께 실행(SIMT). 한 묶음 안에서 if 갈래가 나뉘면 양쪽을 차례로 실행해 느려져요(분기 발산). 1080p 한 프레임에 약 200만 픽셀. 같은 구조로 딥러닝·과학 계산도 해요(CUDA, 컴퓨트 셰이더).<br><sub>Threads are grouped into warps of 32 (NVIDIA) or waves of 32 or 64 (AMD) that execute each instruction together (SIMT). If threads in a group take different branches, both paths run in turn (divergence). A 1080p frame has about two million pixels. The same design powers deep learning and science (CUDA, compute shaders).</sub> |
+| **컬링과 드로우 콜**<br><sub>Culling and draw calls</sub> | 보이지 않을 것은 아예 그리지 않아요: 시야 밖(절두체 컬링), 등진 면(후면 컬링), 가려진 물체(가림 컬링).<br><sub>The fastest draw is the one you skip: objects outside the view (frustum culling), faces turned away (backface culling) and hidden objects (occlusion culling).</sub> | 후면 컬링은 정점의 감기는 순서(시계·반시계)로 판단해 삼각형을 약 절반 줄여요. CPU가 GPU에 그리기를 요청하는 드로우 콜마다 비용이 있어서, 같은 물체는 인스턴싱으로 한 번에, 재질이 같은 것은 배칭으로 묶어요. 거리별로 단순한 모델로 바꾸는 LOD도 함께 써요.<br><sub>Backface culling uses vertex winding order (clockwise or not) and drops about half the triangles. Every draw call from CPU to GPU has overhead, so identical objects are instanced into one call and same-material objects are batched. Level of detail (LOD) swaps in simpler models at a distance.</sub> |
+| **더블 버퍼링과 수직 동기화**<br><sub>Double buffering and V-Sync</sub> | 보여 주는 버퍼와 그리는 버퍼를 따로 두고, 모니터가 화면을 다 그린 사이(수직 동기)에만 바꿔 화면 찢어짐을 막아요.<br><sub>Keep a buffer on display and another being drawn, and swap only between refreshes (vertical sync) so the image never tears.</sub> | 60 Hz면 16.7 ms마다 갱신. 프레임이 늦으면 다음 주기까지 기다려 끊김(stutter)이 생겨요. 트리플 버퍼링은 대기를 줄이고, G-SYNC·FreeSync(가변 주사율)는 모니터가 GPU 속도에 맞춰요. 120 fps면 프레임당 8.3 ms 안에 모든 계산을 끝내야 해요.<br><sub>At 60 Hz the screen refreshes every 16.7 ms; a late frame waits for the next cycle and stutters. Triple buffering reduces waiting, and G-SYNC and FreeSync (variable refresh) let the monitor follow the GPU. At 120 fps all the work must fit in 8.3 ms per frame.</sub> |
+
+<a id="gx-adv"></a>
+
+## 고급 렌더링 · Advanced rendering
+
+빛의 경로를 직접 따라가고 곡선을 다루는 기법이에요.  
+*Following light paths directly and working with curves.*
+
+| 개념 | 설명 | 실무 팁 |
+| --- | --- | --- |
+| **레이 트레이싱**<br><sub>Ray tracing</sub> | 픽셀마다 카메라에서 광선을 쏘아 부딪힌 곳에서 그림자·반사·굴절 광선을 다시 쏘며 색을 모아요. 정확한 반사와 그림자를 얻어요.<br><sub>Shoot a ray from the camera through each pixel and, at every hit, spawn shadow, reflection and refraction rays to gather color, yielding accurate reflections and shadows.</sub> | 래스터화가 “삼각형마다 어느 픽셀?”이라면 레이 트레이싱은 “픽셀마다 어느 물체?”. 경로 추적은 무작위 광선 수백 개로 간접광까지 계산하고 노이즈는 AI 디노이저로 없애요. 영화(픽사), 건축 시각화, RTX 하드웨어 가속을 받는 게임에 써요.<br><sub>Rasterization asks “which pixels does this triangle cover?”; ray tracing asks “which object does this pixel see?”. Path tracing fires hundreds of random rays to capture indirect light and cleans the noise with AI denoisers. Used for film (Pixar), architectural visualization and games on RTX-accelerated hardware.</sub> |
+| **BVH 가속 구조**<br><sub>BVH acceleration</sub> | 물체를 상자로 묶고 상자를 다시 묶은 트리를 만들어, 광선이 지나지 않는 상자 안은 통째로 건너뛰어요.<br><sub>Build a tree of boxes around objects and boxes around boxes; a ray skips any box it misses, along with everything inside.</sub> | 모든 물체를 검사하면 O(n), BVH로는 대략 O(log n). 상자와 광선의 교차 검사는 아주 싸요. 표면적 휴리스틱(SAH)으로 좋은 분할을 고르고, 움직이는 장면은 매 프레임 다시 맞춰요(refit). 레이 트레이싱 하드웨어, 물리 엔진 충돌 감지, 게임 AI 시야 판정에 써요.<br><sub>Testing every object is O(n); a BVH brings it near O(log n), and ray–box tests are cheap. The surface area heuristic (SAH) chooses good splits, and animated scenes refit the tree each frame. Ray-tracing hardware, physics collision detection and game AI line-of-sight all rely on it.</sub> |
+| **베지어 곡선**<br><sub>Bézier curves</sub> | 조절점 몇 개로 매끈한 곡선을 정의해요. 이웃한 점을 같은 비율로 나누는 걸 반복하면 곡선 위의 점이 나와요(드 카스텔조).<br><sub>A few control points define a smooth curve; repeatedly splitting neighboring points at the same ratio lands on the curve (de Casteljau).</sub> | 3차 베지어 B(t) = (1−t)³P₀ + 3(1−t)²tP₁ + 3(1−t)t²P₂ + t³P₃. 곡선은 P₀에서 시작해 P₃에서 끝나고 P₁·P₂ 쪽으로 끌려가요. 글꼴 윤곽(트루타입은 2차, CFF는 3차), SVG path, CSS cubic-bezier() 애니메이션 곡선, 디자인 툴의 펜 도구가 모두 베지어예요.<br><sub>A cubic Bézier is B(t) = (1−t)³P₀ + 3(1−t)²tP₁ + 3(1−t)t²P₂ + t³P₃: it starts at P₀, ends at P₃ and is pulled toward P₁ and P₂. Font outlines (quadratic in TrueType, cubic in CFF), SVG paths, CSS cubic-bezier() easing and the pen tool in design apps are all Bézier curves.</sub> |
+
+## 파일 · Files
+
+| 파일 | 내용 |
+| --- | --- |
+| `index.html` | 과목 페이지 (주제 이동, 검색, 한/영 전환, 다크 모드, 상세 보기) |
+| `content.js` | 이 과목의 개념 설명과 모션 장면 |
+
+공통 엔진과 스타일은 [`../assets`](../assets)에 있어요.
+
+---
+
+Made by [@starrykss](https://github.com/starrykss)
