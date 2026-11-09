@@ -268,7 +268,7 @@
     $('#d-x').setAttribute('aria-label', t.close);
     $('#d-p').setAttribute('aria-label', t.prev);
     $('#d-n').setAttribute('aria-label', t.next);
-    $('#d-ul').textContent = t.when;
+    $('#d-ul').textContent = document.body.dataset[lang === 'en' ? 'whenEn' : 'whenKo'] || t.when;
     lg.querySelector('span').textContent = t.langTxt;
     lg.setAttribute('aria-label', t.lang);
     lg.title = t.lang;
