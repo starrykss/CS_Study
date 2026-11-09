@@ -13,7 +13,7 @@
 
 컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 31개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1121" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1121-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1137" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1137-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 30개와 UI/UX 도감, 개념 1121개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 30개와 UI/UX 도감, 개념 1137개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -63,7 +63,7 @@
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
-| **디지털 논리**<br><sub>Digital logic</sub> | 진법, 2의 보수, 부동소수점, 인코딩, 게이트, 가산기, 플립플롭 | 14 | [열기](https://starrykss.github.io/CS_Study/digital-logic/) | [`digital-logic/`](./digital-logic) |
+| **디지털 논리**<br><sub>Digital logic</sub> | 진법, 2의 보수, 부동소수점, 인코딩, 게이트, 가산기, 플립플롭 | 30 | [열기](https://starrykss.github.io/CS_Study/digital-logic/) | [`digital-logic/`](./digital-logic) |
 | **컴퓨터 구조**<br><sub>Computer architecture</sub> | 명령어 사이클, 메모리 계층, 캐시, 파이프라인, 분기 예측, 멀티코어 | 19 | [열기](https://starrykss.github.io/CS_Study/computer-architecture/) | [`computer-architecture/`](./computer-architecture) |
 | **운영체제**<br><sub>Operating systems</sub> | 프로세스, 스레드, 스케줄링, 동기화, 교착 상태, 가상 메모리 | 23 | [열기](https://starrykss.github.io/CS_Study/operating-systems/) | [`operating-systems/`](./operating-systems) |
 | **시스템 프로그래밍**<br><sub>Systems programming</sub> | 포인터·메모리 관리, 링킹과 빌드, 프로세스·시그널·파일 디스크립터, epoll·원자적 연산 | 25 | [열기](https://starrykss.github.io/CS_Study/systems-programming/) | [`systems-programming/`](./systems-programming) |
