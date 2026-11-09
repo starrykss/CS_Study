@@ -455,6 +455,320 @@ function sBrooks() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'sfx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono sfx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono sfx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c sfx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono sfx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c sfx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'sfx-s sfx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono sfx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono sfx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono sfx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono sfx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono sfx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'sfx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'sfx-xs', 5));
+
+
+const CSSX = `
+.sfx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.sfx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.sfx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.sfx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.sfx-r .in{color:var(--danger);font-weight:800}
+.sfx-g .in{color:var(--ok);font-weight:800}
+.sfx-a .in{color:var(--accent);font-weight:800}
+.sfx-w .in{color:var(--warn);font-weight:800}
+.sfx-c .in{font-size:.6em;font-weight:700}
+.sfx-c2 .in{font-size:.5em;font-weight:700}
+.sfx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.sfx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'sfx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : 0 }));
+const oval = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 22, st, { r: h / 2, cls: 'cz-c sfx-c2', html: label, css: `border:.1em solid var(--${color})`, off: o.off });
+const actor = (S, k, x, y, label, st) => { ring(S, k + 'h', x, y, .55, 'ink-2', st, { w: .1 }); seg(S, k + 'b', [x, y + .55], [x, y + 2], st, 'ink-2', .1); seg(S, k + 'a', [x - .8, y + 1.1], [x + .8, y + 1.1], st, 'ink-2', .1); seg(S, k + 'l1', [x, y + 2], [x - .6, y + 2.9], st, 'ink-2', .1); seg(S, k + 'l2', [x, y + 2], [x + .6, y + 2.9], st, 'ink-2', .1); T(S, k + 't', x - 2, y + 3.05, label, 'cz-tc sfx-tiny', st, { w: 4 }); };
+
+/* ================= process ================= */
+function sReq() {
+  const S = scene({ id: 'se-req', steps: 5, per: 1.6 });
+  const R = [[['R1 비밀번호를 재설정할 수 있다', 'R1 users can reset their password'], 'F'], [['R2 주문 내역을 CSV로 내보낸다', 'R2 export order history as CSV'], 'F'], [['R3 빠르게 로딩돼야 한다', 'R3 it should load fast'], 'NF'], [['R4 개인정보는 암호화해 저장한다', 'R4 personal data is stored encrypted'], 'NF'], [['R5 연중 99.9% 가용', 'R5 99.9% availability per year'], 'NF'], [['R6 관리자는 사용자를 정지할 수 있다', 'R6 admins can suspend users'], 'F']];
+  T(S, 'rt', 1, .2, ['이해관계자에게서 모은 요구사항', 'requirements gathered from stakeholders'], 'sfx-xs sfx-a', 1);
+  R.forEach(([t, f], i) => { const y = 1.2 + i * 1.5; box2(S, 'r' + i, 1, y, 13.4, 1.3, t, 'line', 1, { pct: 40 }); box2(S, 'f' + i, 14.8, y, 3, 1.3, f === 'F' ? ['기능', 'functional'] : ['비기능', 'non-func.'], f === 'F' ? 'accent' : 'warn', 2, { pct: 35 }); });
+  tsets(S, 'r2', [[3, 'danger', 30]]);
+  T(S, 'vt', 19.4, 1.2, ['R3 “빠르게” → 테스트할 수 없어요 ✗', 'R3 “fast” can’t be tested ✗'], 'sfx-xs sfx-r', 3);
+  box2(S, 'vg', 19.4, 2.4, 11.6, 1.5, ['3G에서 첫 화면 p95 ≤ 2초 ✓', 'first screen p95 ≤ 2 s on 3G ✓'], 'ok', 3, { pct: 35 });
+  T(S, 'vn', 19.4, 4.2, ['측정 가능·검증 가능하게 다시 써요', 'rewrite it measurable and verifiable'], 'sfx-xs', 3);
+  [['Must', 'R1 R4', 'danger'], ['Should', 'R3 R5', 'warn'], ['Could', 'R2', 'accent'], ["Won't", 'R6', 'line']].forEach(([m, r, c], i) => { box2(S, 'm' + i, 19.4 + i * 2.95, 6, 2.8, 1.3, m, c, 4, { pct: 35 }); T(S, 'mr' + i, 19.4 + i * 2.95, 7.5, r, 'cz-tc cz-mono sfx-tiny', 4, { w: 2.8 }); });
+  T(S, 'mt', 19.4, 5.1, ['MoSCoW 우선순위', 'MoSCoW prioritization'], 'sfx-xs sfx-a', 4);
+  T(S, 'tr', 19.4, 8.6, ['추적 매트릭스: R1 ↔ TC-12, TC-13', 'traceability: R1 ↔ TC-12, TC-13'], 'cz-mono sfx-xs', 4);
+  stepT(S, 'k', 1, 10.6, [['도출: 사용자, 운영, 보안, 법무에게서 필요를 모아요', 'elicit: gather needs from users, operations, security and legal'], ['기능 요구사항(무엇을 하나) vs 비기능 요구사항(얼마나 잘 하나: 성능·보안·가용성)', 'functional (what it does) vs non-functional (how well: performance, security, availability)'], ['좋은 요구사항은 측정할 수 있고 테스트로 확인할 수 있어요', 'good requirements are measurable and testable'], ['우선순위를 정하고, 요구사항과 테스트를 서로 추적해요', 'prioritize, and trace each requirement to its tests']], 'sfx-xs sfx-a');
+  fin(S, 'z', 12.2, [['요구사항 공학: 도출 → 분석 → 명세 → 검증 → 관리', 'requirements engineering: elicit → analyze → specify → validate → manage', 'sfx-xs sfx-a'], ['초기에 잡은 요구사항 오류가 가장 싸요: 출시 후 고치면 수십~수백 배', 'requirement errors are cheapest early; after release they cost tens to hundreds of times more'], ['애자일에선 사용자 스토리와 인수 조건, 비기능은 품질 속성 시나리오로 적어요', 'in agile they become user stories with acceptance criteria; non-functionals become quality scenarios']]);
+  S.cap(1, '요구사항 모으기', 'Gather requirements').cap(2, '기능과 비기능', 'Functional vs non-functional').cap(3, '검증 가능하게 쓰기', 'Make them testable').cap(4, '우선순위와 추적', 'Prioritize and trace').cap(5, '요구사항 공학', 'Requirements engineering');
+  return S;
+}
+function sVmodel() {
+  const S = scene({ id: 'se-vmodel', steps: 5, per: 1.6 });
+  const L = [[['요구사항 분석', 'requirements'], 1, 1.2], [['시스템 설계', 'system design'], 3, 3.6], [['아키텍처 설계', 'architecture'], 5, 6], [['모듈 설계', 'module design'], 7, 8.4]];
+  const R = [[['인수 테스트', 'acceptance test'], 24.5, 1.2], [['시스템 테스트', 'system test'], 22.5, 3.6], [['통합 테스트', 'integration test'], 20.5, 6], [['단위 테스트', 'unit test'], 18.5, 8.4]];
+  L.forEach(([t, x, y], i) => { box2(S, 'l' + i, x, y, 6.5, 1.6, t, 'accent', 1, { pct: 30 }); if (i) seg(S, 'ls' + i, [L[i - 1][1] + 3.25, L[i - 1][2] + 1.65], [x + 3.25, y - .05], 1, 'accent', .1); });
+  box2(S, 'code', 12.75, 10.6, 6.5, 1.6, ['코딩', 'coding'], 'warn', 2, { pct: 35 });
+  seg(S, 'lc', [10.25, 10.05], [14, 10.55], 2, 'accent', .1); seg(S, 'rc', [18, 10.55], [21.75, 10.05], 2, 'ok', .1);
+  R.forEach(([t, x, y], i) => { box2(S, 'r' + i, x, y, 6.5, 1.6, t, 'ok', 2, { pct: 30 }); if (i) seg(S, 'rs' + i, [x + 3.25, y - .05], [R[i - 1][1] + 3.25, R[i - 1][2] + 1.65], 2, 'ok', .1); });
+  L.forEach(([, x, y], i) => { seg(S, 'h' + i, [x + 6.6, y + .8], [R[i][1] - .1, y + .8], 3, 'warn', .07, { dash: 1 }); });
+  [['인수 기준', 'acceptance criteria'], ['시스템 테스트 계획', 'system test plan'], ['통합 테스트 계획', 'integration plan'], ['단위 테스트 설계', 'unit test design']].forEach((t, i) => T(S, 'hl' + i, L[i][1] + 6.8, L[i][2] + .05, t, 'sfx-tiny sfx-w', 3));
+  stepT(S, 'k', 1, 12.8, [['왼쪽 팔: 요구사항에서 세부 설계로 내려가요', 'left arm: descend from requirements to detailed design'], ['바닥에서 코딩한 뒤, 오른쪽 팔로 올라가며 테스트해요', 'code at the bottom, then climb the right arm testing'], ['같은 높이끼리 짝: 각 설계 단계가 그 단계를 검증할 테스트를 미리 정해요', 'levels pair up: each design stage defines the test that will verify it'], ['검증(제품을 올바르게 만들었나) vs 확인(올바른 제품을 만들었나)', 'verification (built it right?) vs validation (built the right thing?)']], 'sfx-xs sfx-a');
+  fin(S, 'z', 14, [['V 모델: 폭포수의 각 단계에 짝이 되는 테스트 단계를 붙인 모델', 'the V-model pairs each waterfall phase with a matching test phase', 'sfx-xs sfx-a'], ['안전이 중요한 분야(자동차 ISO 26262, 의료, 항공)에서 지금도 많이 써요', 'still common in safety-critical fields (automotive ISO 26262, medical, aerospace)'], ['애자일 팀도 스프린트마다 작은 V를 돌고, 테스트 설계를 앞당겨요(시프트 레프트)', 'agile teams run a small V every sprint and move test design earlier (shift left)']]);
+  S.cap(1, '설계로 내려가기', 'Down into design').cap(2, '테스트로 올라가기', 'Up through testing').cap(3, '같은 높이끼리 짝', 'Pair the levels').cap(4, '검증과 확인', 'Verification and validation').cap(5, 'V 모델', 'The V-model');
+  return S;
+}
+
+/* ================= testing ================= */
+function sMutation() {
+  const S = scene({ id: 'se-mutation', steps: 5, per: 1.6 });
+  code(S, 'cd', 1, .8, 14.5, ['function isAdult(age) {', '  return age >= 18;', '}'], [[1, 2]], { hoff: 3 });
+  code(S, 'ts', 1, 6.6, 14.5, ['expect(isAdult(30)).toBe(true);', 'expect(isAdult(5)).toBe(false);'], [], {});
+  code(S, 't3', 1, 10, 14.5, ['expect(isAdult(18)).toBe(true);'], [], { st: 4 });
+  T(S, 'cv', 1, 5.6, ['테스트 통과 ✓ · 커버리지 100% ✓', 'tests pass ✓ · 100% coverage ✓'], 'sfx-xs sfx-g', 1);
+  T(S, 'mt', 17, .2, ['돌연변이(뮤턴트)', 'mutants'], 'sfx-xs sfx-a', 2);
+  const M = [['age > 18', 'danger', 'ok'], ['age <= 18', 'ok', 'ok'], ['return true', 'ok', 'ok']];
+  M.forEach(([m, c3, c4], i) => { const y = 1.2 + i * 1.6; box2(S, 'm' + i, 17, y, 7.6, 1.3, m, 'warn', 2, { pct: 30 }); box2(S, 'r' + i, 25, y, 6, 1.3, i === 0 ? '' : ['죽음 ✓', 'killed ✓'], c3, 3, { pct: 35 }); });
+  T(S, 'r0a', 25, 1.55, ['살아남음 ✗', 'survived ✗'], 'cz-tc sfx-xs sfx-r', 3, { w: 6, off: 4 }); T(S, 'r0b', 25, 1.55, ['죽음 ✓', 'killed ✓'], 'cz-tc sfx-xs sfx-g', 4, { w: 6 }); tsets(S, 'r0', [[4, 'ok', 35]]);
+  T(S, 's3', 17, 6.2, ['점수 = 죽인 뮤턴트 / 전체 = 2/3 (67%)', 'score = killed / total = 2/3 (67%)'], 'sfx-xs sfx-r', 3, { off: 4 }); T(S, 's4', 17, 6.2, ['점수 = 3/3 (100%) ✓', 'score = 3/3 (100%) ✓'], 'sfx-xs sfx-g', 4);
+  T(S, 's3b', 17, 7.2, ['18일 때를 아무도 검사 안 했어요', 'nobody tested the boundary at 18'], 'sfx-xs', 3, { off: 4 }); T(S, 's4b', 17, 7.2, ['경계값 테스트 하나로 잡았어요', 'one boundary test catches it'], 'sfx-xs', 4);
+  stepT(S, 'k', 1, 12.3, [['커버리지 100%: 모든 줄이 실행됐다는 뜻일 뿐, 검사했다는 뜻은 아니에요', '100% coverage means every line ran, not that anything was checked'], ['코드를 일부러 조금씩 망가뜨린 뮤턴트를 만들어요 (>= → >, return true …)', 'make mutants by breaking the code slightly (>= → >, return true …)'], ['뮤턴트마다 테스트를 돌려요: 실패하면 죽음 ✓, 통과하면 살아남음 ✗', 'run the tests per mutant: a failure kills it ✓, a pass means it survived ✗'], ['살아남은 뮤턴트 = 빠진 테스트 · 18을 넣는 테스트로 해결', 'a surviving mutant = a missing test · fixed by testing 18']], 'sfx-xs sfx-a');
+  fin(S, 'z', 13.6, [['뮤테이션 테스트: 테스트가 버그를 정말 잡는지, 버그를 심어 보고 확인해요', 'mutation testing plants bugs to check that your tests really catch them', 'sfx-xs sfx-a'], ['PIT(Java), Stryker(JS·C#), mutmut(Python) · 느려서 핵심 모듈이나 PR 변경분에만 돌려요', 'PIT (Java), Stryker (JS/C#), mutmut (Python) · slow, so run it on core modules or changed code'], ['커버리지는 “안 테스트한 곳”을, 뮤테이션 점수는 “테스트가 약한 곳”을 알려줘요', 'coverage shows what’s untested; mutation score shows where tests are weak']]);
+  S.cap(1, '100% 커버리지', '100% coverage').cap(2, '뮤턴트 만들기', 'Make mutants').cap(3, '살아남은 뮤턴트', 'A survivor').cap(4, '경계값 테스트 추가', 'Add a boundary test').cap(5, '뮤테이션 테스트', 'Mutation testing');
+  return S;
+}
+function sProperty() {
+  const S = scene({ id: 'se-property', steps: 5, per: 1.6 });
+  code(S, 'ex', 1, .8, 16, ['expect(mySort([3, 1, 2])).toEqual([1, 2, 3]);', 'expect(mySort([])).toEqual([]);'], [], { st: 1 });
+  T(S, 'exn', 1, 4.1, ['예시 몇 개는 통과 ✓', 'a few examples pass ✓'], 'sfx-xs sfx-g', 1);
+  code(S, 'pr', 1, 5.2, 16, ['fc.assert(fc.property(fc.array(fc.integer()),', '  xs => mySort(xs).length === xs.length));'], [], { st: 2 });
+  T(S, 'prn', 1, 8.5, ['속성: 어떤 배열이든 정렬해도 길이는 같다', 'property: sorting any array keeps its length'], 'sfx-xs sfx-a', 2);
+  T(S, 'gt', 17.6, .2, ['무작위 입력 100개 생성', '100 random inputs generated'], 'sfx-xs sfx-a', 3);
+  [['#1  []', 'ok'], ['#2  [4]', 'ok'], ['#3  [9, -2]', 'ok'], ['…', 'line'], ['#37 [5, -2, 5, 9, 0]', 'danger']].forEach(([t, c], i) => box2(S, 'g' + i, 17.6, 1.2 + i * 1.4, 10, 1.2, t + (c === 'ok' ? '  ✓' : c === 'danger' ? '  ✗' : ''), c, 3, { pct: 30 }));
+  T(S, 'sh', 17.6, 8.4, ['축소(shrinking)', 'shrinking'], 'sfx-xs sfx-w', 4);
+  ['[5, -2, 5, 9, 0]', '[5, 5, 9]', '[5, 5]', '[0, 0]'].forEach((t, i) => { box2(S, 's' + i, 17.6 + (i % 2) * 7, 9.4 + Math.floor(i / 2) * 1.6, 6, 1.3, t, i === 3 ? 'danger' : 'warn', 4, { pct: 30 }); });
+  T(S, 'bug', 1, 9.6, ['최소 반례 [0, 0] → 중복 값이 사라지는 버그!', 'minimal counterexample [0, 0] → duplicates get dropped!'], 'sfx-xs sfx-r', 4);
+  stepT(S, 'k', 1, 11, [['예시 기반 테스트: 내가 떠올린 입력만 확인해요', 'example-based tests check only inputs you thought of'], ['대신 “항상 성립해야 하는 성질”을 적어요', 'instead, state a property that must always hold'], ['도구가 무작위 입력을 쏟아붓다가 37번째에서 실패를 찾았어요', 'the tool pours in random inputs and fails on case #37'], ['실패한 입력을 줄이고 줄여 가장 단순한 반례를 보여줘요', 'it shrinks the failing input down to the simplest counterexample']], 'sfx-xs sfx-a');
+  fin(S, 'z', 12.6, [['속성 기반 테스트: 입력을 자동 생성해 “모든 입력에 대해” 성질이 지켜지는지 확인해요', 'property-based testing generates inputs to check a property holds for all of them', 'sfx-xs sfx-a'], ['좋은 성질: 왕복(decode(encode(x)) = x), 불변량(길이·합), 기준 구현과 비교, 멱등성', 'good properties: round trips (decode(encode(x)) = x), invariants (length, sum), oracles, idempotence'], ['QuickCheck(Haskell)에서 시작 · Hypothesis(Python), fast-check(JS), jqwik(Java)', 'pioneered by QuickCheck (Haskell) · Hypothesis (Python), fast-check (JS), jqwik (Java)']]);
+  S.cap(1, '예시 기반 테스트', 'Example-based tests').cap(2, '성질을 적어요', 'State a property').cap(3, '무작위 입력으로 공격', 'Attack with random inputs').cap(4, '반례 축소', 'Shrink the counterexample').cap(5, '속성 기반 테스트', 'Property-based testing');
+  return S;
+}
+function sFlaky() {
+  const S = scene({ id: 'se-flaky', steps: 5, per: 1.6 });
+  T(S, 'ht', 1, .2, ['같은 커밋, 같은 테스트를 10번 실행', 'the same commit and test, run 10 times'], 'sfx-xs sfx-a', 1);
+  '✓✓✗✓✓✓✗✓✓✓'.split('').forEach((c, i) => box2(S, 'h' + i, 1 + i * 2.2, 1.2, 1.9, 1.4, c, c === '✓' ? 'ok' : 'danger', 1, { pct: 40 }));
+  T(S, 'hn', 23.4, 1.5, ['20% 실패 → 불안정', '20% failures → flaky'], 'sfx-xs sfx-r', 1);
+  [[['타이밍', 'timing'], ['async가 끝나기 전에 검사', 'asserts before async finishes']], [['실행 순서 의존', 'order dependence'], ['앞 테스트가 상태를 남김', 'a previous test leaves state']], [['시간·난수', 'time & randomness'], ['Date.now(), Math.random()', 'Date.now(), Math.random()']], [['외부 네트워크', 'external network'], ['느린 API, 타임아웃', 'slow APIs, timeouts']]].forEach(([t, d], i) => { box2(S, 'c' + i, 1 + i * 7.6, 3.6, 7.2, 1.4, t, 'warn', 2, { pct: 30 }); T(S, 'cd' + i, 1 + i * 7.6, 5.2, d, 'cz-tc sfx-tiny', 2, { w: 7.2 }); });
+  code(S, 'bad', 1, 6.6, 14.6, ['await sleep(100);', 'expect(job.done).toBe(true);'], [], { st: 3 });
+  code(S, 'good', 16.4, 6.6, 14.6, ['await waitFor(() => job.done);', 'const clock = fakeClock(t0); seed(42);'], [], { st: 3 });
+  T(S, 'bx', 13.6, 6.75, '✗', 'sfx-s sfx-r', 3); T(S, 'gx', 29.9, 6.75, '✓', 'sfx-s sfx-g', 3);
+  stepT(S, 'k', 1, 10.4, [['코드가 그대로인데 결과가 바뀌는 테스트', 'a test whose result changes while the code doesn’t'], ['원인은 대개 넷: 타이밍, 순서 의존, 시간·난수, 외부 의존', 'usually one of four causes: timing, order, time/randomness, external dependencies'], ['고치기: 조건을 기다리고, 상태를 매번 새로, 시계·시드를 주입, 외부는 가짜로', 'fix it: wait for conditions, fresh state each time, inject clocks and seeds, fake externals'], ['격리(quarantine)하고 불안정 비율을 추적 · 무작정 재시도는 문제를 숨겨요', 'quarantine it and track flake rates · blind retries hide the problem']], 'sfx-xs sfx-a');
+  fin(S, 'z', 12, [['불안정한 테스트는 신뢰를 갉아먹어요: “그냥 다시 돌려” 문화가 되면 진짜 실패도 무시해요', 'flaky tests erode trust: once “just rerun it” is the norm, real failures get ignored too', 'sfx-xs sfx-a'], ['Google 조사에서 테스트의 약 16%가 어느 정도 불안정했어요', 'a Google study found about 16% of tests showed some flakiness'], ['테스트는 결정적이어야 해요: 같은 입력, 같은 결과', 'tests must be deterministic: same input, same result']]);
+  S.cap(1, '결과가 들쭉날쭉', 'Results that flip').cap(2, '흔한 원인 넷', 'Four common causes').cap(3, '결정적으로 고치기', 'Make it deterministic').cap(4, '격리하고 추적', 'Quarantine and track').cap(5, '불안정한 테스트', 'Flaky tests');
+  return S;
+}
+function sContractTest() {
+  const S = scene({ id: 'se-contract', steps: 5, per: 1.6 });
+  box2(S, 'cons', 1, 2.4, 7.4, 2.2, ['소비자: 웹 앱', 'consumer: web app'], 'accent', 0, { pct: 30 }); box2(S, 'prov', 23.6, 2.4, 7.4, 2.2, ['제공자: 사용자 API', 'provider: user API'], 'ok', 0, { pct: 30 });
+  seg(S, 'e2e', [8.5, 3.5], [23.5, 3.5], 1, 'danger', .08, { dash: 1, off: 2 }); T(S, 'e2el', 9.6, 2.4, ['E2E: 둘 다 띄워야 · 느리고 불안정', 'E2E: deploy both · slow and flaky'], 'sfx-tiny sfx-r', 1, { off: 2 });
+  rect(S, 'doc', 11.4, 1, 9.2, 5.2, 'warn', 14, 2, { r: .3, css: 'border:.1em solid var(--warn)' }); T(S, 'dt', 11.7, 1.15, 'pact.json', 'cz-mono sfx-xs sfx-w', 2);
+  ['GET /users/1', '→ 200', '{ "id": 1,', '  "name": "Kim" }'].forEach((t, i) => T(S, 'dl' + i, 11.9, 2.2 + i * .9, t, 'cz-mono sfx-xs', 2));
+  tsets(S, 'doc', [[4, 'danger', 14]]);
+  ar(S, 'g', [8.5, 4.2], [11.3, 4.2], 'accent', 2, { h: .1 }); T(S, 'gl', 7.9, 5, ['생성', 'generates'], 'sfx-tiny sfx-a', 2);
+  ar(S, 'v', [20.7, 4.2], [23.5, 4.2], 'ok', 3, { h: .1 }); T(S, 'vl', 20.6, 5, ['검증', 'verifies'], 'sfx-tiny sfx-g', 3);
+  T(S, 'ok', 23.6, 5, ['제공자 CI: 재생 → 일치 ✓', 'provider CI: replay → match ✓'], 'sfx-xs sfx-g', 3, { off: 4 });
+  T(S, 'ch', 23.6, 5, ['name → fullName 변경 ✗', 'name → fullName rename ✗'], 'cz-mono sfx-xs sfx-r', 4); T(S, 'ch2', 23.6, 6, ['can-i-deploy: 배포 차단', 'can-i-deploy: blocked'], 'cz-mono sfx-xs sfx-r', 4);
+  tsets(S, 'prov', [[4, 'danger', 30]]);
+  stepT(S, 'k', 1, 7.6, [['서비스 간 호환성을 E2E로만 확인하면 느리고 깨지기 쉬워요', 'checking compatibility only end-to-end is slow and brittle'], ['소비자 테스트가 가짜 제공자를 상대로 돌며 “내가 기대하는 요청·응답”을 계약 파일로 남겨요', 'consumer tests run against a mock provider and record expected requests and responses as a contract'], ['제공자는 자기 CI에서 계약을 재생해 실제 응답이 맞는지 검증해요', 'the provider replays the contract in its own CI to verify real responses'], ['소비자가 쓰는 필드를 바꾸면 배포 전에 바로 걸려요', 'renaming a field a consumer relies on fails before deployment']], 'sfx-xs sfx-a');
+  fin(S, 'z', 9.4, [['소비자 주도 계약 테스트: 각 서비스를 따로 빠르게 테스트하면서도 연결이 안 깨지게 해요', 'consumer-driven contract tests keep services independently testable without breaking integrations', 'sfx-xs sfx-a'], ['Pact와 Pact Broker, Spring Cloud Contract · OpenAPI 스키마 검증도 비슷한 역할', 'Pact and the Pact Broker, Spring Cloud Contract · OpenAPI schema checks play a similar role'], ['테스트 피라미드에서 단위와 E2E 사이의 빈틈을 메워요', 'fills the gap between unit tests and E2E in the test pyramid']]);
+  S.cap(1, 'E2E만으로는 힘들어요', 'E2E alone hurts').cap(2, '소비자가 계약을 만들어요', 'The consumer writes the contract').cap(3, '제공자가 검증해요', 'The provider verifies it').cap(4, '깨지는 변경을 미리 잡기', 'Catch breaking changes early').cap(5, '계약 테스트', 'Contract testing');
+  return S;
+}
+
+/* ================= modeling ================= */
+function sUsecase() {
+  const S = scene({ id: 'se-usecase', steps: 5, per: 1.6 });
+  frame(S, 'sys', 6.6, .8, 17.8, 12.6, 'ink-3', 1, { w: .1, r: .3 }); T(S, 'syst', 6.9, .95, ['쇼핑몰 시스템', 'shop system'], 'sfx-xs sfx-a', 1);
+  actor(S, 'cu', 3, 3.2, ['고객', 'customer'], 1); actor(S, 'ad', 3, 9.4, ['관리자', 'admin'], 2); actor(S, 'pg', 28, 4, ['결제사', 'payment provider'], 2);
+  const U = [['u1', 9, 2, ['상품 검색', 'search products'], 1], ['u2', 9, 4.8, ['주문하기', 'place order'], 1], ['u3', 9, 7.6, ['주문 취소', 'cancel order'], 1], ['u4', 17, 4.8, ['결제하기', 'pay'], 2], ['u5', 17, 2, ['쿠폰 적용', 'apply coupon'], 3], ['u6', 9, 10.8, ['상품 관리', 'manage products'], 2]];
+  U.forEach(([k, x, y, l, st]) => oval(S, k, x, y, 6, 1.6, l, 'accent', st));
+  [[2.8], [5.6], [8.4]].forEach(([y], i) => seg(S, 'cl' + i, [3.9, 4.6], [8.95, y], 1, 'ink-3', .07));
+  seg(S, 'al', [3.9, 10.8], [8.95, 11.6], 2, 'ink-3', .07); seg(S, 'pl', [27.1, 5.4], [23.05, 5.6], 2, 'ink-3', .07);
+  ar(S, 'inc', [15.05, 5.6], [16.9, 5.6], 'warn', 3, { h: .08, dash: 1 }); T(S, 'incl', 14.4, 6.5, '«include»', 'cz-mono sfx-tiny sfx-w', 3);
+  elb(S, 'ext', [[20, 3.65], [20, 4.25], [13.5, 4.25], [13.5, 4.75]], 'warn', 3, { h: .08, dash: 1 }); T(S, 'extl', 14.6, 3.45, '«extend»', 'cz-mono sfx-tiny sfx-w', 3);
+  stepT(S, 'k', 1, 14, [['행위자(시스템 밖의 사람·시스템)와 그들이 얻는 기능(유스케이스)', 'actors (people or systems outside) and the functions they get (use cases)'], ['관리자와 외부 결제사도 행위자예요 · 시스템 경계 밖에 그려요', 'admins and the external payment provider are actors too, drawn outside the boundary'], ['include: 주문하면 결제는 항상 포함 · extend: 쿠폰은 가끔 덧붙는 선택 흐름', 'include: placing an order always includes paying · extend: a coupon optionally extends it'], ['유스케이스마다 기본 흐름·대안 흐름·예외를 글로 적어 요구사항을 완성해요', 'each use case gets a written main flow, alternatives and exceptions']], 'sfx-xs sfx-a');
+  fin(S, 'z', 15.2, [['유스케이스 다이어그램: “누가 시스템으로 무엇을 하나”를 한눈에 보여 줘요', 'a use-case diagram shows who does what with the system at a glance', 'sfx-xs sfx-a'], ['구현 방법이 아니라 사용자 관점의 목표를 그리고, 범위(경계)를 합의하는 데 써요', 'it captures user goals, not implementation, and helps agree on scope (the boundary)']]);
+  S.cap(1, '행위자와 유스케이스', 'Actors and use cases').cap(2, '다른 행위자들', 'Other actors').cap(3, 'include와 extend', 'Include and extend').cap(4, '유스케이스 명세', 'Use-case specifications').cap(5, '유스케이스 다이어그램', 'Use-case diagrams');
+  return S;
+}
+function sC4() {
+  const S = scene({ id: 'se-c4', steps: 5, per: 1.6 });
+  const LAD = [['Context', 'accent'], ['Container', 'ok'], ['Component', 'warn'], ['Code', 'line']];
+  LAD.forEach(([l], i) => box2(S, 'z' + i, 27, 1.2 + i * 1.7, 4, 1.4, l, 'line', 0, { pct: 40 }));
+  tsets(S, 'z0', [[1, 'accent', 40], [2, 'line', 40]]); tsets(S, 'z1', [[2, 'ok', 40], [3, 'line', 40]]); tsets(S, 'z2', [[3, 'warn', 40], [5, 'line', 40]]); tsets(S, 'z3', [[4, 'accent', 25], [5, 'line', 40]]);
+  T(S, 'zl', 27, .3, ['확대 단계', 'zoom level'], 'sfx-tiny', 0);
+  /* level 1 */
+  box2(S, 'p', 1, 4, 5, 2, ['고객', 'customer'], 'line', 1, { pct: 40, off: 2 }); box2(S, 'sy', 9, 3.4, 7, 3.2, ['쇼핑몰 시스템', 'shop system'], 'accent', 1, { pct: 35, off: 2 });
+  box2(S, 'x1', 19.5, 1.6, 6, 1.8, ['결제사', 'payment provider'], 'line', 1, { pct: 40, off: 2 }); box2(S, 'x2', 19.5, 6.6, 6, 1.8, ['메일 서비스', 'email service'], 'line', 1, { pct: 40, off: 2 });
+  ar(S, 'pa', [6.1, 5], [8.9, 5], 'ink-3', 1, { h: .08, off: 2 }); elb(S, 'sa1', [[16.1, 4.2], [17.8, 4.2], [17.8, 2.5], [19.4, 2.5]], 'ink-3', 1, { h: .08, off: 2 }); elb(S, 'sa2', [[16.1, 5.8], [17.8, 5.8], [17.8, 7.5], [19.4, 7.5]], 'ink-3', 1, { h: .08, off: 2 });
+  /* level 2 */
+  frame(S, 'b2', 3, 1, 22, 9.6, 'accent', 2, { dash: 1, w: .1, off: 3 }); T(S, 'b2l', 3.3, 1.15, ['쇼핑몰 시스템', 'shop system'], 'sfx-xs sfx-a', 2, { off: 3 });
+  [['w', 4, 2.2, 'Web (React)'], ['q', 14.6, 2.2, 'Queue (Kafka)'], ['a', 4, 6.8, 'API (Spring)'], ['d', 14.6, 6.8, 'DB (Postgres)']].forEach(([k, x, y, l]) => box2(S, 'c' + k, x, y, 9.4, 2, l, 'ok', 2, { pct: 30, off: 3 }));
+  ar(S, 'wa', [8.7, 4.3], [8.7, 6.7], 'ink-3', 2, { h: .08, off: 3 }); ar(S, 'ad', [13.5, 7.8], [14.5, 7.8], 'ink-3', 2, { h: .08, off: 3 }); elb(S, 'aq', [[11, 6.7], [11, 5.4], [19.3, 5.4], [19.3, 4.3]], 'ink-3', 2, { h: .08, off: 3 });
+  /* level 3 */
+  frame(S, 'b3', 3, 1, 22, 9.6, 'ok', 3, { dash: 1, w: .1 }); T(S, 'b3l', 3.3, 1.15, 'API (Spring)', 'sfx-xs sfx-g', 3);
+  [['oc', 4, 2.2, 'OrderController'], ['pc', 14.6, 2.2, 'PaymentClient'], ['os', 4, 6.8, 'OrderService'], ['or', 14.6, 6.8, 'OrderRepository']].forEach(([k, x, y, l]) => box2(S, k, x, y, 9.4, 2, l, 'warn', 3, { pct: 30 }));
+  ar(S, 'm1', [8.7, 4.3], [8.7, 6.7], 'ink-3', 3, { h: .08 }); ar(S, 'm2', [13.5, 7.8], [14.5, 7.8], 'ink-3', 3, { h: .08 }); elb(S, 'm3', [[11, 6.7], [11, 5.4], [19.3, 5.4], [19.3, 4.3]], 'ink-3', 3, { h: .08 });
+  stepT(S, 'k', 1, 11.4, [['① 시스템 맥락: 우리 시스템과 사용자, 외부 시스템', '① context: our system, its users and external systems'], ['② 컨테이너: 시스템 안의 배포 단위(웹, API, DB, 큐)와 통신', '② containers: deployable units inside (web, API, DB, queue) and how they talk'], ['③ 컴포넌트: 한 컨테이너 안의 주요 구성 요소', '③ components: the major parts inside one container'], ['④ 코드: 클래스 수준 · 보통 생략하고 IDE에 맡겨요', '④ code: class level · usually skipped and left to the IDE']], 'sfx-xs sfx-a');
+  fin(S, 'z', 12.8, [['C4 모델: 지도를 확대하듯 Context → Container → Component → Code 네 단계로 아키텍처를 그려요', 'the C4 model draws architecture like a zoomable map: context → container → component → code', 'sfx-xs sfx-a'], ['상자와 화살표에 이름·기술·역할을 적는 단순한 표기라 개발자 아닌 사람도 읽어요', 'simple boxes and arrows labeled with name, tech and purpose, readable by non-developers too'], ['Structurizr DSL, PlantUML, Mermaid로 “다이어그램을 코드로” 관리하고 PR로 리뷰해요', 'manage “diagrams as code” with Structurizr DSL, PlantUML or Mermaid and review them in PRs']]);
+  S.cap(1, '시스템 맥락', 'System context').cap(2, '컨테이너로 확대', 'Zoom into containers').cap(3, '컴포넌트로 확대', 'Zoom into components').cap(4, '코드 단계', 'The code level').cap(5, 'C4 모델', 'The C4 model');
+  return S;
+}
+function sAdr() {
+  const S = scene({ id: 'se-adr', steps: 5, per: 1.6 });
+  T(S, 'q', 1, .2, ['“왜 Kafka를 썼지?” — 결정한 사람은 이미 퇴사', '“why Kafka?” — the person who decided has left'], 'sfx-xs sfx-r', 1);
+  rect(S, 'doc', 1, 1.2, 18.6, 11, 'line', 25, 2, { r: .3, css: 'border:.1em solid var(--line)' });
+  T(S, 'h', 1.5, 1.5, ['ADR-007: 이벤트 전달에 Kafka 사용', 'ADR-007: use Kafka for event delivery'], 'sfx-s sfx-a', 2);
+  const L = [[['상태: 승인됨 (2025-03-04)', 'Status: Accepted (2025-03-04)'], 'sfx-xs sfx-g', 2], [['맥락', 'Context'], 'sfx-xs sfx-a', 2], [['주문 이벤트를 여러 서비스가 재처리할 수 있어야 함', 'several services must be able to replay order events'], 'sfx-xs', 2], [['결정', 'Decision'], 'sfx-xs sfx-a', 2], [['Kafka(보존 7일)로 이벤트를 발행한다', 'publish events to Kafka (7-day retention)'], 'sfx-xs', 2], [['결과', 'Consequences'], 'sfx-xs sfx-a', 3], [['+ 재생·확장 쉬움, 서비스 간 결합 감소', '+ easy replay and scaling, looser coupling'], 'sfx-xs sfx-g', 3], [['− 운영 부담(클러스터), 순서는 파티션 단위', '− operational load (cluster), ordering per partition only'], 'sfx-xs sfx-r', 3], [['검토한 대안: RabbitMQ, DB 폴링', 'alternatives considered: RabbitMQ, DB polling'], 'sfx-xs', 3]];
+  L.forEach(([t, c, st], i) => T(S, 'l' + i, 1.6, 2.8 + i * 1, t, c, st));
+  [['Proposed', 'line', 4], ['Accepted', 'ok', 2], ['Superseded by ADR-012', 'warn', 4]].forEach(([l, c, st], i) => box2(S, 's' + i, 21.4, 1.8 + i * 2.4, 9.6, 1.5, l, c, st, { pct: 35 }));
+  ar(S, 'sa0', [26.2, 3.4], [26.2, 4.1], 'ink-3', 4, { h: .08 }); ar(S, 'sa1', [26.2, 5.8], [26.2, 6.5], 'ink-3', 4, { h: .08 });
+  T(S, 'sn', 21.4, 8.6, ['고치지 않고 새 ADR로 대체 → 역사가 남아요', 'never edit; supersede with a new ADR'], 'sfx-xs', 4);
+  T(S, 'fp', 21.4, 9.8, 'docs/adr/0007-kafka.md', 'cz-mono sfx-xs sfx-a', 4);
+  stepT(S, 'k', 1, 12.8, [['코드는 “무엇”을 남기지만 “왜”는 사라지기 쉬워요', 'code keeps the “what”; the “why” evaporates'], ['ADR: 결정 하나를 맥락·결정·결과로 짧게 적은 문서', 'an ADR records one decision as context, decision and consequences'], ['장점과 대가, 검토한 대안까지 솔직하게 남겨요', 'record the upsides, the costs and the alternatives honestly'], ['저장소에 마크다운으로 두고 PR로 리뷰 · 바뀌면 새 ADR로 대체', 'keep them as markdown in the repo, review via PR, supersede when things change']], 'sfx-xs sfx-a');
+  fin(S, 'z', 14.2, [['아키텍처 결정 기록(ADR): 중요한 기술 결정을 짧은 문서로 남겨 미래의 팀에게 이유를 전해요', 'architecture decision records keep significant technical decisions short and explain the “why” to future teams', 'sfx-xs sfx-a'], ['한 페이지 이내, 결정 하나에 문서 하나 · 마이클 나이가드의 템플릿이 널리 쓰여요', 'one page, one decision per document · Michael Nygard’s template is widely used']]);
+  S.cap(1, '사라진 이유', 'The lost “why”').cap(2, '맥락과 결정', 'Context and decision').cap(3, '결과와 대안', 'Consequences and alternatives').cap(4, '수명 주기', 'Lifecycle').cap(5, '아키텍처 결정 기록', 'Architecture decision records');
+  return S;
+}
+
+/* ================= team ================= */
+function sDora() {
+  const S = scene({ id: 'se-dora', steps: 5, per: 1.6 });
+  const C = [[1, 1, ['배포 빈도', 'deployment frequency'], ['운영에 얼마나 자주 배포하나', 'how often you ship to production'], ['엘리트: 하루 여러 번', 'elite: several a day'], ['낮음: 월 1회 미만', 'low: < once a month'], 'accent', 1], [16.6, 1, ['변경 리드 타임', 'lead time for changes'], ['커밋 → 운영 반영까지', 'commit to running in production'], ['엘리트: 하루 이내', 'elite: under a day'], ['낮음: 1~6개월', 'low: 1–6 months'], 'accent', 1], [1, 5.9, ['변경 실패율', 'change failure rate'], ['장애·롤백을 부른 배포 비율', 'share of deploys causing failure'], ['엘리트: 0~15%', 'elite: 0–15%'], ['낮음: 46~60%', 'low: 46–60%'], 'warn', 2], [16.6, 5.9, ['서비스 복구 시간', 'time to restore service'], ['장애에서 회복까지', 'from incident to recovery'], ['엘리트: 1시간 이내', 'elite: under an hour'], ['낮음: 1주~1개월', 'low: 1 week – 1 month'], 'warn', 2]];
+  C.forEach(([x, y, t, d, e, l, c, st], i) => { rect(S, 'c' + i, x, y, 14.4, 4, c, 10, st, { r: .35, css: `border:.1em solid var(--${c})` }); T(S, 't' + i, x + .4, y + .3, t, `sfx-s sfx-${c === 'accent' ? 'a' : 'w'}`, st); T(S, 'd' + i, x + .4, y + 1.35, d, 'sfx-xs', st); box2(S, 'e' + i, x + .4, y + 2.4, 6.6, 1.2, e, 'ok', 3, { pct: 35 }); box2(S, 'l' + i, x + 7.4, y + 2.4, 6.6, 1.2, l, 'danger', 3, { pct: 30 }); });
+  T(S, 'g1', 1, .2, ['속도 (처리량)', 'speed (throughput)'], 'sfx-xs sfx-a', 1); T(S, 'g2', 1, 5.1, ['안정성', 'stability'], 'sfx-xs sfx-w', 2);
+  stepT(S, 'k', 1, 10.3, [['처리량 지표: 얼마나 자주, 얼마나 빨리 내보내나', 'throughput: how often and how fast you ship'], ['안정성 지표: 얼마나 자주 깨지고, 얼마나 빨리 고치나', 'stability: how often things break and how fast you recover'], ['조사 결과(예시 기준): 상위 팀과 하위 팀의 차이는 수백 배', 'survey bands (illustrative): top and bottom teams differ by orders of magnitude'], ['속도와 안정성은 반비례가 아니에요: 작은 변경을 자주 내는 팀이 둘 다 좋아요', 'speed and stability aren’t a trade-off: teams shipping small changes often do well at both']], 'sfx-xs sfx-a');
+  T(S, 'w', 1, 11.4, ['개인 평가가 아니라 팀·시스템 개선용 · 목표로 삼는 순간 왜곡돼요 (굿하트의 법칙)', 'for improving teams and systems, not rating people · once made targets, they get gamed (Goodhart’s law)'], 'sfx-xs sfx-r', 4);
+  fin(S, 'z', 12.8, [['DORA 4대 지표: 배포 빈도, 변경 리드 타임, 변경 실패율, 복구 시간', 'the four DORA metrics: deployment frequency, lead time, change failure rate and time to restore', 'sfx-xs sfx-a'], ['『Accelerate』와 State of DevOps 보고서에서 나왔고, 조직 성과와의 상관을 보여줬어요', 'from “Accelerate” and the State of DevOps reports, which linked them to organizational performance'], ['CI/CD·작은 배치·트렁크 기반 개발·자동화된 테스트가 지표를 끌어올려요', 'CI/CD, small batches, trunk-based development and test automation move the needle']]);
+  S.cap(1, '속도 지표 둘', 'Two speed metrics').cap(2, '안정성 지표 둘', 'Two stability metrics').cap(3, '상위 팀 vs 하위 팀', 'Top vs bottom performers').cap(4, '어떻게 써야 하나', 'How to use them').cap(5, 'DORA 지표', 'DORA metrics');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'se-proc': [
+    item('se-req', '요구사항 공학', 'Requirements engineering', '무엇을 만들어야 하는지 이해관계자에게서 도출하고, 분석·명세·검증·관리하는 활동이에요.', '요구사항은 기능(무엇을 하나: 비밀번호 재설정)과 비기능(얼마나 잘 하나: 성능, 보안, 가용성 99.9%)으로 나눠요. “빠르게 로딩”처럼 모호한 요구는 “3G에서 첫 화면 p95 ≤ 2초”처럼 측정·검증 가능하게 다시 써요. MoSCoW(Must, Should, Could, Won’t)로 우선순위를 정하고, 요구사항과 테스트를 추적 매트릭스로 연결해요. 요구사항 오류는 초기에 잡을수록 싸요.', 'The work of eliciting what to build from stakeholders, then analyzing, specifying, validating and managing it.', 'Requirements split into functional ones (what it does: reset a password) and non-functional ones (how well: performance, security, 99.9% availability). Vague wishes like “loads fast” are rewritten to be measurable and testable, such as “first screen p95 ≤ 2 s on 3G”. MoSCoW (Must, Should, Could, Won’t) sets priorities, and a traceability matrix links requirements to tests. Requirement errors are cheapest to fix early.', sReq()),
+    item('se-vmodel', 'V 모델', 'The V-model', '폭포수의 각 설계 단계마다 그것을 검증할 테스트 단계를 짝지어 V자로 그린 개발 모델이에요.', '왼쪽 팔은 요구사항 분석 → 시스템 설계 → 아키텍처 설계 → 모듈 설계로 내려가고, 바닥에서 코딩한 뒤 오른쪽 팔은 단위 → 통합 → 시스템 → 인수 테스트로 올라가요. 같은 높이끼리 짝이라 각 설계 단계에서 테스트 계획을 미리 세워요. 검증(제품을 올바르게 만들었나)과 확인(올바른 제품을 만들었나)을 구분하며, 자동차·의료·항공 같은 안전 분야에서 지금도 많이 써요.', 'A development model that pairs each waterfall design phase with the test phase that verifies it, drawn as a V.', 'The left arm descends from requirements analysis through system, architecture and module design; coding sits at the bottom; the right arm climbs through unit, integration, system and acceptance testing. Each level pairs with its counterpart, so test plans are written during design. It distinguishes verification (built it right?) from validation (built the right thing?) and remains common in safety-critical fields such as automotive, medical and aerospace.', sVmodel())
+  ],
+  'se-test': [
+    item('se-mutation', '뮤테이션 테스트', 'Mutation testing', '코드를 일부러 조금씩 망가뜨린 “뮤턴트”를 만들어, 테스트가 그 버그를 잡는지 확인해 테스트의 품질을 재요.', 'isAdult(age)는 age >= 18인데 테스트가 30과 5만 확인하면 커버리지는 100%지만 >=를 >로 바꾼 뮤턴트가 살아남아요. 18을 넣는 경계값 테스트를 추가하면 그 뮤턴트도 죽어 점수가 2/3에서 3/3이 돼요. 커버리지는 실행 여부만, 뮤테이션 점수는 검사의 강도를 알려줘요. PIT(Java), Stryker(JS·C#), mutmut(Python)이 있고, 느려서 핵심 모듈이나 변경분에만 돌려요.', 'Measure test quality by planting small bugs (“mutants”) in the code and checking whether the tests catch them.', 'If isAdult(age) is age >= 18 and the tests only try 30 and 5, coverage is 100% yet a mutant changing >= to > survives. Adding a boundary test at 18 kills it, raising the score from 2/3 to 3/3. Coverage tells you what ran; mutation score tells you how hard the tests check. Tools include PIT (Java), Stryker (JS/C#) and mutmut (Python); since it is slow, run it on core modules or changed code.', sMutation()),
+    item('se-property', '속성 기반 테스트', 'Property-based testing', '예시 입력 대신 “항상 성립해야 하는 성질”을 적으면, 도구가 무작위 입력을 대량으로 만들어 반례를 찾아 줘요.', 'mySort의 예시 테스트 몇 개는 통과해도, “정렬해도 길이는 같다”는 성질을 적으면 37번째 무작위 입력에서 실패하고, 도구가 입력을 줄여 [0, 0]이라는 최소 반례를 보여 줘 중복이 사라지는 버그를 드러내요. 왕복(decode(encode(x)) = x), 불변량, 기준 구현과의 비교, 멱등성이 좋은 성질이에요. QuickCheck에서 시작해 Hypothesis, fast-check, jqwik이 있어요.', 'Instead of example inputs, state a property that must always hold and let a tool generate many random inputs to find a counterexample.', 'A few example tests of mySort pass, but the property “sorting keeps the length” fails on random input #37, and shrinking reduces it to the minimal counterexample [0, 0], exposing a bug that drops duplicates. Good properties include round trips (decode(encode(x)) = x), invariants, comparison with a reference implementation and idempotence. It began with QuickCheck; Hypothesis, fast-check and jqwik followed.', sProperty()),
+    item('se-flaky', '불안정한 테스트', 'Flaky tests', '코드가 그대로인데도 실행할 때마다 통과했다 실패했다 하는 테스트예요. 팀이 테스트를 믿지 못하게 만들어요.', '원인은 대개 타이밍(비동기가 끝나기 전 검사), 실행 순서 의존(공유 상태), 시간·난수, 외부 네트워크예요. sleep 대신 조건을 기다리고, 상태를 매번 새로 만들고, 시계와 시드를 주입하고, 외부 서비스는 가짜로 바꿔 결정적으로 고쳐요. 바로 못 고치면 격리하고 불안정 비율을 추적하되, 무작정 재시도로 숨기면 “그냥 다시 돌려” 문화가 생겨 진짜 실패도 놓쳐요.', 'Tests that pass and fail on different runs while the code stays the same, eroding the team’s trust in the suite.', 'Typical causes are timing (asserting before async work finishes), order dependence (shared state), time and randomness, and external networks. Make them deterministic: wait for conditions instead of sleeping, build fresh state each time, inject clocks and seeds, and fake external services. If a fix must wait, quarantine the test and track flake rates; hiding it with blind retries breeds a “just rerun it” culture that misses real failures.', sFlaky()),
+    item('se-contract', '계약 테스트', 'Contract testing', '서비스 사이의 요청·응답 약속을 계약 파일로 남겨, 각 서비스를 따로 테스트하면서도 연결이 깨지지 않게 하는 방법이에요.', '소비자(웹 앱)의 테스트가 가짜 제공자를 상대로 돌며 “GET /users/1 → 200 { id, name }” 같은 기대를 계약(pact.json)으로 기록하고, 제공자는 자기 CI에서 그 계약을 재생해 실제 응답이 맞는지 검증해요. 제공자가 name을 fullName으로 바꾸면 배포 전에 실패하고 can-i-deploy가 막아요. 느리고 불안정한 E2E를 줄이며, Pact, Spring Cloud Contract가 대표 도구예요.', 'Record the request/response promises between services as contracts so each service is tested alone without breaking the integration.', 'The consumer’s tests run against a mock provider and record expectations such as “GET /users/1 → 200 { id, name }” in a contract (pact.json); the provider replays that contract in its own CI to verify its real responses. If the provider renames name to fullName, verification fails before deployment and can-i-deploy blocks the release. It reduces slow, flaky end-to-end tests; Pact and Spring Cloud Contract are typical tools.', sContractTest())
+  ],
+  'se-model': [
+    item('se-usecase', '유스케이스 다이어그램', 'Use-case diagrams', '시스템 밖의 행위자(사람·외부 시스템)가 시스템으로 무엇을 하는지(유스케이스)를 보여 주는 UML 다이어그램이에요.', '고객은 상품 검색·주문·취소를, 관리자는 상품 관리를 하고, 외부 결제사는 결제하기와 연결돼요. 주문하면 결제가 항상 포함되므로 «include», 쿠폰 적용처럼 가끔 덧붙는 선택 흐름은 «extend»로 그려요. 시스템 경계를 그려 범위를 합의하고, 유스케이스마다 기본 흐름·대안 흐름·예외를 글로 적어 요구사항을 완성해요.', 'A UML diagram showing what actors outside the system (people or external systems) do with it (use cases).', 'Customers search, order and cancel; admins manage products; an external payment provider connects to Pay. Placing an order always includes paying, drawn as «include», while an optional flow like applying a coupon is «extend». The system boundary makes the scope explicit, and each use case is completed with a written main flow, alternatives and exceptions.', sUsecase()),
+    item('se-c4', 'C4 모델', 'The C4 model', '지도를 확대하듯 시스템 맥락 → 컨테이너 → 컴포넌트 → 코드 네 단계로 소프트웨어 아키텍처를 그리는 방법이에요.', '맥락 단계는 우리 시스템과 사용자·외부 시스템을, 컨테이너 단계는 웹·API·DB·큐 같은 배포 단위와 통신을, 컴포넌트 단계는 한 컨테이너 안의 주요 구성 요소를 보여 줘요. 코드 단계는 보통 생략하고 IDE에 맡겨요. 상자와 화살표에 이름·기술·역할을 적는 단순한 표기라 비개발자도 읽을 수 있고, Structurizr DSL이나 Mermaid로 다이어그램을 코드로 관리해요.', 'A way to draw software architecture like a zoomable map in four levels: context, containers, components and code.', 'The context level shows our system with its users and external systems; the container level shows deployable units such as web, API, database and queue and how they talk; the component level shows the major parts inside one container. The code level is usually skipped and left to the IDE. Its plain boxes and arrows labeled with name, technology and purpose are readable by non-developers, and tools like Structurizr DSL or Mermaid keep diagrams as code.', sC4()),
+    item('se-adr', '아키텍처 결정 기록 (ADR)', 'Architecture decision records', '중요한 기술 결정 하나를 맥락·결정·결과로 짧게 적어, 나중의 팀이 “왜”를 알 수 있게 하는 문서예요.', '“ADR-007: 이벤트 전달에 Kafka 사용”처럼 제목을 달고, 상태(승인됨), 맥락(여러 서비스가 이벤트를 재처리해야 함), 결정, 결과(장점과 운영 부담), 검토한 대안을 한 페이지 안에 적어요. 저장소에 마크다운으로 두고 PR로 리뷰하며, 결정이 바뀌면 기존 문서를 고치지 않고 새 ADR로 대체해 역사를 남겨요. 마이클 나이가드의 템플릿이 널리 쓰여요.', 'A short document recording one significant technical decision as context, decision and consequences, so future teams know the “why”.', 'Titled like “ADR-007: use Kafka for event delivery”, it lists the status (accepted), the context (several services must replay events), the decision, the consequences (benefits and operational cost) and the alternatives considered, all within a page. ADRs live as markdown in the repository and are reviewed via PRs; when a decision changes, a new ADR supersedes the old one instead of editing it. Michael Nygard’s template is widely used.', sAdr())
+  ],
+  'se-team': [
+    item('se-dora', 'DORA 지표', 'DORA metrics', '소프트웨어 전달 성과를 재는 네 가지 지표예요: 배포 빈도, 변경 리드 타임, 변경 실패율, 서비스 복구 시간.', '앞의 둘은 속도(얼마나 자주, 빨리 내보내나), 뒤의 둘은 안정성(얼마나 자주 깨지고, 빨리 고치나)을 재요. 『Accelerate』와 State of DevOps 보고서는 상위 팀이 하루 여러 번 배포하고 한 시간 안에 복구하는 등 하위 팀과 수백 배 차이가 나며, 속도와 안정성이 함께 좋아진다는 걸 보여 줬어요. 개인 평가가 아니라 팀 개선용이고, 목표로 삼으면 왜곡돼요(굿하트의 법칙).', 'Four measures of software delivery performance: deployment frequency, lead time for changes, change failure rate and time to restore service.', 'The first two measure speed (how often and how fast you ship); the last two measure stability (how often things break and how fast you recover). “Accelerate” and the State of DevOps reports showed top teams deploying many times a day and restoring within an hour, orders of magnitude ahead of low performers, with speed and stability improving together. They are for improving teams, not rating individuals, and get gamed once turned into targets (Goodhart’s law).', sDora())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('se-proc', '프로세스', 'Process', '개발 프로세스와 애자일', 'Development process and agile',
     '팀이 일을 나누고 계획하고 피드백을 받는 방식이에요.', 'How teams split, plan and get feedback on work.', [
@@ -464,7 +778,7 @@ window.UX = page([
     item('se-kanban', '칸반', 'Kanban', '일을 카드로 보드에 올리고 "진행 중" 칸의 개수(WIP)를 제한해서, 새로 시작하기보다 끝내는 데 집중하게 해요.', '스프린트 없이 계속 흐르는 일(운영, 고객 지원, 유지보수)에 잘 맞아요. 리드 타임과 막힌 칸을 보면 병목이 보여요.', 'Work items sit on a board as cards and the number in progress (WIP) is capped, so the team finishes before starting more.', 'Fits continuous work without sprints, like ops, support and maintenance; lead time and stuck columns reveal bottlenecks.', sKanban()),
     item('se-story', '사용자 스토리와 인수 조건', 'User stories and acceptance criteria', '"누가, 무엇을, 왜"를 한 문장으로 쓰고, 완료를 판단할 구체적인 조건을 붙여요.', '인수 조건이 모호하면 "다 됐다"의 기준이 사람마다 달라져요. 잘 쓴 조건은 그대로 테스트 케이스가 돼요.', 'State who wants what and why in one sentence, then attach concrete conditions that decide when it’s done.', 'Vague criteria mean everyone has a different idea of done; good criteria become test cases directly.', sStory()),
     item('se-burndown', '번다운 차트와 속도', 'Burndown and velocity', '스프린트 동안 남은 작업량이 줄어드는 모습을 그리고, 스프린트마다 끝낸 양(속도)으로 다음 계획을 세워요.', '속도는 팀 내부의 계획 도구예요. 팀끼리 비교하거나 성과 지표로 쓰면 포인트만 부풀려져요.', 'Plot remaining work shrinking through the sprint, and use how much each sprint finished (velocity) to plan the next.', 'Velocity is a team-internal planning tool; comparing teams or using it as a KPI just inflates the points.', sBurn())
-  ]),
+  ].concat(XT.add['se-proc'] || [])),
   sec('se-test', '테스트', 'Testing', '소프트웨어 테스트', 'Software testing',
     '버그를 일찍, 싸게 찾는 방법이에요.', 'Ways to find bugs early and cheaply.', [
     item('se-pyramid', '테스트 피라미드', 'Test pyramid', '빠르고 싼 단위 테스트를 가장 많이, 통합 테스트는 적당히, 느린 E2E 테스트는 핵심 흐름만 두는 구조예요.', 'E2E가 대부분이면 CI가 느리고 자주 깨져요. 실패 원인을 좁히기 쉬운 아래층을 두텁게 하세요.', 'Lots of fast, cheap unit tests, a moderate layer of integration tests, and slow end-to-end tests only for key flows.', 'A suite made mostly of E2E tests makes CI slow and flaky; thicken the lower layers, where failures are easy to pinpoint.', sPyramid()),
@@ -473,13 +787,13 @@ window.UX = page([
     item('se-double', '테스트 더블', 'Test doubles', '테스트할 때 실제 의존성(결제, 메일, DB) 대신 끼워 넣는 대역이에요. Stub·Mock·Fake·Spy로 나뉘어요.', 'Mock을 과하게 쓰면 구현 세부에 묶인 깨지기 쉬운 테스트가 돼요. 가능하면 결과(상태)를 검증하세요.', 'Stand-ins for real dependencies such as payments, email and databases during tests: stubs, mocks, fakes and spies.', 'Over-mocking ties tests to implementation details; verify outcomes and state where you can.', sDouble()),
     item('se-coverage', '코드 커버리지', 'Code coverage', '테스트가 코드의 몇 %를 실행했는지예요. 줄(라인) 기준과 분기(브랜치) 기준이 있어요.', '커버리지가 낮은 곳은 확실히 위험하지만, 높다고 안전한 건 아니에요. 숫자 목표보다 핵심 로직의 분기를 챙기세요.', 'The share of code your tests execute, measured by lines or by branches.', 'Low coverage flags real risk, but high coverage proves little; care about the branches in core logic, not the number.', sCov()),
     item('se-boundary', '경계값 분석 · 동등 분할', 'Boundary values · equivalence partitions', '입력을 같은 결과를 내는 구간으로 나누고(동등 분할), 구간 경계의 바로 양쪽 값을 집중적으로 테스트해요.', '> 와 >=, 0과 1, 빈 목록과 하나짜리 목록처럼 버그는 경계에 몰려요. 테스트 케이스 수는 줄이고 효과는 높여요.', 'Group inputs into ranges that behave the same, then test values on both sides of each boundary.', 'Bugs cluster at edges: > vs >=, zero vs one, empty vs single-item lists. Fewer test cases, more bugs caught.', sBoundary())
-  ]),
+  ].concat(XT.add['se-test'] || [])),
   sec('se-model', '모델링', 'Modeling', '설계와 모델링', 'Design and modeling',
     '코드를 쓰기 전에 구조와 흐름, 도메인을 정리하는 도구예요.', 'Tools for shaping structure, flow and domain before code.', [
     item('se-uml-class', 'UML 클래스 다이어그램', 'UML class diagrams', '클래스의 이름·속성·메서드와 클래스 사이의 관계(연관, 합성, 상속)를 그림으로 나타내요.', '설계 토론이나 문서화할 때 핵심 관계만 스케치하세요. 코드와 1:1로 모든 걸 그리면 금방 낡아요.', 'Shows each class’s name, attributes and methods, plus how classes relate: association, composition and inheritance.', 'Sketch only the key relationships for design talks and docs; diagrams that mirror every line of code go stale fast.', sUMLClass()),
     item('se-uml-seq', 'UML 시퀀스 다이어그램', 'UML sequence diagrams', '참여자들이 시간 순서대로 주고받는 메시지를 위에서 아래로 그려요.', 'API 연동 설계, 인증 흐름 설명, 장애 원인 분석에 많이 써요. Mermaid 같은 텍스트 도구로 코드처럼 관리할 수 있어요.', 'Draws the messages participants exchange, in time order from top to bottom.', 'Handy for API integration design, auth flows and incident analysis; tools like Mermaid keep them in text alongside code.', sUMLSeq()),
     item('se-ddd', 'DDD · 바운디드 컨텍스트', 'DDD · bounded contexts', '같은 단어도 맥락마다 의미가 달라요. 도메인을 경계(컨텍스트)로 나누고 각자 자기 모델과 용어를 가져요.', '거대한 공용 모델 하나가 모든 팀을 묶는 걸 막아줘요. 마이크로서비스 경계를 정할 때 출발점으로 많이 써요.', 'The same word means different things in different parts of a business. Split the domain into bounded contexts, each with its own model and vocabulary.', 'Stops one giant shared model from coupling every team, and is a common starting point for drawing microservice boundaries.', sDDD())
-  ]),
+  ].concat(XT.add['se-model'] || [])),
   sec('se-team', '협업', 'Teamwork', '협업과 품질', 'Collaboration and quality',
     '여럿이 함께 오래 유지할 수 있는 소프트웨어를 만드는 원칙이에요.', 'Principles for software many people can maintain for years.', [
     item('se-review', '코드 리뷰와 PR', 'Code review and pull requests', '변경을 병합하기 전에 동료가 읽고 질문·제안하는 과정이에요. CI 검사와 승인을 거쳐 main에 들어가요.', 'PR은 작게 나누고 "왜"를 설명하세요. 스타일은 린터에 맡기고 리뷰는 설계·버그·가독성에 집중해요.', 'Before a change merges, teammates read it, ask questions and suggest fixes; it lands on main after CI checks and approval.', 'Keep PRs small and explain why; leave style to linters and spend review time on design, bugs and readability.', sReview()),
@@ -487,8 +801,9 @@ window.UX = page([
     item('se-debt', '기술 부채', 'Technical debt', '지금 빨리 가려고 택한 임시방편이 나중에 이자처럼 개발 속도를 갉아먹는 현상이에요.', '빚 자체는 전략이 될 수 있지만 기록하고 갚아야 해요. 스프린트의 일정 비율을 정리 작업에 꾸준히 쓰는 팀이 많아요.', 'Shortcuts taken to go fast now that later charge interest by slowing every change.', 'Debt can be a valid strategy if it’s recorded and repaid; many teams reserve a fixed share of each sprint for cleanup.', sDebt()),
     item('se-conway', '콘웨이의 법칙', 'Conway’s law', '시스템의 구조는 그것을 만드는 조직의 소통 구조를 닮아요.', '원하는 아키텍처가 있다면 팀 구성부터 맞추세요(역 콘웨이 전략). 마이크로서비스는 팀 자율성과 함께 갈 때 효과가 있어요.', 'A system’s structure mirrors the communication structure of the organization that builds it.', 'If you want a certain architecture, organize teams to match it first (inverse Conway); microservices pay off only with autonomous teams.', sConway()),
     item('se-brooks', '브룩스의 법칙', 'Brooks’s law', '늦어진 프로젝트에 인력을 추가하면 더 늦어져요. 사람이 n명이면 소통 경로는 n(n−1)/2개로 늘어나요.', '일정이 밀리면 사람을 더하기보다 범위를 줄이세요. 팀을 작게 유지하고 경계를 분명히 하면 소통 비용이 줄어요.', 'Adding people to a late project makes it later; n people have n(n−1)/2 communication paths.', 'When you slip, cut scope rather than add people; small teams with clear boundaries keep communication cheap.', sBrooks())
-  ])
-]);
+  ].concat(XT.add['se-team'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .se-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .se-p .in{font-family:inherit;font-size:.72em;font-weight:700;line-height:1.25;text-align:center}
