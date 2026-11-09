@@ -555,6 +555,275 @@ function sEstimate() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'dix-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono dix-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono dix-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c dix-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono dix-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c dix-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'dix-s dix-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono dix-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono dix-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono dix-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono dix-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono dix-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'dix-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'dix-xs', 5));
+
+
+const CSSX = `
+.dix-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.dix-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.dix-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.dix-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.dix-r .in{color:var(--danger);font-weight:800}
+.dix-g .in{color:var(--ok);font-weight:800}
+.dix-a .in{color:var(--accent);font-weight:800}
+.dix-w .in{color:var(--warn);font-weight:800}
+.dix-c .in{font-size:.6em;font-weight:700}
+.dix-c2 .in{font-size:.5em;font-weight:700}
+.dix-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.dix-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'dix-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ga = (S, k, a, b, color, st, r, o = {}) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L; ar(S, k, [a[0] + ux * r, a[1] + uy * r], [b[0] - ux * r, b[1] - uy * r], color, st, Object.assign({ h: .1 }, o)); };
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+const acol = (S, k, st, color) => S.set(k, st, { background: cv(color), 'border-color': cv(color) });
+
+/* ================= scaling ================= */
+function sGossip() {
+  const S = scene({ id: 'di-gossip', steps: 5, per: 1.6 });
+  const P = i => { const a = (-90 + i * 22.5) * Math.PI / 180; return [8 + 5.8 * Math.cos(a), 5.6 + 4.4 * Math.sin(a)]; }, R = .78;
+  const LEARN = {}; LEARN[0] = 0;
+  const RND = [[[0, 9], [0, 5], [9, 13]], [[0, 2], [9, 11], [5, 7], [13, 15]], [[0, 14], [9, 4], [5, 1], [13, 3], [2, 12], [11, 6], [7, 10], [15, 8]]];
+  RND.forEach((list, s) => list.forEach(([a, b]) => { LEARN[b] = s + 1; }));
+  for (let i = 0; i < 16; i++) { const [x, y] = P(i); stt(S, 'n' + i, x, y, String(i), i ? 'line' : 'warn', 0, { r: R, pct: i ? 14 : 40 }); if (i) tsets(S, 'n' + i, [[LEARN[i], 'accent', 40]]); }
+  tsets(S, 'n10', [[4, 'ink-3', 30]]); xm(S, 'x10', P(10)[0] + 1.1, P(10)[1] - .4, 4);
+  RND.forEach((list, s) => list.forEach(([a, b], j) => ga(S, `a${s}_${j}`, P(a), P(b), 'accent', s + 1, R, { h: .08, off: s + 2 })));
+  T(S, 'ct', 17, 1.2, ['라운드별 아는 노드 수', 'nodes informed per round'], 'dix-xs dix-a', 0);
+  [[0, 1, 0], [1, 2, 1], [2, 4, 1], [3, 8, 2], [4, 16, 3]].forEach(([r, n, st]) => { T(S, 'cl' + r, 17.2, 2.35 + r * 1.1, 'R' + r, 'cz-mono dix-xs', st); rect(S, 'cb' + r, 19, 2.4 + r * 1.1, n * .7, .75, 'accent', 45, st, { r: .15 }); T(S, 'cn' + r, 19.3 + n * .7, 2.35 + r * 1.1, String(n), 'cz-mono dix-xs', st); });
+  T(S, 'hb', 17.2, 8.4, ['노드 10의 하트비트: 41 → 41 → 41', 'node 10 heartbeat: 41 → 41 → 41'], 'cz-mono dix-xs dix-r', 4);
+  T(S, 'hb2', 17.2, 9.4, ['오래 안 오르면 의심 → 확인 후 장애로 판정', 'stuck too long → suspect → declare failed'], 'dix-tiny', 4);
+  stepT(S, 'k', 1, 11.0, [['노드 0이 소식을 알아요 · 라운드마다 아는 노드가 무작위 1명에게 전해요', 'node 0 has news · each round every informed node tells one random peer'], ['아는 노드가 라운드마다 약 2배로 늘어요 → 2, 4, 8…', 'the informed set roughly doubles each round → 2, 4, 8…'], ['약 log₂N 라운드면 전체에 퍼져요 (16개 → 4라운드) · 중앙 서버가 필요 없어요', 'about log₂N rounds reach everyone (16 nodes → 4 rounds) · no central server needed'], ['하트비트 카운터도 이렇게 퍼뜨려, 오래 안 오른 노드(10)를 장애로 의심해요', 'heartbeat counters spread the same way, so a node whose counter stops (10) is suspected']]);
+  fin(S, 'z', 12.4, [['가십 프로토콜: 무작위 이웃끼리 정보를 주고받아 O(log N) 라운드에 전체가 알게 돼요', 'gossip protocols spread information through random peer exchanges, reaching everyone in O(log N) rounds', 'dix-xs dix-a'], ['노드가 죽거나 메시지가 빠져도 잘 퍼지고 확장성이 좋아요', 'they tolerate dead nodes and lost messages, and scale well'], ['카산드라, Consul(SWIM)이 멤버십 관리와 장애 감지에 써요', 'Cassandra and Consul (SWIM) use them for membership and failure detection']]);
+  S.cap(1, '무작위로 전하기', 'Tell a random peer').cap(2, '두 배씩 늘어요', 'Doubling each round').cap(3, 'log N 라운드면 전체', 'Everyone in log N rounds').cap(4, '하트비트로 장애 감지', 'Failure detection with heartbeats').cap(5, '가십 프로토콜', 'Gossip protocols');
+  return S;
+}
+
+/* ================= messaging ================= */
+function sOutbox() {
+  const S = scene({ id: 'di-outbox', steps: 5, per: 1.6 });
+  box2(S, 'svc', 1, 3.4, 6, 2.2, ['주문 서비스', 'order service'], 'accent', 0, { pct: 25 });
+  rect(S, 'db', 10, 5.4, 9.4, 5.2, 'ink-3', 8, 0, { r: .4 }); T(S, 'dbt', 10.4, 5.55, 'DB', 'cz-mono dix-xs dix-a', 0);
+  box2(S, 'ord', 10.6, 6.5, 8.2, 1.2, 'orders: #42', 'line', 0, { pct: 25 });
+  box2(S, 'obx', 10.6, 8.4, 8.2, 1.2, '', 'warn', 3, { pct: 25 }); ver(S, 'obt', 10.6, 8.75, [[3, 'outbox: Created #42 ⏳'], [4, 'outbox: Created #42 ✓']], 'cz-tc cz-mono dix-xs', 8.2);
+  frame(S, 'tx', 10.35, 6.3, 8.7, 3.5, 'accent', 3, { w: .1, dash: 1 }); T(S, 'txl', 10.4, 9.9, ['한 트랜잭션 (원자적)', 'one transaction (atomic)'], 'dix-tiny dix-a', 3);
+  box2(S, 'brk', 23, 1.2, 8, 2, ['브로커 (Kafka)', 'broker (Kafka)'], 'warn', 0, { pct: 25 });
+  ar(S, 'a1', [7.1, 5.0], [10.5, 6.9], 'ok', 1, { h: .1, off: 3 }); ar(S, 'a2', [7.1, 3.8], [22.9, 2.3], 'danger', 1, { h: .1, off: 3 });
+  acol(S, 'a1', 2, 'danger'); acol(S, 'a2', 2, 'ok');
+  ver(S, 'a1l', 6.4, 6.5, [[1, '① INSERT'], [2, '② INSERT'], [3, '']], 'cz-mono dix-tiny', 0);
+  ver(S, 'a2l', 9.5, 2.6, [[1, '② publish'], [2, '① publish'], [3, '']], 'cz-mono dix-tiny', 0);
+  ver(S, 'boom', 14.6, 2.6, [[1, '💥'], [2, '']], 'dix-l', 0); T(S, 'boom2', 8.5, 5.4, '💥', 'dix-l', 2, { off: 3 });
+  ver(S, 'res', 22.6, 3.6, [[1, ['이벤트 유실 → 배송 안 됨 ✗', 'event lost → no shipping ✗']], [2, ['없는 주문의 이벤트 ✗', 'event for a missing order ✗']], [3, '']], 'dix-xs dix-r', 0);
+  ar(S, 'a3', [7.1, 5.0], [10.2, 7.6], 'accent', 3, { h: .1 }); T(S, 'a3l', 6.2, 7.7, 'BEGIN … COMMIT', 'cz-mono dix-tiny dix-a', 3);
+  box2(S, 'rly', 23, 8.4, 8, 1.4, ['릴레이 (폴링·CDC)', 'relay (polling / CDC)'], 'ok', 4, { pct: 25 });
+  ar(S, 'a4', [19.0, 9.0], [22.9, 9.0], 'ok', 4, { h: .1 }); ar(S, 'a5', [27, 8.3], [27, 3.3], 'ok', 4, { h: .1 }); T(S, 'a5l', 27.4, 5.6, 'publish', 'cz-mono dix-tiny dix-g', 4);
+  stepT(S, 'k', 1, 11.4, [['DB에 저장한 직후 죽으면 이벤트가 사라져요 → 다른 서비스는 주문을 몰라요', 'crash right after the DB write and the event is lost → other services never hear of the order'], ['순서를 바꿔도 마찬가지: 발행 후 DB가 실패하면 없는 주문의 이벤트가 나가요', 'reversing the order fails too: publish, then a DB failure leaves an event for a missing order'], ['아웃박스: 주문과 “보낼 이벤트”를 같은 트랜잭션으로 함께 저장해요', 'outbox: store the order and the event to send in the same transaction'], ['릴레이가 아웃박스를 읽어 발행하고 표시 · 중복될 수 있으니 소비자는 멱등하게', 'a relay reads the outbox, publishes and marks rows · duplicates can happen, so consumers must be idempotent']]);
+  fin(S, 'z', 12.8, [['트랜잭셔널 아웃박스: DB·브로커 “이중 쓰기” 문제를 로컬 트랜잭션 하나로 풀어요', 'the transactional outbox solves the DB-plus-broker dual-write problem with one local transaction', 'dix-xs dix-a'], ['릴레이는 주기적 폴링이나 CDC(Debezium 등)로 만들고, 전달은 최소 한 번이에요', 'the relay uses polling or CDC (e.g. Debezium), and delivery is at least once']]);
+  S.cap(1, 'DB 저장 후 죽으면', 'Crash after the DB write').cap(2, '먼저 발행해도 문제', 'Publishing first fails too').cap(3, '같은 트랜잭션에 이벤트도', 'The event joins the transaction').cap(4, '릴레이가 발행', 'A relay publishes').cap(5, '트랜잭셔널 아웃박스', 'The transactional outbox');
+  return S;
+}
+
+/* ================= consistency ================= */
+function sVclock() {
+  const S = scene({ id: 'di-vclock', steps: 5, per: 1.6 });
+  const LY = [2.4, 5.6, 8.8];
+  LY.forEach((y, i) => { box2(S, 'p' + i, 1, y - .55, 2.6, 1.1, 'P' + (i + 1), 'accent', 0, { pct: 25 }); hl(S, 'l' + i, 4, 28, y, 'line', 0, { w: .06 }); });
+  const EV = [['e1', 0, 6, '[1,0,0]', 1, -1], ['e5', 2, 7, '[0,0,1]', 1, 1], ['e2', 0, 10, '[2,0,0]', 2, -1], ['e3', 1, 14, '[2,1,0]', 2, 1], ['e4', 1, 18, '[2,2,0]', 2, -1], ['e6', 2, 22, '[2,2,2]', 2, 1], ['e7', 0, 21, '[3,0,0]', 4, -1]];
+  const POS = {};
+  EV.forEach(([k, p, x, v, st, side]) => { const y = LY[p]; POS[k] = [x, y]; pt(S, k, x, y, st, C.cur, .3); T(S, k + 'l', x - 2.2, side < 0 ? y - 1.35 : y + .45, `${k} ${v}`, 'cz-tc cz-mono dix-xs', st, { w: 4.4 }); });
+  ga(S, 'm1', POS.e2, POS.e3, 'ink-2', 2, .35); ga(S, 'm2', POS.e4, POS.e6, 'ink-2', 2, .35);
+  T(S, 'm1l', 12.5, 3.4, 'm1', 'cz-mono dix-tiny', 2); T(S, 'm2l', 20.6, 6.6, 'm2', 'cz-mono dix-tiny', 2);
+  ring(S, 'r2', POS.e2[0], POS.e2[1], .7, 'ok', 3, { w: .12, off: 4 }); ring(S, 'r6', POS.e6[0], POS.e6[1], .7, 'ok', 3, { w: .12, off: 4 });
+  ring(S, 'r7', POS.e7[0], POS.e7[1], .7, 'warn', 4, { w: .12, off: 5 }); ring(S, 'r5', POS.e5[0], POS.e5[1], .7, 'warn', 4, { w: .12, off: 5 });
+  stepT(S, 'k', 1, 10.8, [['각 프로세스는 벡터 [P1, P2, P3]를 들고, 사건마다 자기 칸을 +1', 'each process keeps a vector [P1, P2, P3] and adds 1 to its own slot per event'], ['메시지에 벡터를 실어 보내고, 받으면 칸별 최댓값을 취한 뒤 자기 칸 +1', 'messages carry the vector; the receiver takes the slot-wise max, then adds 1 to its own slot'], ['e2 [2,0,0] ≤ e6 [2,2,2]: 모든 칸이 작거나 같으면 “먼저 일어남(→)”', 'e2 [2,0,0] ≤ e6 [2,2,2]: when every slot is ≤, it happened before (→)'], ['e7 [3,0,0]과 e5 [0,0,1]은 어느 쪽도 작지 않음 → 동시(∥)', 'e7 [3,0,0] and e5 [0,0,1]: neither is smaller → concurrent (∥)']], 'dix-xs', 5);
+  T(S, 'k4b', 1, 11.9, ['램포트 시계는 3 > 1만 알려 줘서 이 둘이 동시인지 알 수 없어요', 'a Lamport clock only says 3 > 1 and cannot tell they are concurrent'], 'dix-xs dix-r', 4, { off: 5 });
+  fin(S, 'z', 10.8, [['벡터 시계: 두 사건이 인과 관계(→)인지 동시(∥)인지 정확히 가려내는 논리 시계', 'vector clocks tell exactly whether two events are causally ordered (→) or concurrent (∥)', 'dix-xs dix-a'], ['대가는 프로세스 수만큼 길어지는 벡터예요', 'the price is a vector as long as the number of processes'], ['다이나모 계열 저장소가 동시 쓰기 충돌을 찾아낼 때 써요', 'Dynamo-style stores use them to detect conflicting concurrent writes']]);
+  S.cap(1, '자기 칸 올리기', 'Bump your own slot').cap(2, '메시지와 함께 전달', 'Passed along with messages').cap(3, '먼저 일어난 사건', 'Happened before').cap(4, '동시 사건', 'Concurrent events').cap(5, '벡터 시계', 'Vector clocks');
+  return S;
+}
+function sCrdt() {
+  const S = scene({ id: 'di-crdt', steps: 5, per: 1.6 });
+  rect(S, 'ra', 1, 1.2, 11, 6.4, 'accent', 8, 0, { r: .4 }); T(S, 'rat', 1.5, 1.45, ['복제본 A (서울)', 'replica A (Seoul)'], 'dix-xs dix-a', 0);
+  rect(S, 'rb', 20, 1.2, 11, 6.4, 'accent', 8, 0, { r: .4 }); T(S, 'rbt', 20.5, 1.45, ['복제본 B (도쿄)', 'replica B (Tokyo)'], 'dix-xs dix-a', 0);
+  seg(S, 'part', [16, 1.2], [16, 7.6], 1, 'danger', .1, { dash: 1, off: 3 }); T(S, 'partl', 12.5, .1, ['⚡ 네트워크 분리', '⚡ partition'], 'cz-tc dix-xs dix-r', 1, { w: 7, off: 3 });
+  T(S, 'la', 1.5, 2.7, ['좋아요 +1 +1', 'likes +1 +1'], 'cz-mono dix-xs', 1); T(S, 'lb', 20.5, 2.7, ['좋아요 +1 +1 +1', 'likes +1 +1 +1'], 'cz-mono dix-xs', 1);
+  T(S, 'lww', 1, 8.2, ['합칠 때 “마지막 쓰기 승리”(LWW)면 3만 남고 2개가 사라져요 ✗', 'a last-write-wins merge keeps 3 and loses 2 likes ✗'], 'dix-xs dix-r', 1, { off: 2 });
+  const SL = [['aA', 1.6, 'A', [[2, '2']], 1], ['aB', 6.6, 'B', [[2, '0'], [3, '3']], 0], ['bA', 20.6, 'A', [[2, '0'], [3, '2']], 0], ['bB', 25.6, 'B', [[2, '3']], 1]];
+  SL.forEach(([k, x, lab, vals, own]) => { box2(S, k, x, 4.0, 4.6, 1.5, '', own ? 'ok' : 'line', 2, { pct: own ? 35 : 22 }); T(S, k + 'h', x, 4.1, lab, 'cz-tc cz-mono dix-tiny', 2, { w: 4.6 }); ver(S, k + 'v', x, 4.55, vals, 'cz-tc cz-mono dix-s', 4.6); });
+  tsets(S, 'aB', [[3, 'warn', 35], [4, 'line', 22]]); tsets(S, 'bA', [[3, 'warn', 35], [4, 'line', 22]]);
+  ver(S, 'sa', 1.6, 6.0, [[2, ['값 = 2 + 0 = 2', 'value = 2 + 0 = 2']], [3, ['값 = 2 + 3 = 5 ✓', 'value = 2 + 3 = 5 ✓']]], 'dix-xs dix-g');
+  ver(S, 'sb', 20.6, 6.0, [[2, ['값 = 0 + 3 = 3', 'value = 0 + 3 = 3']], [3, ['값 = 2 + 3 = 5 ✓', 'value = 2 + 3 = 5 ✓']]], 'dix-xs dix-g');
+  ar(S, 'm1', [12.2, 4.4], [19.8, 4.4], 'ok', 3, { h: .1 }); ar(S, 'm2', [19.8, 5.2], [12.2, 5.2], 'ok', 3, { h: .1 }); T(S, 'ml', 12.2, 3.4, ['칸별 최댓값', 'slot-wise max'], 'cz-tc dix-tiny dix-g', 3, { w: 7.6 });
+  [['교환 법칙', 'commutative'], ['결합 법칙', 'associative'], ['멱등성', 'idempotent']].forEach((t, i) => box2(S, 'pp' + i, 1 + i * 6.5, 8.2, 6.1, 1.1, t, 'ok', 3, { pct: 30 }));
+  T(S, 'ppl', 20.6, 8.4, ['→ 순서·중복과 상관없이 수렴', '→ converges despite order or duplicates'], 'dix-tiny dix-g', 3);
+  [['PN-Counter', ['증가·감소', 'increment and decrement']], ['OR-Set', ['추가가 이기는 집합', 'add-wins set']], ['LWW-Register', ['타임스탬프 최신값', 'latest by timestamp']], ['RGA·Sequence', ['공동 문서 편집', 'collaborative text']]].forEach(([n, d], i) => { box2(S, 'ot' + i, 1 + i * 7.6, 9.9, 7.2, 1.1, n, 'accent', 4, { pct: 25 }); T(S, 'od' + i, 1 + i * 7.6, 11.15, d, 'cz-tc dix-tiny', 4, { w: 7.2 }); });
+  stepT(S, 'k', 1, 12.6, [['두 복제본이 끊긴 채 따로 좋아요를 셌어요', 'two replicas counted likes separately while cut off'], ['G-카운터: 각 복제본은 자기 칸만 올려요', 'G-counter: each replica only increments its own slot'], ['합치기 = 칸별 최댓값 → 어디서 합쳐도 [2, 3], 값은 합계 5', 'merge = slot-wise max → [2, 3] wherever it happens, value = sum 5'], ['다른 CRDT도 같은 원리: 합치는 연산이 순서·중복과 무관하게 같은 결과를 내요', 'other CRDTs follow the same rule: a merge unaffected by order or duplicates']]);
+  fin(S, 'z', 14.0, [['CRDT: 조정 없이 각자 고쳐도, 합치면 반드시 같은 상태로 수렴하는 자료형', 'CRDTs are data types that always converge once merged, with no coordination needed', 'dix-xs dix-a'], ['강한 최종 일관성 · Yjs·Automerge 같은 공동 편집 라이브러리, Riak, Redis Active-Active가 써요', 'strong eventual consistency · used by co-editing libraries like Yjs and Automerge, Riak and Redis Active-Active']]);
+  S.cap(1, '끊긴 채 따로 세기', 'Counting apart').cap(2, '자기 칸만 올리는 G-카운터', 'A G-counter bumps its own slot').cap(3, '칸별 최댓값으로 합치기', 'Merge by slot-wise max').cap(4, '여러 가지 CRDT', 'A family of CRDTs').cap(5, 'CRDT', 'CRDTs');
+  return S;
+}
+function sLock() {
+  const S = scene({ id: 'di-lock', steps: 5, per: 1.6 });
+  const LY = { L: 1.6, C1: 4.6, C2: 7.6, St: 10.6 }, LAB = { L: ['락 서비스', 'lock service'], C1: 'C1', C2: 'C2', St: ['저장소', 'storage'] };
+  Object.entries(LY).forEach(([k, y]) => { box2(S, 'ln' + k, 1, y, 4.6, 1.1, LAB[k], k === 'St' ? 'warn' : k === 'L' ? 'ink-3' : 'accent', 0, { pct: 22 }); hl(S, 'll' + k, 6, 31, y + .55, 'line', 0, { w: .06 }); });
+  ar(S, 'g1', [8, 2.2], [8, 5.1], 'accent', 1, { h: .1 }); T(S, 'g1l', 8.3, 3.15, 'token 33', 'cz-mono dix-tiny dix-a', 1);
+  rect(S, 'lease', 8.2, 4.25, 7.8, .5, 'accent', 35, 1, { r: .15 }); T(S, 'leasel', 11, 3.45, ['임대 10초', 'lease 10s'], 'dix-tiny dix-a', 1);
+  rect(S, 'gc', 10, 5.35, 12, .5, 'danger', 35, 2, { r: .15 }); T(S, 'gcl', 10.2, 5.95, ['⏸ GC 일시 정지', '⏸ GC pause'], 'dix-tiny dix-r', 2);
+  seg(S, 'exp', [16, 1.2], [16, 6.2], 2, 'danger', .08, { dash: 1 }); T(S, 'expl', 14.5, .25, ['만료', 'expired'], 'cz-tc dix-tiny dix-r', 2, { w: 3 });
+  ar(S, 'g2', [17.4, 2.2], [17.4, 8.1], 'accent', 2, { h: .1 }); T(S, 'g2l', 17.7, 6.2, 'token 34', 'cz-mono dix-tiny dix-a', 2);
+  ar(S, 'w2', [19.4, 8.2], [19.4, 11.1], 'ok', 2, { h: .1 }); T(S, 'w2l', 19.7, 9.2, 'write(34)', 'cz-mono dix-tiny dix-g', 2);
+  T(S, 'wake', 22.3, 4.4, ['깨어남', 'wakes up'], 'dix-tiny', 3);
+  ar(S, 'w1', [23.6, 5.2], [23.6, 11.1], 'danger', 3, { h: .1 }); T(S, 'w1l', 23.9, 6.6, 'write(33)', 'cz-mono dix-tiny dix-r', 3);
+  T(S, 'res0', 24.2, 11.85, ['C2의 데이터를 덮어씀 ✗', 'clobbers C2’s data ✗'], 'dix-xs dix-r', 3, { off: 4 }); T(S, 'res1', 24.2, 11.85, ['거절: 33 < 34 ✓', 'rejected: 33 < 34 ✓'], 'dix-xs dix-g', 4);
+  T(S, 'mx', 6.4, 11.85, ['기억한 최대 토큰: 34', 'max token seen: 34'], 'dix-xs dix-a', 4);
+  stepT(S, 'k', 1, 13.1, [['C1이 10초짜리 임대(lease) 락과 토큰 33을 받아요', 'C1 gets a 10-second lease lock with token 33'], ['C1이 GC로 멈춘 사이 임대가 만료 → C2가 토큰 34로 락을 받고 써요', 'while C1 is paused by GC the lease expires → C2 takes the lock with token 34 and writes'], ['깨어난 C1은 아직 락이 있다고 믿고 써요 → C2의 쓰기를 덮어써 데이터 손상 ✗', 'C1 wakes up believing it still holds the lock and writes → it clobbers C2’s data ✗'], ['펜싱 토큰: 저장소가 본 적 있는 최대 토큰보다 작은 요청은 거절해요', 'fencing token: storage rejects any request with a token smaller than the largest it has seen']]);
+  fin(S, 'z', 14.5, [['임대 락만 믿으면 GC 멈춤·네트워크 지연 때 두 클라이언트가 동시에 쓸 수 있어요', 'a lease lock alone lets two clients write at once after a GC pause or network delay', 'dix-xs dix-a'], ['저장소가 계속 커지는 펜싱 토큰(ZooKeeper zxid, etcd revision)을 직접 확인해야 해요', 'storage must check a monotonically increasing fencing token (ZooKeeper zxid, etcd revision)']]);
+  S.cap(1, '락과 토큰 받기', 'Taking the lock and a token').cap(2, '멈춘 사이 만료', 'Expired during a pause').cap(3, '오래된 락으로 쓰기', 'Writing with a stale lock').cap(4, '펜싱 토큰으로 거절', 'Rejected by the fencing token').cap(5, '분산 락과 펜싱 토큰', 'Distributed locks and fencing tokens');
+  return S;
+}
+function sMerkle() {
+  const S = scene({ id: 'di-merkle', steps: 5, per: 1.6 });
+  const TR = { A: { ox: 1, L: ['3c', '9a', '41', 'e2', '5b', '07', 'd8', '6f'], L2: ['8e', '2d', 'b7', 'f0'], L1: ['5a', '19'], R: 'e3' }, B: { ox: 17, L: ['3c', '9a', '41', 'e2', '5b', 'c4', 'd8', '6f'], L2: ['8e', '2d', '4c', 'f0'], L1: ['5a', 'a6'], R: '7d' } };
+  const Y = [1.4, 3.2, 5.0, 6.8];
+  T(S, 'tA', 1, .1, ['복제본 A', 'replica A'], 'dix-xs dix-a', 0); T(S, 'tB', 17, .1, ['복제본 B', 'replica B'], 'dix-xs dix-a', 0);
+  const DIFF = { 0: [0], 1: [1], 2: [2], 3: [5] }, SAME = { 1: [0], 2: [3], 3: [4] }, SKIP = { 2: [0, 1], 3: [0, 1, 2, 3, 6, 7] };
+  Object.entries(TR).forEach(([t, tr]) => {
+    const lv = [[tr.R], tr.L1, tr.L2, tr.L], wd = [3.6, 3.4, 2.8, 1.6];
+    lv.forEach((arr, l) => { const slot = 14 / arr.length; arr.forEach((h, j) => {
+      const cx = tr.ox + slot * (j + .5), k = `${t}${l}_${j}`;
+      box2(S, k, cx - wd[l] / 2, Y[l], wd[l], 1.1, h, 'line', l === 3 ? 0 : 2, { pct: 22 });
+      if (l) { const ps = 14 / lv[l - 1].length, px = tr.ox + ps * (Math.floor(j / 2) + .5); seg(S, `e${k}`, [px, Y[l - 1] + 1.1], [cx, Y[l]], 2, 'ink-3', .06); }
+      if ((DIFF[l] || []).includes(j)) tsets(S, k, [[3, 'danger', 35]]);
+      if ((SAME[l] || []).includes(j)) tsets(S, k, [[3, 'ok', 35]]);
+      if ((SKIP[l] || []).includes(j)) S.set(k, 3, { opacity: '.3' });
+    }); });
+  });
+  tsets(S, 'A3_5', [[4, 'ok', 45]]); tsets(S, 'B3_5', [[4, 'ok', 45]]);
+  const xa = 1 + 1.75 * 5.5, xb = 17 + 1.75 * 5.5;
+  elb(S, 'sy', [[xa, 7.95], [xa, 8.9], [xb, 8.9], [xb, 8.0]], 'ok', 4, { h: .1 }); T(S, 'syl', xa + .4, 9.1, ['이 블록 하나만 동기화', 'sync just this one block'], 'dix-tiny dix-g', 4);
+  T(S, 'cmp', 1, 10.0, ['비교 7번 · 전송 1블록 (전부 비교하면 8블록 전송)', '7 comparisons · 1 block sent (instead of all 8)'], 'dix-xs dix-g', 4);
+  stepT(S, 'k', 1, 11.3, [['두 복제본의 데이터가 어딘가 하나 달라요 · 전부 보내 비교하면 비싸요', 'the two replicas differ somewhere · shipping everything to compare is expensive'], ['머클 트리: 블록마다 해시, 부모는 자식 해시들을 이어 붙여 다시 해시', 'Merkle tree: hash each block; each parent hashes its children’s hashes'], ['루트부터 비교: 같으면 그 아래 전체를 건너뛰고, 다르면 내려가요', 'compare from the root: equal means skip the whole subtree, different means descend'], ['약 log N번 내려가 다른 블록을 찾아 그것만 보내요', 'about log N steps down find the differing block, and only it is sent']]);
+  fin(S, 'z', 12.7, [['머클 트리: 큰 데이터의 차이를 해시 몇 번 비교로 찾아내는 구조', 'a Merkle tree finds differences in large data with a handful of hash comparisons', 'dix-xs dix-a'], ['카산드라·다이나모의 안티 엔트로피 복구, Git, 블록체인, 인증서 투명성 로그가 써요', 'used by Cassandra/Dynamo anti-entropy repair, Git, blockchains and Certificate Transparency logs']]);
+  S.cap(1, '어딘가 다른 두 복제본', 'Two replicas that differ somewhere').cap(2, '해시의 트리', 'A tree of hashes').cap(3, '위에서부터 비교', 'Compare from the top').cap(4, '다른 블록만 동기화', 'Sync only the differing block').cap(5, '머클 트리와 안티 엔트로피', 'Merkle trees and anti-entropy');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'di-scaling': [
+    item('di-gossip', '가십 프로토콜과 장애 감지', 'Gossip protocols and failure detection', '중앙 서버 없이 노드들이 무작위 이웃과 정보를 주고받아, 소문처럼 O(log N) 라운드 만에 전체에 퍼뜨리는 방식이에요. 멤버십 관리와 장애 감지에 써요.', '소식을 아는 노드가 라운드마다 무작위 노드 하나에게 전하면 아는 노드 수가 약 2배씩 늘어, 16개 노드면 4라운드쯤에 모두 알게 돼요. 일부 노드가 죽거나 메시지가 빠져도 다른 경로로 퍼지므로 튼튼해요. 각 노드의 하트비트 카운터도 이렇게 퍼뜨리면, 오래 오르지 않는 노드를 먼저 “의심”하고 확인을 거쳐 장애로 판정할 수 있어요(SWIM, φ 누적 감지). 카산드라와 Consul이 이 방식을 써요.', 'Nodes swap information with random peers, with no central server, so news spreads like a rumour to everyone in O(log N) rounds; it is used for membership and failure detection.', 'If every informed node tells one random peer per round, the informed set roughly doubles, so 16 nodes all know within about 4 rounds. Dead nodes or lost messages don’t stop it, since information takes other routes. Spreading each node’s heartbeat counter the same way lets the cluster first suspect a node whose counter stops rising, then confirm and declare it failed (SWIM, phi-accrual detection). Cassandra and Consul work this way.', sGossip())
+  ],
+  'di-messaging': [
+    item('di-outbox', '트랜잭셔널 아웃박스', 'The transactional outbox', 'DB 저장과 메시지 발행을 함께 해야 할 때, 둘 중 하나만 성공하는 “이중 쓰기” 문제를 막는 패턴이에요. 보낼 이벤트를 같은 DB 트랜잭션에 함께 저장해요.', '주문을 DB에 저장한 직후 서비스가 죽으면 OrderCreated 이벤트가 사라져 배송 서비스는 주문을 몰라요. 반대로 먼저 발행하고 DB 커밋이 실패하면 존재하지 않는 주문의 이벤트가 나가요. 아웃박스 패턴은 주문 행과 outbox 행을 하나의 로컬 트랜잭션으로 함께 저장하고, 별도 릴레이가 outbox를 폴링하거나 CDC(Debezium 등)로 읽어 브로커에 발행한 뒤 표시해요. 전달은 최소 한 번이라 중복이 생길 수 있으니 소비자는 멱등하게 만들어요.', 'A pattern that prevents the dual-write problem, where only one of a DB write and a message publish succeeds, by saving the outgoing event in the same database transaction.', 'If the service crashes right after saving an order, the OrderCreated event is lost and shipping never hears of the order. Publish first instead and a failed DB commit leaves an event for an order that doesn’t exist. The outbox pattern stores the order row and an outbox row in one local transaction; a separate relay polls the outbox or reads it through CDC (e.g. Debezium), publishes to the broker and marks the row. Delivery is at least once, so consumers must be idempotent.', sOutbox())
+  ],
+  'di-consensus': [
+    item('di-vclock', '벡터 시계', 'Vector clocks', '프로세스마다 칸이 하나씩 있는 카운터 벡터로, 두 사건이 인과 관계(먼저 일어남)인지 동시인지를 정확히 판별하는 논리 시계예요.', '각 프로세스는 [P1, P2, P3] 같은 벡터를 들고 사건마다 자기 칸을 1 올려요. 메시지에 벡터를 실어 보내고, 받는 쪽은 칸별 최댓값을 취한 뒤 자기 칸을 올려요. 모든 칸이 작거나 같으면 “먼저 일어남(→)”이고, 어느 쪽도 작지 않으면 동시(∥)예요. 램포트 시계는 숫자 하나라 3 > 1이어도 인과인지 동시인지 알 수 없지만, 벡터 시계는 구분할 수 있어요. 대신 벡터가 프로세스 수만큼 길어지고, 다이나모 계열 저장소가 동시 쓰기 충돌을 찾을 때 써요.', 'Logical clocks made of a counter vector with one slot per process, which tell exactly whether two events are causally ordered (happened before) or concurrent.', 'Each process keeps a vector such as [P1, P2, P3] and adds 1 to its own slot for every event. Messages carry the vector; the receiver takes the slot-wise maximum, then bumps its own slot. If every slot is less than or equal, one event happened before the other (→); if neither is smaller, they are concurrent (∥). A Lamport clock is a single number, so 3 > 1 can’t distinguish causality from concurrency, but a vector clock can. The cost is a vector as long as the number of processes; Dynamo-style stores use it to detect conflicting concurrent writes.', sVclock()),
+    item('di-crdt', 'CRDT', 'CRDTs', '여러 복제본이 서로 조정하지 않고 따로 수정해도, 합치면 반드시 같은 상태로 수렴하도록 설계된 자료형이에요.', '네트워크가 끊긴 채 서울 복제본은 좋아요 2개, 도쿄 복제본은 3개를 받았을 때 “마지막 쓰기 승리”로 합치면 2개가 사라져요. G-카운터는 복제본마다 자기 칸만 올리고, 합칠 때 칸별 최댓값을 취해 [2, 3], 값은 합계 5가 돼요. 합치기 연산이 교환·결합 법칙과 멱등성을 만족하므로 순서나 중복과 상관없이 수렴해요(강한 최종 일관성). PN-카운터, OR-Set, LWW-Register, 공동 편집용 시퀀스 CRDT가 있고 Yjs·Automerge, Riak, Redis Active-Active가 써요.', 'Data types designed so that replicas edited independently, with no coordination, always converge to the same state once merged.', 'Suppose that while partitioned the Seoul replica gets 2 likes and the Tokyo replica gets 3; a last-write-wins merge loses 2 of them. A G-counter lets each replica bump only its own slot and merges by slot-wise maximum, giving [2, 3] with value 5. Because the merge is commutative, associative and idempotent, replicas converge regardless of order or duplicates (strong eventual consistency). There are PN-counters, OR-sets, LWW-registers and sequence CRDTs for collaborative text, used by Yjs, Automerge, Riak and Redis Active-Active.', sCrdt()),
+    item('di-lock', '분산 락과 펜싱 토큰', 'Distributed locks and fencing tokens', '여러 서버 중 하나만 자원을 쓰게 하는 분산 락은 임대(lease)만으로는 안전하지 않아요. 계속 커지는 펜싱 토큰을 저장소가 확인해야 해요.', 'C1이 10초짜리 임대 락과 토큰 33을 받은 뒤 GC로 멈춘 사이 임대가 만료되고, C2가 토큰 34로 락을 받아 저장소에 써요. 깨어난 C1은 아직 락을 가졌다고 믿고 써서 C2의 데이터를 덮어써요. 펜싱 토큰을 쓰면 저장소가 지금까지 본 최대 토큰(34)보다 작은 33의 요청을 거절해요. ZooKeeper의 zxid나 etcd의 revision처럼 단조 증가하는 값을 토큰으로 쓰고, 확인은 반드시 자원 쪽에서 해야 해요.', 'Distributed locks let only one server use a resource at a time, but a lease alone isn’t safe: the resource must check a monotonically increasing fencing token.', 'C1 takes a 10-second lease lock with token 33, then pauses for garbage collection while the lease expires; C2 acquires the lock with token 34 and writes to storage. C1 wakes believing it still holds the lock and overwrites C2’s data. With fencing tokens, storage rejects C1’s request because 33 is smaller than the largest token it has seen, 34. Monotonic values such as ZooKeeper’s zxid or etcd’s revision serve as tokens, and the check must happen at the resource itself.', sLock()),
+    item('di-merkle', '머클 트리와 안티 엔트로피', 'Merkle trees and anti-entropy', '데이터 블록의 해시를 트리로 쌓아, 두 복제본의 차이를 해시 몇 번만 비교해서 찾아내는 구조예요.', '블록마다 해시를 구하고, 부모는 자식 해시들을 이어 붙여 다시 해시해 루트까지 올려요. 두 복제본의 루트가 같으면 전체가 같고, 다르면 자식으로 내려가며 같은 쪽 하위 트리는 통째로 건너뛰어요. 약 log N번만 내려가면 다른 블록을 찾아 그것만 보내면 돼요. 카산드라·다이나모의 안티 엔트로피 복구가 이렇게 복제본을 맞추고, Git의 커밋 구조, 블록체인, 인증서 투명성 로그도 머클 트리를 써요.', 'A tree built from hashes of data blocks that finds where two replicas differ with only a few hash comparisons.', 'Hash every block, then hash each pair of child hashes into a parent, up to the root. If two replicas have the same root, everything matches; otherwise descend, skipping any subtree whose hashes agree. About log N steps down reveal the differing block, and only it needs sending. Cassandra and Dynamo’s anti-entropy repair reconciles replicas this way, and Git’s object model, blockchains and Certificate Transparency logs also rely on Merkle trees.', sMerkle())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('di-scaling', '확장', 'Scaling', '확장과 부하 분산', 'Scaling and load',
     '사용자가 늘어도 느려지지 않게 서버와 데이터를 나누는 방법이에요.', 'Ways to split servers and data so growth doesn’t mean slowdowns.', [
@@ -564,7 +833,7 @@ window.UX = page([
     item('di-chash', '일관된 해싱', 'Consistent hashing', '서버와 키를 같은 해시 링 위에 놓고, 키는 시계 방향으로 처음 만나는 서버에 저장해요. 서버가 늘거나 줄어도 일부 키만 옮겨가요.', '분산 캐시(Memcached 클라이언트), DynamoDB·Cassandra 파티셔닝에 써요. 서버마다 가상 노드를 여러 개 두면 부하가 고르게 퍼져요.', 'Servers and keys share one hash ring; each key lives on the next server clockwise, so adding or removing a server moves only a few keys.', 'Used by distributed caches and by DynamoDB and Cassandra partitioning; virtual nodes per server even out the load.', sCHash()),
     item('di-stampede', '캐시 스탬피드', 'Cache stampede', '인기 있는 캐시 항목이 만료되는 순간 수많은 요청이 한꺼번에 DB로 몰려 장애를 일으키는 현상이에요.', '갱신 락(하나만 다시 계산), 만료 전 미리 갱신, TTL에 무작위 값 더하기로 막아요. 이전 값을 잠깐 내주는(stale-while-revalidate) 방식도 좋아요.', 'When a hot cache entry expires, a flood of requests hits the database at once and can take it down.', 'Prevent it with a rebuild lock, early refresh, randomized TTLs, or serving stale data while revalidating.', sStampede()),
     item('di-ratelimit', '레이트 리밋', 'Rate limiting', '일정 시간 동안 받을 수 있는 요청 수를 제한해요. 토큰 버킷은 토큰이 일정 속도로 차고, 요청마다 하나씩 써요.', '로그인 시도, 공개 API, 비싼 작업을 보호해요. 사용자·IP·API 키별로 걸고, 초과하면 429와 Retry-After 헤더를 돌려줘요.', 'Caps how many requests are accepted per time window; in a token bucket, tokens refill at a steady rate and each request spends one.', 'Protects logins, public APIs and costly endpoints; limit per user, IP or API key and answer 429 with a Retry-After header.', sRate())
-  ]),
+  ].concat(XT.add['di-scaling'] || [])),
   sec('di-messaging', '메시징', 'Messaging', '비동기와 메시징', 'Async and messaging',
     '서비스들이 서로 기다리지 않고 메시지와 이벤트로 일하는 방식이에요.', 'How services work through messages and events instead of waiting on each other.', [
     item('di-mq', '메시지 큐', 'Message queues', '생산자가 메시지를 큐에 넣으면 소비자(워커)가 자기 속도로 꺼내 처리해요. 둘은 서로를 기다리지 않아요.', '이메일 발송, 이미지 변환, 결제 후처리처럼 오래 걸리는 일을 뒤로 빼요. RabbitMQ, SQS가 대표적이고 실패 메시지는 DLQ로 보내요.', 'Producers drop messages on a queue and consumers (workers) take them at their own pace; neither waits for the other.', 'Push slow work like emails, image processing and post-payment tasks to the background; RabbitMQ and SQS are common, with failed messages parked in a DLQ.', sMQ()),
@@ -572,7 +841,7 @@ window.UX = page([
     item('di-idem', '멱등성과 재시도', 'Idempotency and retries', '같은 요청을 여러 번 보내도 결과가 한 번 보낸 것과 같도록 만드는 성질이에요. 요청마다 고유 키를 붙여 중복을 걸러요.', '결제·주문 API는 Idempotency-Key 헤더를 받으세요(Stripe 방식). 메시지 소비자도 같은 메시지가 두 번 올 수 있다고 가정하고 처리해요.', 'An operation is idempotent if doing it twice has the same effect as doing it once; a unique key per request lets the server drop duplicates.', 'Payment and order APIs should accept an Idempotency-Key header (as Stripe does); message consumers must assume duplicates.', sIdem()),
     item('di-saga', '사가 패턴', 'Saga pattern', '여러 서비스에 걸친 작업을 단계별 로컬 트랜잭션으로 나누고, 중간에 실패하면 앞 단계를 되돌리는 보상 작업을 실행해요.', '서비스마다 DB가 따로인 마이크로서비스에서 분산 트랜잭션 대신 써요. 보상 작업도 멱등하게 만들어야 해요.', 'A cross-service operation is split into local transactions; if one fails, compensating actions undo the earlier steps.', 'The usual replacement for distributed transactions when each microservice owns its database; compensations must be idempotent too.', sSaga()),
     item('di-es', '이벤트 소싱', 'Event sourcing', '현재 값만 저장하는 대신 일어난 모든 사건(이벤트)을 순서대로 저장하고, 상태는 이벤트를 재생해서 계산해요.', '금융 원장, 감사 기록이 중요한 도메인에 맞아요. 스키마 변경과 재생 비용이 커서 모든 곳에 쓰기보단 필요한 곳에만 써요.', 'Instead of storing only the current value, store every event in order and compute state by replaying them.', 'Fits ledgers and audit-heavy domains; schema evolution and replay cost make it a targeted tool rather than a default.', sES())
-  ]),
+  ].concat(XT.add['di-messaging'] || [])),
   sec('di-consensus', '일관성', 'Consistency', '일관성과 합의', 'Consistency and consensus',
     '여러 대의 컴퓨터가 같은 데이터에 대해 의견을 맞추는 방법이에요.', 'How many machines agree on the same data.', [
     item('di-cap', 'CAP 정리', 'CAP theorem', '네트워크 분할(P)이 생기면 일관성(C)과 가용성(A) 중 하나를 포기해야 해요.', '분할은 피할 수 없으니 "장애 때 무엇을 택할까"의 문제예요. 은행 잔액은 CP, 좋아요 수나 피드는 AP가 자연스러워요. 평소의 지연까지 따지는 PACELC도 있어요.', 'During a network partition (P), a system must give up either consistency (C) or availability (A).', 'Partitions happen, so the real question is what to sacrifice when they do: balances lean CP, likes and feeds lean AP; PACELC adds the everyday latency trade-off.', sCAP()),
@@ -581,7 +850,7 @@ window.UX = page([
     item('di-raft', 'Raft 합의 알고리즘', 'Raft consensus', '노드들이 리더를 선출하고, 리더가 로그를 팔로워에게 복제해 과반이 저장하면 확정해요. 리더가 죽으면 새로 선거해요.', 'etcd(쿠버네티스), Consul, CockroachDB, Kafka KRaft가 Raft를 써요. 과반이 필요해서 노드는 3·5대처럼 홀수로 둬요.', 'Nodes elect a leader; the leader replicates its log to followers and commits an entry once a majority stores it, holding a new election if it dies.', 'Used by etcd (Kubernetes), Consul, CockroachDB and Kafka KRaft; clusters use odd sizes like 3 or 5 because a majority is required.', sRaft()),
     item('di-2pc', '2단계 커밋 (2PC)', 'Two-phase commit', '코디네이터가 모든 참여자에게 준비를 묻고(1단계), 모두 YES면 커밋, 하나라도 NO면 전부 롤백해요(2단계).', '하나의 DB 안이나 XA 트랜잭션에서 쓰여요. 코디네이터 장애 때 참여자가 잠긴 채 멈출 수 있어 마이크로서비스에선 사가를 선호해요.', 'A coordinator asks every participant to prepare (phase 1), then commits if all vote yes or rolls everyone back if any vote no (phase 2).', 'Used inside databases and XA transactions; a failed coordinator can leave participants blocked, so microservices prefer sagas.', s2PC()),
     item('di-lamport', '논리 시계 (램포트)', 'Logical clocks (Lamport)', '서버마다 시계가 어긋나므로, 이벤트마다 카운터를 올리고 메시지를 받으면 max(내 값, 받은 값) + 1로 맞춰 원인-결과 순서를 표현해요.', '분산 로그 정렬, 충돌 해결의 기초예요. 동시 발생까지 구분하려면 벡터 클록, 실제 시간과 섞으려면 HLC(하이브리드 논리 시계)를 써요.', 'Since machine clocks drift, each process bumps a counter per event and, on receiving a message, sets it to max(local, received) + 1, so causes get smaller numbers than effects.', 'The basis for ordering distributed logs and resolving conflicts; vector clocks detect concurrency and hybrid logical clocks mix in wall time.', sLamport())
-  ]),
+  ].concat(XT.add['di-consensus'] || [])),
   sec('di-arch', '아키텍처', 'Architecture', '아키텍처와 장애 대응', 'Architecture and resilience',
     '서비스를 나누고 연결하고, 일부가 고장 나도 전체가 버티게 만드는 설계예요.', 'Designs for splitting and connecting services, and for surviving partial failures.', [
     item('di-micro', '모놀리스 vs 마이크로서비스', 'Monolith vs microservices', '모놀리스는 하나로 빌드·배포하고, 마이크로서비스는 기능별로 나눠 각자 DB와 배포 주기를 가져요.', '마이크로서비스는 팀이 독립적으로 움직일 때 효과가 있어요. 작은 팀이라면 경계를 잘 나눈 모듈러 모놀리스가 대부분 더 나아요.', 'A monolith is built and deployed as one unit; microservices split by capability, each with its own database and release cycle.', 'Microservices pay off when teams need to move independently; small teams are usually better served by a well-structured modular monolith.', sMicro()),
@@ -591,8 +860,9 @@ window.UX = page([
     item('di-cb', '서킷 브레이커', 'Circuit breaker', '하위 서비스가 계속 실패하면 회로를 열어 호출을 즉시 실패시키고, 잠시 뒤 시험 요청으로 회복을 확인해요.', '느린 서비스 하나가 스레드·커넥션을 다 잡아먹어 전체가 죽는 연쇄 장애를 막아요. Resilience4j, Envoy, 서비스 메시에 들어 있어요.', 'After repeated failures it opens the circuit and fails calls immediately, then probes with a trial request before closing again.', 'Prevents one slow dependency from exhausting threads and connections and taking everything down; built into Resilience4j, Envoy and service meshes.', sCB()),
     item('di-retry', '지수 백오프와 지터', 'Exponential backoff and jitter', '실패한 요청을 재시도할 때 간격을 1초, 2초, 4초처럼 두 배씩 늘리고, 무작위 값(지터)을 더해 재시도가 한꺼번에 몰리지 않게 해요.', '최대 재시도 횟수와 최대 대기 시간을 꼭 두세요. 멱등하지 않은 요청은 함부로 재시도하면 안 돼요. AWS SDK 등 대부분의 클라이언트에 내장돼 있어요.', 'Retry failed requests with doubling waits such as 1 s, 2 s, 4 s, plus random jitter so clients don’t retry in lockstep.', 'Always cap attempts and total wait, and never blindly retry non-idempotent requests; most SDKs, AWS included, build this in.', sRetry()),
     item('di-estimate', '용량 추정', 'Back-of-the-envelope estimation', '사용자 수에서 출발해 초당 요청, 피크, 저장 용량을 어림 계산해 필요한 규모를 잡아요.', '시스템 설계 면접과 실제 기획 모두에 써요. 하루 ≈ 10만 초, 피크 ≈ 평균의 2~3배처럼 외워 두면 빨라요.', 'Start from user counts and roughly derive requests per second, peaks and storage to size the system.', 'Used in system design interviews and real planning; shortcuts like “a day ≈ 100k seconds” and “peak ≈ 2–3× average” keep it quick.', sEstimate())
-  ])
-]);
+  ].concat(XT.add['di-arch'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .di-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .di-p .in{font-family:inherit;font-size:.72em;font-weight:700;line-height:1.25;text-align:center}
