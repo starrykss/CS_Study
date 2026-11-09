@@ -322,6 +322,306 @@ function sSW() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'wbx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono wbx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono wbx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c wbx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono wbx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c wbx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'wbx-s wbx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono wbx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono wbx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono wbx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono wbx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono wbx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'wbx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'wbx-xs', 5));
+
+
+const CSSX = `
+.wbx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.wbx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.wbx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.wbx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.wbx-r .in{color:var(--danger);font-weight:800}
+.wbx-g .in{color:var(--ok);font-weight:800}
+.wbx-a .in{color:var(--accent);font-weight:800}
+.wbx-w .in{color:var(--warn);font-weight:800}
+.wbx-c .in{font-size:.6em;font-weight:700}
+.wbx-c2 .in{font-size:.5em;font-weight:700}
+.wbx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.wbx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'wbx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : 0 }));
+
+/* ================= CSS ================= */
+function sBox() {
+  const S = scene({ id: 'wb-box', steps: 5, per: 1.6 });
+  frame(S, 'mg', 1, 1, 14, 10, 'warn', 1, { dash: 1, w: .1, r: .2 }); T(S, 'mgl', 1.3, 1.1, 'margin', 'cz-mono wbx-tiny wbx-w', 1);
+  rect(S, 'bd', 2.2, 2.2, 11.6, 7.6, 'ink-2', 70, 1, { r: .2 }); T(S, 'bdl', 2.4, 2.25, 'border', 'cz-mono wbx-tiny', 1, { css: 'color:var(--ui)' });
+  rect(S, 'pd', 2.6, 2.7, 10.8, 6.7, 'accent', 22, 1, { r: .1 }); T(S, 'pdl', 2.9, 2.8, 'padding', 'cz-mono wbx-tiny wbx-a', 1);
+  rect(S, 'ct', 4.4, 4.4, 7.2, 3.2, 'ok', 40, 1, { r: .1, html: 'content', cls: 'cz-c wbx-c2' });
+  const bar = (k, y, parts, st, lbl, c) => { let x = 17; parts.forEach(([w, col, l], i) => { rect(S, `${k}${i}`, x, y, w - .04, 1.3, col, 40, st, { r: .05, html: l, cls: 'cz-c wbx-c2' }); x += w; }); T(S, k + 'l', 17, y - .9, lbl, 'cz-mono wbx-xs ' + c, st); };
+  bar('cb', 2, [[.25, 'ink-2', ''], [1, 'accent', ''], [10, 'ok', '200'], [1, 'accent', ''], [.25, 'ink-2', '']], 2, ['content-box: width 200 → 실제 250px', 'content-box: width 200 → 250px wide'], 'wbx-r');
+  bar('bb', 5, [[.25, 'ink-2', ''], [1, 'accent', ''], [7.5, 'ok', '150'], [1, 'accent', ''], [.25, 'ink-2', '']], 3, ['border-box: 테두리까지 200px', 'border-box: 200px including border'], 'wbx-g');
+  T(S, 'bbc', 17, 6.7, '* { box-sizing: border-box; }', 'cz-mono wbx-xs wbx-g', 3);
+  box2(S, 'ma', 17, 8.2, 10, 1.3, ['블록 A · margin-bottom 20px', 'block A · margin-bottom 20px'], 'line', 4, { pct: 40 }); box2(S, 'mb', 17, 11, 10, 1.3, ['블록 B · margin-top 30px', 'block B · margin-top 30px'], 'line', 4, { pct: 40 });
+  seg(S, 'gp', [22, 9.55], [22, 10.95], 4, 'warn', .08); T(S, 'gpl', 22.4, 9.9, ['간격 30px (50 아님)', 'gap 30px (not 50)'], 'wbx-xs wbx-w', 4);
+  stepT(S, 'k', 1, 12.8, [['모든 요소는 상자: 안쪽부터 content → padding → border → margin', 'every element is a box: content → padding → border → margin'], ['기본값 content-box: width는 내용만이라 padding·border가 더해져요', 'default content-box: width covers content only, so padding and border add on'], ['border-box: width에 padding·border까지 포함 → 계산이 쉬워요', 'border-box: width includes padding and border → easier math'], ['세로로 붙은 블록의 margin은 겹쳐서 큰 쪽만 남아요 (마진 상쇄)', 'vertical margins between blocks collapse to the larger one']], 'wbx-xs wbx-a');
+  fin(S, 'z', 14.2, [['CSS 박스 모델: 크기와 간격의 기본 단위 · 개발자 도구의 박스 그림으로 바로 확인해요', 'the CSS box model is the basic unit of size and spacing · inspect it in DevTools', 'wbx-xs wbx-a'], ['요즘 CSS는 거의 다 border-box로 시작해요 · 간격은 margin보다 gap을 선호해요', 'modern CSS starts with border-box everywhere and prefers gap over margins']]);
+  S.cap(1, '네 겹의 상자', 'Four nested layers').cap(2, 'content-box', 'content-box').cap(3, 'border-box', 'border-box').cap(4, '마진 상쇄', 'Margin collapsing').cap(5, 'CSS 박스 모델', 'The CSS box model');
+  return S;
+}
+function sSpec() {
+  const S = scene({ id: 'wb-specificity', steps: 5, per: 1.6 });
+  code(S, 'cd', 1, .8, 15, ['p        { color: gray; }', '.note    { color: blue; }', '#intro   { color: green; }', ['<p id="intro" class="note">안녕</p>', '<p id="intro" class="note">Hello</p>']], [[3, 1], [2, 2]], { hoff: 3 });
+  T(S, 'q', 1, 6.9, ['이 문단은 무슨 색일까?', 'what color is this paragraph?'], 'wbx-s wbx-a', 1);
+  [['(0, 0, 1)', 'line'], ['(0, 1, 0)', 'accent'], ['(1, 0, 0)', 'ok']].forEach(([t, c], i) => { box2(S, 's' + i, 17, 1.1 + i * 1.3, 5, 1.1, t, c, 2, { pct: 35 }); });
+  T(S, 'sl', 22.6, 1.2, ['(ID, 클래스, 태그) 개수', '(ID, class, tag) counts'], 'wbx-xs', 2); T(S, 'sw', 22.6, 3.8, ['← 가장 큼', '← highest'], 'wbx-xs wbx-g', 2);
+  T(S, 'res', 17, 5.4, ['결과: 초록 ✓', 'result: green ✓'], 'wbx-s wbx-g', 2);
+  [['!important', 'danger'], [['인라인 style', 'inline style'], 'warn'], ['#id', 'ok'], ['.class · :hover', 'accent'], [['태그 · ::before', 'tag · ::before'], 'line']].forEach(([t, c], i) => box2(S, 'o' + i, 1 + i * 6.1, 8.1, 5.9, 1.4, t, c, 3, { pct: 30 }));
+  T(S, 'ot', 1, 9.8, ['왼쪽일수록 강해요 · 같으면 나중에 쓴 규칙이 이겨요', 'stronger to the left · on a tie, the later rule wins'], 'wbx-xs wbx-a', 3);
+  T(S, 'k1', 1, 11, ['명시도 싸움을 피하려면: 클래스 위주(BEM), :where()로 0점 만들기, @layer로 순서 정하기', 'to avoid specificity wars: stick to classes (BEM), zero it with :where(), order with @layer'], 'wbx-xs', 4);
+  T(S, 'k2', 1, 12, ['!important와 ID 선택자 남발은 나중에 덮어쓰기 어렵게 만들어요', 'overusing !important and ID selectors makes later overrides painful'], 'wbx-xs wbx-r', 4);
+  fin(S, 'z', 13.4, [['캐스케이드: 중요도 → 출처 → 명시도 → 선언 순서로 이긴 규칙을 골라요', 'the cascade picks a winner by importance, origin, specificity, then source order', 'wbx-xs wbx-a'], ['명시도는 (ID 수, 클래스·속성·가상 클래스 수, 태그 수)를 앞에서부터 비교해요', 'specificity compares (IDs, classes/attributes/pseudo-classes, tags) from the left']]);
+  S.cap(1, '세 규칙이 충돌', 'Three rules collide').cap(2, '명시도 계산', 'Compute specificity').cap(3, '강한 순서', 'Order of strength').cap(4, '명시도 관리 요령', 'Keeping specificity low').cap(5, '캐스케이드와 명시도', 'Cascade and specificity');
+  return S;
+}
+function sFlex() {
+  const S = scene({ id: 'wb-flex', steps: 5, per: 1.6 });
+  frame(S, 'ct', 1, 1.6, 24, 6, 'ink-3', 0, { w: .1, r: .2 });
+  ar(S, 'ma', [1, .9], [25, .9], 'accent', 1, { h: .08 }); T(S, 'mal', 25.4, .6, ['주축', 'main axis'], 'wbx-xs wbx-a', 1);
+  ar(S, 'ca', [25.8, 1.6], [25.8, 7.6], 'warn', 1, { h: .08 }); T(S, 'cal', 26.3, 4.2, ['교차축', 'cross axis'], 'wbx-xs wbx-w', 1);
+  const IT = [['A', 2], ['B', 3.4], ['C', 1.6]], X1 = [1.2, 4.8, 8.4], X2 = [1.2, 11.3, 21.4];
+  IT.forEach(([l, h], i) => { box2(S, 'i' + l, X1[i], 1.8, 3.4, h, l, i === 1 ? 'ok' : 'accent', 0, { pct: 35 }); S.move('i' + l, 2, X2[i], 1.8); S.move('i' + l, 3, X2[i], 1.6 + (6 - h) / 2); });
+  S.set('iB', 4, { opacity: '0' }); box2(S, 'iB2', 4.8, 2.9, 16.4, 3.4, ['B (flex: 1)', 'B (flex: 1)'], 'ok', 4, { pct: 35 });
+  code(S, 'cd', 1, 8.6, 30, [['.box { display: flex; }              /* 한 줄로, 주축 → */', '.box { display: flex; }              /* one row, main axis → */'], ['  justify-content: space-between;    /* 주축 정렬 */', '  justify-content: space-between;    /* main-axis alignment */'], ['  align-items: center;               /* 교차축 정렬 */', '  align-items: center;               /* cross-axis alignment */'], ['.b { flex: 1; }                      /* 남는 공간을 차지 */', '.b { flex: 1; }                      /* take the free space */']], [[0, 1], [1, 2], [2, 3], [3, 4]], { hoff: 5 });
+  fin(S, 'z', 14.6, [['Flexbox: 한 방향(행 또는 열)으로 늘어선 요소를 정렬하고 남는 공간을 나눠요', 'Flexbox lines items up in one direction (row or column) and shares out free space', 'wbx-xs wbx-a'], ['flex-direction: column이면 주축과 교차축이 바뀌어요 · 줄바꿈은 flex-wrap, 간격은 gap', 'flex-direction: column swaps the axes · flex-wrap wraps lines and gap sets spacing']]);
+  S.cap(1, '한 줄로 늘어서기', 'Line up in a row').cap(2, '주축 정렬', 'Main-axis alignment').cap(3, '교차축 정렬', 'Cross-axis alignment').cap(4, '남는 공간 나누기', 'Share the free space').cap(5, 'Flexbox', 'Flexbox');
+  return S;
+}
+function sGrid() {
+  const S = scene({ id: 'wb-grid', steps: 5, per: 1.6 });
+  frame(S, 'g', 1, 1.4, 18, 7, 'ink-3', 1, { w: .1, r: .1 });
+  [5, 12].forEach((x, i) => seg(S, 'cv' + i, [x, 1.4], [x, 8.4], 1, 'ink-3', .06, { dash: 1 })); [2.8, 7].forEach((y, i) => seg(S, 'rh' + i, [1, y], [19, y], 1, 'ink-3', .06, { dash: 1 }));
+  [['200px', 1, 4], ['1fr', 5, 7], ['1fr', 12, 7]].forEach(([l, x, w], i) => T(S, 'cw' + i, x, .5, l, 'cz-tc cz-mono wbx-xs wbx-a', 2, { w }));
+  T(S, 'fr', 1, 8.9, ['1fr = 남은 공간을 나눈 한 몫 → 고정 200px를 빼고 반반', '1fr = one share of the leftover space → half each after the fixed 200px'], 'wbx-xs wbx-a', 2, { off: 3 });
+  [['hd', 1, 1.4, 18, 1.4, 'header', 'accent'], ['sd', 1, 2.8, 4, 4.2, 'side', 'warn'], ['mn', 5, 2.8, 14, 4.2, 'main', 'ok'], ['ft', 1, 7, 18, 1.4, 'footer', 'accent']].forEach(([k, x, y, w, h, l, c]) => rect(S, k, x + .1, y + .1, w - .2, h - .2, c, 30, 3, { r: .15, html: l, cls: 'cz-c wbx-c2' }));
+  T(S, 'ct', 21, 1.4, ['카드 목록은 폭에 따라 열 수가 바뀌어요', 'card lists reflow with the width'], 'wbx-xs wbx-a', 4);
+  frame(S, 'cd', 21, 2.4, 10, 5.6, 'ink-3', 4, { w: .08, r: .2 }); for (let i = 0; i < 6; i++) box2(S, 'c' + i, 21.3 + (i % 3) * 3.2, 2.7 + Math.floor(i / 3) * 2.6, 3, 2.4, String(i + 1), 'accent', 4, { pct: 25 });
+  code(S, 'cs', 1, 9.9, 30, ['grid-template-columns: 200px 1fr 1fr;', 'grid-template-areas: "head head head" "side main main" "foot foot foot";', 'grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));'], [[0, 2], [1, 3], [2, 4]], { st: 2, hoff: 5 });
+  T(S, 'n1', 21, 8.3, ['Flex는 1차원, Grid는 2차원', 'Flex is 1D, Grid is 2D'], 'wbx-xs', 4);
+  fin(S, 'z', 14.8, [['CSS Grid: 행과 열을 함께 정의해 2차원 레이아웃을 선언적으로 그려요', 'CSS Grid defines rows and columns together for declarative 2D layouts', 'wbx-xs wbx-a'], ['페이지 뼈대는 Grid, 그 안의 한 줄 정렬은 Flex를 쓰는 조합이 흔해요', 'a common combo: Grid for the page skeleton, Flex for alignment within rows']]);
+  S.cap(1, '격자 선 긋기', 'Draw the grid lines').cap(2, 'fr 단위', 'The fr unit').cap(3, '영역 이름으로 배치', 'Place by area names').cap(4, '자동으로 채우기', 'Auto-fill').cap(5, 'CSS Grid', 'CSS Grid');
+  return S;
+}
+function sResponsive() {
+  const S = scene({ id: 'wb-responsive', steps: 5, per: 1.6 });
+  code(S, 'vp', 1, .8, 30, ['<meta name="viewport" content="width=device-width, initial-scale=1">'], [], { st: 1 });
+  T(S, 'vpn', 1, 3, ['이게 없으면 휴대폰이 980px 데스크톱 화면을 축소해서 보여줘요', 'without it, phones render a 980px desktop page shrunk down'], 'wbx-xs wbx-r', 1, { off: 2 });
+  const dev = (k, x, w, h, cols, n, st, l) => { rect(S, k, x, 3.8, w, h, 'line', 30, st, { r: .5, css: 'border:.14em solid var(--ink-3)' }); T(S, k + 'l', x, 3.8 + h + .2, l, 'cz-tc wbx-tiny', st, { w }); const cw = (w - .6 - (cols - 1) * .3) / cols; for (let i = 0; i < n; i++) box2(S, `${k}c${i}`, x + .3 + (i % cols) * (cw + .3), 4.2 + Math.floor(i / cols) * 1.7, cw, 1.4, '', 'accent', st, { pct: 25 }); };
+  dev('ph', 1, 5, 9, 1, 5, 2, ['휴대폰 · 1열', 'phone · 1 column']); dev('tb', 8, 9, 7.2, 2, 6, 3, ['태블릿 ≥ 768px · 2열', 'tablet ≥ 768px · 2 columns']); dev('dt', 19, 12, 5.6, 3, 6, 3, ['데스크톱 ≥ 1024px · 3열', 'desktop ≥ 1024px · 3 columns']);
+  T(S, 'mf', 8, 3, ['모바일 우선: 기본 CSS는 작은 화면용', 'mobile first: base CSS targets small screens'], 'wbx-xs wbx-a', 2, { off: 3 });
+  T(S, 'mq', 8, 3, '@media (min-width: 768px) { … }', 'cz-mono wbx-xs wbx-a', 3);
+  T(S, 'fl', 1, 14.2, ['유동 단위 clamp(1rem, 2.5vw, 1.5rem) · 컨테이너 쿼리 · srcset 이미지', 'fluid clamp(1rem, 2.5vw, 1.5rem) · container queries · srcset images'], 'wbx-xs wbx-a', 4);
+  fin(S, 'z', 15.4, [['반응형 웹: 한 코드가 화면 크기에 맞춰 배치·글자·이미지를 바꿔요', 'responsive design: one codebase adapts layout, type and images to the screen', 'wbx-xs wbx-a'], ['기기 이름이 아니라 내용이 깨지는 지점에 브레이크포인트를 둬요', 'set breakpoints where the content breaks, not by device names']]);
+  S.cap(1, '뷰포트 메타 태그', 'The viewport meta tag').cap(2, '모바일 우선', 'Mobile first').cap(3, '미디어 쿼리로 넓히기', 'Widen with media queries').cap(4, '유동 단위와 이미지', 'Fluid units and images').cap(5, '반응형 웹', 'Responsive design');
+  return S;
+}
+
+/* ================= front end ================= */
+function sState() {
+  const S = scene({ id: 'wb-state', steps: 5, per: 1.6 });
+  const N = { app: [12.4, 1.6, 'App'], hd: [4, 4.4, 'Header'], mn: [20.8, 4.4, 'Main'], cb: [4, 7.2, 'CartBadge'], ls: [20.8, 7.2, 'ProductList'], cd: [20.8, 10, 'ProductCard'] }, E = [['app', 'hd'], ['app', 'mn'], ['hd', 'cb'], ['mn', 'ls'], ['ls', 'cd']];
+  const c = k => [N[k][0] + 2.8, N[k][1] + .7];
+  E.forEach(([a, b], i) => seg(S, 'e' + i, [c(a)[0], N[a][1] + 1.4], [c(b)[0], N[b][1]], 0, 'ink-3', .07));
+  Object.entries(N).forEach(([k, [x, y, l]]) => box2(S, 'n' + k, x, y, 5.6, 1.4, l, 'line', 0, { pct: 40 }));
+  tsets(S, 'ncb', [[1, 'warn', 40]]); tsets(S, 'ncd', [[1, 'warn', 40]]);
+  T(S, 's1', 1, .3, ['장바구니 상태를 CartBadge와 ProductCard가 함께 써야 해요', 'CartBadge and ProductCard both need the cart state'], 'wbx-xs wbx-w', 1, { off: 2 });
+  tsets(S, 'napp', [[2, 'accent', 35], [3, 'line', 40]]);
+  [['app', 'mn'], ['mn', 'ls'], ['ls', 'cd'], ['app', 'hd'], ['hd', 'cb']].forEach(([a, b], i) => seg(S, 'pd' + i, [c(a)[0] + .25, N[a][1] + 1.4], [c(b)[0] + .25, N[b][1]], 2, 'danger', .14, { off: 3 }));
+  T(S, 'pdl', 27, 5.8, ['props로', 'passed'], 'wbx-tiny wbx-r', 2, { off: 3 }); T(S, 'pdl2', 27, 6.5, ['계속 전달', 'down'], 'wbx-tiny wbx-r', 2, { off: 3 });
+  T(S, 's2', 1, .3, ['prop drilling: 쓰지도 않는 Main, ProductList가 props를 넘겨 줘야 해요', 'prop drilling: Main and ProductList must pass props they never use'], 'wbx-xs wbx-r', 2, { off: 3 });
+  box2(S, 'st', 1, 10, 8, 1.4, 'store { cart }', 'accent', 3, { pct: 35 });
+  seg(S, 'sb', [6.8, 9.95], [6.8, 8.65], 3, 'ok', .1, { dash: 1 }); seg(S, 'sc', [9.05, 10.7], [20.75, 10.7], 3, 'ok', .1, { dash: 1 });
+  T(S, 's3', 1, .3, ['전역 스토어(Context, Redux, Zustand): 필요한 컴포넌트만 직접 구독', 'a global store (Context, Redux, Zustand): only the components that need it subscribe'], 'wbx-xs wbx-g', 3);
+  [['action', 'accent'], ['reducer', 'warn'], ['state', 'ok'], ['view', 'line']].forEach(([l, col], i) => { box2(S, 'f' + i, 1 + i * 6.4, 12.2, 5, 1.2, l, col, 4, { pct: 35 }); if (i < 3) ar(S, 'fa' + i, [6.1 + i * 6.4, 12.8], [7.3 + i * 6.4, 12.8], 'ink-3', 4, { h: .08 }); });
+  T(S, 'fl', 26.2, 12.35, ['↺ 한 방향', '↺ one way'], 'wbx-xs wbx-a', 4);
+  fin(S, 'z', 14.2, [['상태는 쓰는 곳 가까이 두고, 여러 곳이 쓰면 공통 조상이나 스토어로 올려요', 'keep state close to where it’s used; lift it to a common ancestor or a store when shared', 'wbx-xs wbx-a'], ['서버 데이터(캐시)는 React Query·SWR, 화면 상태는 스토어처럼 종류별로 나눠 관리해요', 'manage server data (cache) with React Query or SWR and UI state in a store, separately']]);
+  S.cap(1, '멀리 떨어진 두 컴포넌트', 'Two distant components').cap(2, 'prop drilling', 'Prop drilling').cap(3, '전역 스토어 구독', 'Subscribe to a store').cap(4, '단방향 데이터 흐름', 'One-way data flow').cap(5, '프런트엔드 상태 관리', 'Front-end state management');
+  return S;
+}
+function sWasm() {
+  const S = scene({ id: 'wb-wasm', steps: 5, per: 1.6 });
+  ['C / C++', 'Rust', 'Go'].forEach((l, i) => { box2(S, 'src' + i, 1, 1 + i * 1.6, 5, 1.3, l, 'line', 1, { pct: 40 }); seg(S, 'sl' + i, [6.05, 1.65 + i * 1.6], [8.95, 3.25], 1, 'ink-3', .07); });
+  box2(S, 'cc', 9, 2.4, 6.4, 1.7, ['컴파일러 (LLVM 등)', 'compiler (LLVM, …)'], 'accent', 1, { pct: 30 }); ar(S, 'ca', [15.5, 3.25], [18.4, 3.25], 'ink-3', 1, { h: .08 });
+  box2(S, 'wm', 18.5, 2.4, 5, 1.7, 'add.wasm', 'warn', 1, { pct: 40 }); T(S, 'wmn', 24, 2.3, ['작은 바이너리', 'compact binary'], 'wbx-xs', 1); T(S, 'wmn2', 24, 3.3, ['스택 VM 명령', 'stack-VM code'], 'wbx-xs', 1);
+  code(S, 'js', 1, 5.6, 30, ['const { instance } = await WebAssembly.instantiateStreaming(fetch("add.wasm"));', 'instance.exports.add(2, 3);   // 5'], [], { st: 2 });
+  T(S, 'mt', 1, 9, ['선형 메모리: 하나의 ArrayBuffer · 경계 밖은 접근 불가 (샌드박스)', 'linear memory: a single ArrayBuffer · nothing outside is reachable (sandboxed)'], 'wbx-xs wbx-a', 3);
+  for (let i = 0; i < 16; i++) box2(S, 'm' + i, 1 + i * 1.9, 10, 1.75, 1.1, i === 5 ? '5' : '', i === 5 ? 'ok' : 'line', 3, { pct: 40 });
+  T(S, 'mj', 1, 11.4, ['JS는 같은 버퍼를 Uint8Array로 읽어 결과를 주고받아요', 'JS reads the same buffer as a Uint8Array to exchange results'], 'wbx-xs', 3);
+  T(S, 'u1', 1, 12.6, ['쓰임: Figma, Photoshop 웹, ffmpeg.wasm, 게임 엔진, 브라우저 속 SQLite', 'used by Figma, Photoshop on the web, ffmpeg.wasm, game engines, SQLite in the browser'], 'wbx-xs wbx-g', 4);
+  T(S, 'u2', 1, 13.6, ['DOM은 직접 못 만져요 → UI는 JS, 무거운 계산은 Wasm으로 나눠요', 'it can’t touch the DOM directly → JS for UI, Wasm for heavy computation'], 'wbx-xs', 4);
+  fin(S, 'z', 15, [['WebAssembly: 여러 언어를 브라우저에서 거의 네이티브 속도로 돌리는 안전한 바이너리 형식', 'WebAssembly runs many languages in the browser at near-native speed in a safe binary format', 'wbx-xs wbx-a'], ['WASI로 브라우저 밖(서버, 엣지, 플러그인)에서도 써요', 'with WASI it also runs outside the browser: servers, edge functions, plugins']]);
+  S.cap(1, '여러 언어 → .wasm', 'Many languages → .wasm').cap(2, 'JS에서 불러 쓰기', 'Call it from JS').cap(3, '선형 메모리와 샌드박스', 'Linear memory and the sandbox').cap(4, '어디에 쓰나', 'Where it’s used').cap(5, 'WebAssembly', 'WebAssembly');
+  return S;
+}
+
+/* ================= HTTP ================= */
+function sRealtime() {
+  const S = scene({ id: 'wb-realtime', steps: 5, per: 1.6 });
+  const row = (k, y, title, st) => { T(S, k + 't', 1, y + .1, title, 'wbx-s wbx-a', st); hl(S, k + 'ln', 8, 31, y + .55, 'line', st, { w: .06 }); };
+  row('p', .8, ['폴링', 'polling'], 1);
+  [0, 1, 2, 3, 4, 5].forEach(i => box2(S, 'pr' + i, 8 + i * 3.9, .3, 3.4, 1.1, i === 3 ? 'data' : '∅', i === 3 ? 'ok' : 'line', 1, { pct: 40 }));
+  T(S, 'pn', 8, 1.6, ['몇 초마다 “새 거 있어?” → 대부분 빈 응답, 지연 = 주기', 'ask “anything new?” every few seconds → mostly empty, latency = interval'], 'wbx-tiny', 1);
+  row('l', 3.4, ['롱 폴링', 'long polling'], 2);
+  rect(S, 'lh', 8, 3.4, 11, 1.1, 'accent', 20, 2, { r: .2, html: ['요청을 붙잡고 대기…', 'request held open…'], cls: 'cz-c wbx-c2' }); box2(S, 'ld', 19.2, 3.4, 2.6, 1.1, 'data', 'ok', 2, { pct: 40 }); rect(S, 'lh2', 22, 3.4, 9, 1.1, 'accent', 20, 2, { r: .2, html: ['다시 요청…', 'ask again…'], cls: 'cz-c wbx-c2' });
+  T(S, 'ln2', 8, 4.7, ['이벤트가 생기면 바로 응답 → 다시 요청 · 낭비는 줄지만 연결이 자주 끊겨요', 'answer as soon as an event occurs, then re-ask · less waste, frequent reconnects'], 'wbx-tiny', 2);
+  row('s', 6, 'SSE', 3);
+  rect(S, 'sh', 8, 6, 23, 1.1, 'ok', 15, 3, { r: .2, html: 'text/event-stream', cls: 'cz-c wbx-c2' });
+  [8.6, 11.6, 25.4, 28.4].forEach((x, i) => box2(S, 'se' + i, x, 6.1, 1.8, .9, '↓', 'ok', 3, { pct: 50 }));
+  T(S, 'sn', 8, 7.3, ['HTTP 응답 하나를 열어 두고 서버 → 클라이언트로 이벤트를 흘려요 · 자동 재연결', 'one HTTP response stays open; the server streams events to the client · auto-reconnect'], 'wbx-tiny', 3);
+  row('w', 8.6, ['웹소켓', 'WebSocket'], 4);
+  rect(S, 'wh', 8, 8.6, 23, 1.1, 'warn', 15, 4, { r: .2, html: 'ws://', cls: 'cz-c wbx-c2' });
+  [[8.6, '↑', 'accent'], [11.4, '↓', 'ok'], [14.2, '↓', 'ok'], [24.4, '↑', 'accent'], [27.4, '↓', 'ok']].forEach(([x, l, c], i) => box2(S, 'wv' + i, x, 8.7, 1.8, .9, l, c, 4, { pct: 50 }));
+  T(S, 'wn', 8, 9.9, ['업그레이드 후 양방향 메시지 · 채팅, 게임, 협업 편집', 'after an upgrade, messages flow both ways · chat, games, collaborative editing'], 'wbx-tiny', 4);
+  box2(S, 'k1', 1, 11.4, 9.6, 1.6, ['알림·피드: SSE', 'notifications/feeds: SSE'], 'ok', 4, { pct: 30 }); box2(S, 'k2', 11.2, 11.4, 9.6, 1.6, ['양방향·저지연: 웹소켓', 'two-way, low latency: WebSocket'], 'warn', 4, { pct: 30 }); box2(S, 'k3', 21.4, 11.4, 9.6, 1.6, ['드문 갱신: 폴링도 OK', 'rare updates: polling is fine'], 'line', 4, { pct: 40 });
+  fin(S, 'z', 13.6, [['실시간 갱신 방법: 폴링 → 롱 폴링 → SSE(단방향 스트림) → 웹소켓(양방향)', 'ways to push updates: polling → long polling → SSE (one-way stream) → WebSocket (two-way)', 'wbx-xs wbx-a'], ['연결을 오래 붙잡는 방식은 로드 밸런서 타임아웃·서버 연결 수를 함께 설계해야 해요', 'long-lived connections require planning for load-balancer timeouts and server connection counts']]);
+  S.cap(1, '폴링', 'Polling').cap(2, '롱 폴링', 'Long polling').cap(3, '서버 전송 이벤트', 'Server-sent events').cap(4, '웹소켓과 선택 기준', 'WebSocket, and how to choose').cap(5, '실시간 통신 방식', 'Real-time techniques');
+  return S;
+}
+
+/* ================= performance ================= */
+function sHints() {
+  const S = scene({ id: 'wb-hints', steps: 5, per: 1.6 });
+  const U = 2, X = t => 8 + t * U, row = i => 1.4 + i * 1.3;
+  ['HTML', 'CSS', ['폰트', 'font'], ['히어로 이미지', 'hero image'], ['CDN 연결', 'CDN connect']].forEach((l, i) => T(S, 'rl' + i, 1, row(i) + .15, l, 'wbx-xs', i === 4 ? 2 : 0));
+  const bar = (k, r, a, b, c, st, off, l) => rect(S, k, X(a), row(r), (b - a) * U - .06, 1, c, 40, st, { r: .15, off, html: l || '', cls: 'cz-c wbx-c2' });
+  bar('b0', 0, 0, 2, 'accent', 0, 0); bar('b1', 1, 2, 5, 'warn', 0, 0, ['렌더 차단', 'render-blocking']);
+  bar('f1c', 2, 5, 6, 'danger', 1, 2, ['연결', 'connect']); bar('f1', 2, 6, 8, 'ok', 1, 2); bar('i1', 3, 3, 9, 'ok', 1, 3);
+  bar('pc', 4, .5, 1.5, 'danger', 2, 0, ''); bar('f2', 2, 5, 7, 'ok', 2, 3);
+  bar('f3', 2, 2, 4, 'ok', 3, 0, 'preload'); bar('i3', 3, 2, 6, 'ok', 3, 0, 'preload');
+  seg(S, 'lcp1', [X(9), 1], [X(9), 8], 1, 'danger', .1, { off: 3 }); T(S, 'lcp1l', X(9) - 1.6, .2, 'LCP 9', 'cz-mono wbx-xs wbx-r', 1, { off: 3 });
+  seg(S, 'lcp2', [X(6), 1], [X(6), 8], 3, 'ok', .12); T(S, 'lcp2l', X(6) - 1.6, .2, 'LCP 6 ✓', 'cz-mono wbx-xs wbx-g', 3);
+  T(S, 'n1', 1, 8.3, ['폰트는 CSS를 다 읽고 나서야 발견돼 늦게 시작해요', 'the font is only discovered after the CSS is parsed, so it starts late'], 'wbx-xs wbx-r', 1, { off: 2 });
+  code(S, 'cd', 1, 9.2, 30, ['<link rel="preconnect" href="https://cdn.example.com">', '<link rel="preload" href="/font.woff2" as="font" crossorigin>', '<img src="hero.avif" fetchpriority="high">'], [[0, 2], [1, 3]], { hoff: 4 });
+  T(S, 'p4', 1, 13.8, ['prefetch: 다음 페이지 자원을 한가할 때 · preload 남발은 정작 중요한 자원을 늦춰요', 'prefetch: fetch next-page assets when idle · overusing preload delays what really matters'], 'wbx-xs wbx-a', 4);
+  fin(S, 'z', 15, [['리소스 힌트: 브라우저가 늦게 발견할 자원을 미리 알려 중요 렌더링 경로를 줄여요', 'resource hints tell the browser about late-discovered resources to shorten the critical path', 'wbx-xs wbx-a'], ['DevTools 네트워크 워터폴과 Lighthouse로 늦게 시작하는 요청을 찾아요', 'find late-starting requests in the DevTools network waterfall and Lighthouse']]);
+  S.cap(1, '늦게 발견되는 자원', 'Late-discovered resources').cap(2, 'preconnect로 연결 미리', 'Connect early with preconnect').cap(3, 'preload로 먼저 받기', 'Fetch early with preload').cap(4, 'prefetch와 주의점', 'Prefetch and caveats').cap(5, '리소스 힌트', 'Resource hints');
+  return S;
+}
+
+return { css: CSSX, secs: [
+  sec('wb-css', 'CSS', 'CSS', 'CSS 레이아웃', 'CSS layout', '상자부터 그리드까지, 화면에 요소를 배치하는 규칙이에요.', 'The rules that place elements on screen, from boxes to grids.', [
+    item('wb-box', 'CSS 박스 모델', 'The CSS box model', '모든 요소는 content → padding → border → margin 네 겹의 상자예요. box-sizing에 따라 width가 뜻하는 범위가 달라져요.', '기본값 content-box에서는 width: 200px에 padding 20px, border 5px가 더해져 실제 폭이 250px이 돼요. border-box로 바꾸면 테두리까지 200px라 계산이 쉬워서 요즘은 * { box-sizing: border-box }로 시작해요. 세로로 붙은 블록의 margin은 더해지지 않고 큰 쪽만 남는 마진 상쇄가 일어나요. 개발자 도구의 박스 그림으로 바로 확인할 수 있어요.', 'Every element is a box of four layers: content → padding → border → margin. box-sizing decides what width refers to.', 'Under the default content-box, width: 200px plus 20px padding and 5px border renders 250px wide. border-box counts padding and border inside the 200px, which is easier, so modern CSS starts with * { box-sizing: border-box }. Vertical margins between adjacent blocks collapse to the larger one instead of adding up. DevTools shows the box diagram for any element.', sBox()),
+    item('wb-specificity', '캐스케이드와 명시도', 'Cascade and specificity', '같은 요소에 여러 CSS 규칙이 겹치면 중요도 → 출처 → 명시도 → 선언 순서로 이길 규칙을 골라요.', '명시도는 (ID 수, 클래스·속성·가상 클래스 수, 태그 수)를 앞에서부터 비교해요. p(0,0,1) < .note(0,1,0) < #intro(1,0,0)라 문단은 초록이 되고, 명시도가 같으면 나중에 쓴 규칙이 이겨요. 인라인 style과 !important는 그보다 강해서 남발하면 나중에 덮어쓰기 어려워요. 클래스 위주(BEM), :where()로 명시도 0 만들기, @layer로 계층 순서 정하기가 관리 요령이에요.', 'When several CSS rules target one element, the cascade picks a winner by importance, origin, specificity and then source order.', 'Specificity compares (IDs, classes/attributes/pseudo-classes, tags) from the left: p (0,0,1) < .note (0,1,0) < #intro (1,0,0), so the paragraph turns green, and on a tie the later rule wins. Inline styles and !important beat all of these, and overusing them makes later overrides painful. Stick to classes (BEM), zero specificity out with :where(), and order styles with @layer.', sSpec()),
+    item('wb-flex', 'Flexbox', 'Flexbox', '요소를 한 방향(행 또는 열)으로 늘어놓고, 주축과 교차축을 따라 정렬하며 남는 공간을 나눠 주는 레이아웃이에요.', 'display: flex를 주면 자식들이 주축(기본은 가로)으로 늘어서요. justify-content는 주축 정렬(space-between 등), align-items는 교차축 정렬(center로 세로 가운데)을 맡고, flex: 1인 요소는 남는 공간을 차지해요. flex-direction: column이면 두 축이 바뀌고, flex-wrap으로 줄바꿈, gap으로 간격을 줘요. 내비게이션 바, 버튼 묶음, 카드 안 정렬처럼 1차원 배치에 써요.', 'A layout that lines items up in one direction (row or column), aligns them along main and cross axes and shares out free space.', 'With display: flex, children line up along the main axis (horizontal by default). justify-content aligns along the main axis (e.g. space-between), align-items along the cross axis (center for vertical centering), and an item with flex: 1 takes the free space. flex-direction: column swaps the axes, flex-wrap wraps lines and gap sets spacing. It suits one-dimensional layouts such as nav bars, button groups and alignment inside cards.', sFlex()),
+    item('wb-grid', 'CSS Grid', 'CSS Grid', '행과 열을 함께 정의해 2차원 레이아웃을 선언적으로 그리는 CSS 기능이에요.', 'grid-template-columns: 200px 1fr 1fr은 고정 200px 뒤에 남은 공간을 1:1로 나눠요(fr = 남은 공간의 몫). grid-template-areas로 header, side, main, footer 같은 영역 이름을 지도처럼 그려 배치할 수 있고, repeat(auto-fill, minmax(150px, 1fr))는 화면 폭에 따라 열 수를 자동으로 바꿔 카드 목록을 반응형으로 만들어요. Flex는 1차원, Grid는 2차원이라 페이지 뼈대는 Grid, 줄 안 정렬은 Flex를 함께 써요.', 'A CSS feature that defines rows and columns together to lay out pages in two dimensions declaratively.', 'grid-template-columns: 200px 1fr 1fr fixes 200px and splits the rest 1:1 (fr = a share of leftover space). grid-template-areas draws named areas like header, side, main and footer as a map, and repeat(auto-fill, minmax(150px, 1fr)) changes the column count with the viewport for responsive card lists. Flex is one-dimensional and Grid two-dimensional, so a common combo is Grid for the page skeleton and Flex within rows.', sGrid()),
+    item('wb-responsive', '반응형 웹', 'Responsive design', '하나의 코드가 화면 크기에 맞춰 레이아웃·글자·이미지를 바꾸도록 만드는 방법이에요.', '먼저 viewport 메타 태그가 있어야 휴대폰이 데스크톱 폭(980px)으로 축소해 보여 주지 않아요. 모바일 우선으로 기본 CSS를 작은 화면용으로 쓰고, @media (min-width: 768px) 같은 미디어 쿼리로 넓은 화면에서 2열, 3열로 늘려요. clamp()로 유동 글자 크기, 컨테이너 쿼리로 부품 단위 반응형, srcset으로 화면에 맞는 이미지를 줘요. 브레이크포인트는 기기 이름이 아니라 내용이 깨지는 지점에 둬요.', 'Making one codebase adapt its layout, type and images to the screen size.', 'First, the viewport meta tag stops phones from rendering a shrunken 980px desktop page. Write mobile-first base CSS for small screens, then widen to two or three columns with media queries like @media (min-width: 768px). clamp() gives fluid type, container queries make components responsive on their own, and srcset serves fitting images. Put breakpoints where the content breaks, not at device names.', sResponsive())
+  ])
+], add: {
+  'wb-front': [
+    item('wb-state', '프런트엔드 상태 관리', 'Front-end state management', '여러 컴포넌트가 같은 데이터를 써야 할 때 그 상태를 어디에 두고 어떻게 전달할지 정하는 일이에요.', '장바구니처럼 멀리 떨어진 CartBadge와 ProductCard가 함께 쓰는 상태를 App에 두면, 쓰지도 않는 중간 컴포넌트가 props를 계속 넘겨야 하는 prop drilling이 생겨요. Context, Redux, Zustand 같은 전역 스토어에 두면 필요한 컴포넌트만 직접 구독해요. 상태 변경은 action → reducer → 새 state → 화면으로 한 방향으로 흘러 추적이 쉬워요. 서버 데이터는 React Query·SWR, 화면 상태는 스토어로 종류별로 나눠 관리해요.', 'Deciding where shared state lives and how it reaches the components that need it.', 'If cart state used by distant CartBadge and ProductCard sits in App, intermediate components must pass props they never use: prop drilling. A global store such as Context, Redux or Zustand lets only the interested components subscribe. Changes flow one way, action → reducer → new state → view, which keeps them traceable. Manage server data with React Query or SWR and UI state in a store, separately.', sState()),
+    item('wb-wasm', 'WebAssembly', 'WebAssembly', 'C, C++, Rust 같은 언어를 컴파일한 바이너리를 브라우저에서 거의 네이티브 속도로 안전하게 실행하는 형식이에요.', '컴파일러가 만든 .wasm 파일을 JS가 WebAssembly.instantiateStreaming으로 불러와 instance.exports.add(2, 3)처럼 호출해요. Wasm은 하나의 ArrayBuffer인 선형 메모리만 접근하는 샌드박스에서 돌고, JS는 같은 버퍼를 읽어 결과를 주고받아요. DOM은 직접 다루지 못해 UI는 JS, 무거운 계산은 Wasm으로 나누며, Figma, Photoshop 웹, ffmpeg.wasm이 대표 사례예요. WASI로 브라우저 밖에서도 써요.', 'A binary format that runs code compiled from languages like C, C++ and Rust in the browser, safely and at near-native speed.', 'JavaScript loads the compiled .wasm file with WebAssembly.instantiateStreaming and calls exports such as instance.exports.add(2, 3). Wasm runs in a sandbox that can only touch its linear memory, a single ArrayBuffer, which JS also reads to exchange results. It can’t manipulate the DOM directly, so JS handles UI and Wasm the heavy computation; Figma, Photoshop on the web and ffmpeg.wasm are well-known uses. With WASI it runs outside the browser too.', sWasm())
+  ],
+  'wb-http': [
+    item('wb-realtime', '폴링 · SSE · 웹소켓', 'Polling, SSE and WebSockets', '서버의 새 소식을 클라이언트에 실시간으로 전하는 방법들이에요: 폴링, 롱 폴링, 서버 전송 이벤트(SSE), 웹소켓.', '폴링은 몇 초마다 물어봐서 단순하지만 대부분 빈 응답이고 지연이 주기만큼 생겨요. 롱 폴링은 이벤트가 생길 때까지 요청을 붙잡아 낭비를 줄여요. SSE는 HTTP 응답 하나를 열어 두고 서버가 이벤트를 흘려보내는 단방향 스트림으로 자동 재연결이 돼 알림·피드에 좋아요. 웹소켓은 업그레이드 후 양방향 메시지를 주고받아 채팅·게임·협업 편집에 써요. 긴 연결은 로드 밸런서 타임아웃과 연결 수를 함께 설계해야 해요.', 'Ways to deliver server updates to clients in real time: polling, long polling, server-sent events (SSE) and WebSockets.', 'Polling asks every few seconds: simple, but mostly empty responses and latency equal to the interval. Long polling holds a request open until an event arrives, cutting waste. SSE keeps one HTTP response open and streams events one way, with automatic reconnection, ideal for notifications and feeds. WebSockets upgrade the connection for two-way messages, used in chat, games and collaborative editing. Long-lived connections require planning for load-balancer timeouts and connection counts.', sRealtime())
+  ],
+  'wb-perf': [
+    item('wb-hints', '리소스 힌트', 'Resource hints', 'preconnect, preload, prefetch로 브라우저가 늦게 발견할 자원을 미리 알려, 중요 렌더링 경로를 줄이는 방법이에요.', '폰트처럼 CSS를 다 읽고 나서야 발견되는 자원은 늦게 시작해 LCP를 늦춰요. preconnect는 CDN과의 DNS·TCP·TLS 연결을 미리 열고, preload는 꼭 필요한 폰트·히어로 이미지를 처음부터 받게 하며, fetchpriority="high"로 우선순위를 높여요. prefetch는 다음 페이지 자원을 한가할 때 받아 둬요. 다만 preload를 남발하면 정작 중요한 자원이 밀리니, 네트워크 워터폴과 Lighthouse로 확인하며 써요.', 'preconnect, preload and prefetch tell the browser about resources it would discover late, shortening the critical rendering path.', 'Resources like fonts are only discovered after the CSS is parsed, so they start late and delay LCP. preconnect opens the DNS, TCP and TLS connection to a CDN early, preload fetches essential fonts and hero images from the start, and fetchpriority="high" raises priority. prefetch grabs next-page assets when idle. Overusing preload pushes back what really matters, so verify with the network waterfall and Lighthouse.', sHints())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('wb-browser', '브라우저', 'Browser', '브라우저 동작 원리', 'How browsers work',
     '코드가 화면이 되기까지 브라우저 안에서 일어나는 일이에요.', 'What happens inside the browser between code and pixels.', [
@@ -330,7 +630,7 @@ window.UX = page([
     item('wb-eventloop', '이벤트 루프', 'Event loop', 'JS는 스레드 하나로 콜 스택을 실행하고, 스택이 비면 마이크로태스크(Promise)를 모두 처리한 뒤 태스크(setTimeout, 이벤트)를 하나씩 꺼내요.', '50ms 넘는 긴 작업은 화면을 멈추게 해요. 무거운 계산은 Web Worker로 보내거나 잘게 쪼개세요. 면접 단골 문제(출력 순서)도 이 규칙이에요.', 'JavaScript runs the call stack on one thread; when it empties, all microtasks (promises) run, then tasks (timers, events) one at a time.', 'Tasks over 50 ms freeze the page; move heavy work to a Web Worker or split it up. Interview “output order” puzzles follow these rules.', sLoop()),
     item('wb-event', '이벤트 전파', 'Event propagation', '이벤트는 바깥(window)에서 대상까지 내려가는 캡처 단계, 대상 단계, 다시 바깥으로 올라가는 버블 단계를 거쳐요.', '리스트 항목마다 리스너를 다는 대신 부모 하나에 달고 event.target으로 구분하는 이벤트 위임이 효율적이에요.', 'Events travel down from the window to the target (capture), hit the target, then bubble back up.', 'Event delegation, one listener on a parent using event.target, beats a listener on every list item.', sEvent()),
     item('wb-storage', '브라우저 저장소', 'Browser storage', '쿠키, localStorage, sessionStorage, IndexedDB는 용량·수명·서버 전송 여부가 달라요.', '로그인 토큰을 localStorage에 두면 XSS 한 번에 털려요. 민감한 값은 HttpOnly·Secure·SameSite 쿠키에 두세요.', 'Cookies, localStorage, sessionStorage and IndexedDB differ in size, lifetime and whether they are sent to the server.', 'A token in localStorage is one XSS away from theft. Keep sensitive values in HttpOnly, Secure, SameSite cookies.', sStorage())
-  ]),
+  ].concat(XT.add['wb-browser'] || [])),
   sec('wb-http', 'HTTP 실무', 'HTTP', 'HTTP와 API 실무', 'HTTP and APIs in practice',
     '매일 쓰는 HTTP를 제대로 쓰는 법이에요.', 'Using the HTTP you touch every day properly.', [
     item('wb-status', '상태 코드', 'Status codes', '응답의 첫 숫자가 결과의 종류를 말해요. 2xx 성공, 3xx 이동, 4xx 클라이언트 잘못, 5xx 서버 잘못이에요.', '모니터링·재시도·캐시가 상태 코드로 동작해요. 429는 잠시 후 재시도, 5xx는 서버 알림을 보내는 식으로 처리하세요.', 'The first digit says what kind of result it is: 2xx success, 3xx redirect, 4xx client error, 5xx server error.', 'Monitoring, retries and caching all key off status codes: retry later on 429, alert on 5xx.', sStatus()),
@@ -339,7 +639,7 @@ window.UX = page([
     item('wb-cdn', 'CDN', 'CDN · Content delivery network', '전 세계 엣지 서버에 콘텐츠를 복사해 두고, 사용자와 가까운 곳에서 응답해요.', '이미지·JS·영상은 기본으로 CDN에 두세요. 캐시 무효화(purge) 방법과 캐시 키(쿼리스트링·쿠키 포함 여부)를 확인하세요.', 'Copies content to edge servers worldwide and answers from the one nearest the user.', 'Serve images, JS and video from a CDN by default. Know how to purge and what goes into the cache key (query strings, cookies).', sCDN()),
     item('wb-rest', 'REST API 설계', 'REST API design', '자원은 URL(명사)로, 동작은 HTTP 메서드(동사)로 표현하고, 결과는 상태 코드로 알려요.', '복수형 명사, 일관된 에러 형식, 페이지네이션, 버전(/v1) 규칙을 팀에서 정해 두세요. OpenAPI로 문서를 자동화하면 좋아요.', 'Name resources with URLs (nouns), act on them with HTTP methods (verbs) and report results with status codes.', 'Agree on plural nouns, a consistent error format, pagination and versioning (/v1). Generate docs with OpenAPI.', sREST()),
     item('wb-graphql', 'GraphQL vs REST', 'GraphQL vs REST', 'GraphQL은 클라이언트가 필요한 데이터의 모양을 쿼리로 정해 한 번에 받아요. REST는 자원별 엔드포인트를 여러 번 호출해요.', '화면이 다양하고 데이터 관계가 복잡하면 GraphQL이 유리해요. 대신 HTTP 캐시가 어렵고 무거운 쿼리를 제한하는 장치가 필요해요.', 'With GraphQL the client describes the exact shape of data it needs and gets it in one request; REST calls several resource endpoints.', 'GraphQL shines with many screens and rich relations, but HTTP caching gets harder and you must limit expensive queries.', sGQL())
-  ]),
+  ].concat(XT.add['wb-http'] || [])),
   sec('wb-front', '프런트엔드', 'Front end', '프런트엔드 렌더링', 'Front-end rendering',
     '화면을 언제, 어디서 그릴지에 대한 선택이에요.', 'Choices about when and where pages are rendered.', [
     item('wb-csr', 'CSR · SSR · SSG', 'CSR · SSR · SSG', 'CSR은 브라우저의 JS가 화면을 그리고, SSR은 요청마다 서버가 HTML을 만들고, SSG는 빌드 때 미리 만들어 둬요.', '로그인 뒤 대시보드는 CSR, 검색 노출이 중요한 페이지는 SSR/SSG가 유리해요. Next.js·Nuxt·Astro는 페이지마다 고를 수 있어요.', 'CSR renders in the browser with JS, SSR renders HTML on the server per request, SSG prebuilds HTML at build time.', 'Dashboards behind login suit CSR; pages that need search traffic suit SSR or SSG. Next.js, Nuxt and Astro let you choose per page.', sCSR()),
@@ -349,14 +649,15 @@ window.UX = page([
     item('wb-bundle', '번들링·코드 스플리팅', 'Bundling · Code splitting', '여러 모듈을 몇 개 파일로 묶고, 당장 필요 없는 코드는 따로 떼어 나중에 받고, 쓰지 않는 코드는 빼요(트리 셰이킹).', '라우트별 동적 import()가 가장 쉬운 스플리팅이에요. 큰 라이브러리는 필요한 함수만 import하세요.', 'Combines many modules into a few files, defers code not needed yet and drops unused code (tree shaking).', 'Dynamic import() per route is the easiest split. Import only the functions you need from big libraries.', sBundle()),
     item('wb-lazy', '지연 로딩', 'Lazy loading', '화면에 보일 때가 가까워져서야 이미지·컴포넌트를 불러와 첫 로딩을 가볍게 해요.', 'img에 loading="lazy"만 붙여도 돼요. 단, 첫 화면의 큰 이미지(LCP)는 지연 로딩하면 오히려 느려져요.', 'Loads images and components only as they approach the viewport, making the first load lighter.', 'Adding loading="lazy" to img is enough, but lazy-loading the main above-the-fold image (LCP) makes things slower.', sLazy()),
     item('wb-debounce', '디바운스와 스로틀', 'Debounce · Throttle', '디바운스는 이벤트가 멈춘 뒤 한 번만, 스로틀은 정해진 간격마다 최대 한 번만 실행해요.', '검색어 자동완성 API 호출은 디바운스, 스크롤·리사이즈 처리는 스로틀이 맞아요. 서버 쪽 레이트 리밋과는 별개예요.', 'Debounce runs once after events stop; throttle runs at most once per interval.', 'Debounce search-suggestion API calls; throttle scroll and resize handlers. Server-side rate limiting is a separate concern.', sDebounce())
-  ]),
+  ].concat(XT.add['wb-front'] || [])),
   sec('wb-perf', '성능·접근성', 'Performance & a11y', '성능과 접근성', 'Performance and accessibility',
     '빠르고 누구나 쓸 수 있는 웹을 만드는 기준이에요.', 'Standards for a web that is fast and usable by everyone.', [
     item('wb-cwv', 'Core Web Vitals', 'Core Web Vitals', '구글이 정한 사용자 경험 지표로, LCP(로딩), INP(반응성), CLS(시각 안정성) 세 가지예요.', '랩 측정(Lighthouse)과 실사용자 측정(CrUX, RUM)이 다를 수 있어요. 실제 사용자 데이터를 기준으로 개선하세요.', 'Google’s user-experience metrics: LCP for loading, INP for responsiveness and CLS for visual stability.', 'Lab tools (Lighthouse) and field data (CrUX, RUM) can disagree; optimize against real-user data.', sCWV()),
     item('wb-a11y', '웹 접근성', 'Web accessibility', '시각·운동 장애가 있거나 키보드·스크린 리더를 쓰는 사람도 같은 정보와 기능을 쓸 수 있게 만드는 거예요.', 'div 대신 button·a 같은 시맨틱 태그, 이미지 alt, 4.5:1 명도 대비, 보이는 포커스 표시가 기본이에요. 공공·금융 서비스는 법적 의무예요.', 'Making the same information and functions usable by people with visual or motor impairments, keyboards or screen readers.', 'Use semantic tags (button, a) instead of divs, alt text, 4.5:1 contrast and visible focus. It is a legal requirement for many public and financial services.', sA11y()),
     item('wb-sw', '서비스 워커 · PWA', 'Service worker · PWA', '페이지와 네트워크 사이에서 요청을 가로채는 백그라운드 스크립트로, 캐시를 이용해 오프라인에서도 동작하게 해요.', '캐시 전략(캐시 우선, 네트워크 우선)을 자원마다 골라요. 업데이트가 안 되는 문제가 흔하니 버전 관리와 갱신 흐름을 꼭 설계하세요.', 'A background script that intercepts requests between the page and network, using a cache so the app works offline.', 'Pick a cache strategy (cache-first, network-first) per resource. Stale updates are a common trap, so design versioning and refresh flows.', sSW())
-  ])
-]);
+  ].concat(XT.add['wb-perf'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .wb-m .in{font-family:var(--f-mono);font-size:.64em;font-weight:600}
 .wb-xs .in{font-size:.54em}
