@@ -641,7 +641,7 @@ function sDiag() {
   T(S, 'e1', 20.4, 8, 'A = PDP⁻¹', 'cz-mono la-big', 4);
   T(S, 'e2', 20.4, 9.8, 'P = [1 −1; 1 1]', 'cz-mono la-s', 4); T(S, 'e2b', 20.4, 11, 'D = diag(3, 1)', 'cz-mono la-s', 4);
   T(S, 'e3', 20.4, 12.6, 'Aⁿ = PDⁿP⁻¹', 'cz-mono la-l la-g', 4); T(S, 'e4', 20.4, 14, 'A¹⁰ = P diag(3¹⁰, 1) P⁻¹', 'cz-mono la-s', 4);
-  T(S, 'e5', 20.4, 16, ['독립 고유벡터 n개 ⟺ 대각화', 'n independent eigenvectors ⟺ diagonalizable'], 'la-s', 5);
+  T(S, 'e5', 20.4, 16, ['독립 고유벡터 n개 ⟺ 대각화', 'n indep. eigenvectors ⟺ diagonalizable'], 'la-xs', 5);
   T(S, 'e6', 20.4, 17.4, ['닮은 행렬 B = P⁻¹AP', 'similar matrices B = P⁻¹AP'], 'la-s', 5);
   S.cap(1, 'P⁻¹은 고유벡터를 좌표축으로 돌려놓고', 'P⁻¹ turns the eigenvectors into the axes')
     .cap(2, 'D는 각 축 방향으로 고윳값만큼 늘이고', 'D stretches each axis by its eigenvalue')
