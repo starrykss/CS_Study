@@ -507,6 +507,290 @@ function sStable() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'alx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono alx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono alx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c alx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono alx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c alx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'alx-s alx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono alx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono alx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono alx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono alx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono alx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'alx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'alx-xs', 5));
+
+
+const CSSX = `
+.alx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.alx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.alx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.alx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.alx-r .in{color:var(--danger);font-weight:800}
+.alx-g .in{color:var(--ok);font-weight:800}
+.alx-a .in{color:var(--accent);font-weight:800}
+.alx-w .in{color:var(--warn);font-weight:800}
+.alx-c .in{font-size:.6em;font-weight:700}
+.alx-c2 .in{font-size:.5em;font-weight:700}
+.alx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.alx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'alx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ga = (S, k, a, b, color, st, r, o = {}) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L; ar(S, k, [a[0] + ux * r, a[1] + uy * r], [b[0] - ux * r, b[1] - uy * r], color, st, Object.assign({ h: .1 }, o)); };
+const mid = (a, b, ld) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy); return [(a[0] + b[0]) / 2 - dy / L * ld, (a[1] + b[1]) / 2 + dx / L * ld]; };
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+const acol = (S, k, st, color) => S.set(k, st, { background: cv(color), 'border-color': cv(color) });
+
+/* ================= divide and conquer ================= */
+function sMaster() {
+  const S = scene({ id: 'al-master', steps: 5, per: 1.6 });
+  T(S, 'rec', 1, .2, 'T(n) = 2·T(n/2) + n', 'cz-mono alx-s alx-a', 0);
+  T(S, 'recd', 11.4, .35, ['병합 정렬: 반으로 나눠 두 번 풀고, 합치는 데 n', 'merge sort: two half-size calls, n to merge'], 'alx-xs', 0);
+  const LV = [[1, 'n', 4], [2, 'n/2', 4], [4, 'n/4', 3.6], [8, 'n/8', 1.9]], ys = [1.8, 3.6, 5.4, 7.2], WT = 18;
+  const SUM = ['n', '2 × n/2 = n', '4 × n/4 = n', '8 × n/8 = n'];
+  LV.forEach(([cnt, lab, w], l) => {
+    const slot = WT / cnt;
+    for (let j = 0; j < cnt; j++) {
+      const cx = 1 + slot * (j + .5);
+      box2(S, `b${l}_${j}`, cx - w / 2, ys[l], w, 1.1, lab, l ? 'accent' : 'warn', l ? 2 : 1, { pct: 30 });
+      if (l) { const pcx = 1 + (WT / (cnt / 2)) * (Math.floor(j / 2) + .5); seg(S, `e${l}_${j}`, [pcx, ys[l - 1] + 1.1], [cx, ys[l]], 2, 'ink-3', .06); }
+    }
+    T(S, 's' + l, 20.4, ys[l] + .2, (l ? '' : '= ') + SUM[l], 'cz-mono alx-xs alx-g', 2);
+  });
+  T(S, 'lf', 1, 8.9, '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1', 'cz-tc cz-mono alx-xs', 3, { w: 18 });
+  T(S, 'lfs', 20.4, 8.9, 'n × 1 = n', 'cz-mono alx-xs alx-g', 3);
+  seg(S, 'br', [25.6, 1.9], [25.6, 9.8], 3, 'ink-3', .08);
+  T(S, 'brl', 26.2, 5.3, ['log₂n 층', 'log₂n levels'], 'alx-xs alx-a', 3);
+  T(S, 'tot', 1, 10.5, ['층마다 n × 층 수 log₂n  →  T(n) = Θ(n log n)', 'n per level × log₂n levels  →  T(n) = Θ(n log n)'], 'alx-xs alx-g', 3);
+  T(S, 'mt', 1, 11.9, ['일반형 T(n) = a·T(n/b) + f(n): f(n)을 n^(log_b a)와 비교해요', 'general form T(n) = a·T(n/b) + f(n): compare f(n) with n^(log_b a)'], 'alx-xs alx-a', 4);
+  [[['f가 작음: 리프가 지배', 'f smaller: leaves win'], 'warn', '8·T(n/2) + n²  →  Θ(n³)', ['단순 분할 행렬 곱셈', 'naive split matrix multiply']],
+   [['f와 같음: 층마다 같음', 'f equal: same each level'], 'accent', '2·T(n/2) + n  →  Θ(n log n)', ['병합 정렬 (이진 탐색은 Θ(log n))', 'merge sort (binary search: Θ(log n))']],
+   [['f가 큼: 뿌리가 지배', 'f larger: root wins'], 'danger', '2·T(n/2) + n²  →  Θ(n²)', ['합치는 비용이 전부', 'the combine step dominates']]].forEach(([lab, c, ex2, note], i) => {
+    box2(S, 'mc' + i, 1, 13.0 + i * 1.15, 8.2, .95, lab, c, 4, { pct: 30 });
+    T(S, 'mx' + i, 9.8, 13.1 + i * 1.15, ex2, 'cz-mono alx-xs', 4);
+    T(S, 'mn' + i, 21.4, 13.17 + i * 1.15, note, 'alx-tiny', 4);
+  });
+  fin(S, 'z', 16.6, [['분할 정복: 쪼개고(divide) → 각각 풀고(conquer) → 합치기(combine)', 'divide and conquer: split → solve each part → combine', 'alx-xs alx-a'], ['재귀 트리에서 층별 비용을 더하면 점화식의 답이 보여요', 'summing the recursion tree level by level solves the recurrence'], ['마스터 정리는 a·T(n/b) + f(n) 꼴을 세 경우로 바로 풀어 줘요', 'the master theorem solves a·T(n/b) + f(n) in three cases']]);
+  S.cap(1, '병합 정렬의 점화식', 'The merge sort recurrence').cap(2, '재귀 트리: 층마다 n', 'Recursion tree: n per level').cap(3, 'log n 층 × n', 'log n levels × n').cap(4, '마스터 정리의 세 경우', 'The three cases of the master theorem').cap(5, '분할 정복과 마스터 정리', 'Divide and conquer and the master theorem');
+  return S;
+}
+
+/* ================= DP / strings ================= */
+function sKnap() {
+  const S = scene({ id: 'al-knapsack', steps: 5, per: 1.6 });
+  T(S, 'bag', 1, .3, ['🎒 가방 용량 W = 5', '🎒 capacity W = 5'], 'alx-xs alx-a', 0);
+  const IT = [['A', 1, 6], ['B', 2, 10], ['C', 3, 12]];
+  IT.forEach(([n, w, v], i) => box2(S, 'it' + i, 1, 1.5 + i * 1.4, 8.4, 1.15, `${n}  w=${w}  v=${v}`, 'line', 0, { pct: 30 }));
+  tsets(S, 'it0', [[1, 'ok', 35], [2, 'line', 30]]); tsets(S, 'it1', [[1, 'ok', 35], [2, 'line', 30], [4, 'ok', 35], [5, 'line', 30]]); tsets(S, 'it2', [[1, 'danger', 30], [2, 'line', 30], [4, 'ok', 35], [5, 'line', 30]]);
+  const CX = c => 15.6 + c * 2.55, RY = r => 2.7 + r * 1.3;
+  T(S, 'hw', 11, 1.45, 'c →', 'cz-tc cz-mono alx-xs', 2, { w: 4.2 });
+  for (let c = 0; c < 6; c++) T(S, 'hc' + c, CX(c), 1.45, String(c), 'cz-tc cz-mono alx-xs', 2, { w: 2.35 });
+  const RL = ['∅', 'A (1, 6)', 'B (2, 10)', 'C (3, 12)'], DP = [[0, 0, 0, 0, 0, 0], [0, 6, 6, 6, 6, 6], [0, 6, 10, 16, 16, 16], [0, 6, 10, 16, 18, 22]];
+  DP.forEach((row, r) => { box2(S, 'rl' + r, 11, RY(r), 4.2, 1.1, RL[r], 'ink-3', r < 3 ? 2 : 3, { pct: 12 }); row.forEach((v, c) => box2(S, `c${r}_${c}`, CX(c), RY(r), 2.35, 1.1, String(v), 'line', r < 3 ? 2 : 3, { pct: 22 })); });
+  tsets(S, 'c3_5', [[3, 'ok', 50], [4, 'accent', 40], [5, 'line', 22]]); tsets(S, 'c2_5', [[3, 'warn', 40], [4, 'line', 22]]); tsets(S, 'c2_2', [[3, 'warn', 40], [4, 'accent', 40], [5, 'line', 22]]); tsets(S, 'c1_0', [[4, 'accent', 40], [5, 'line', 22]]);
+  T(S, 'f3', 11, 8.1, 'dp[C][5] = max(16, 10 + 12) = 22', 'cz-mono alx-xs alx-g', 3, { off: 4 });
+  T(S, 'f4', 11, 8.1, ['결과: B + C = 22 (무게 5)', 'result: B + C = 22 (weight 5)'], 'alx-xs alx-g', 4);
+  stepT(S, 'k', 1, 9.4, [['가치/무게가 큰 순(탐욕): A·B를 넣으면 16, 남은 칸 2엔 C가 안 들어가요 ✗', 'greedy by value/weight: A and B give 16, and C won’t fit in the 2 left ✗'], ['dp[i][c] = i번째 물건까지 써서 용량 c로 얻는 최대 가치', 'dp[i][c] = best value using items up to i with capacity c'], ['안 넣기 dp[i−1][c] vs 넣기 dp[i−1][c−w] + v 중 큰 값', 'skip: dp[i−1][c] vs take: dp[i−1][c−w] + v, whichever is larger'], ['거꾸로 따라가기: 바로 위 칸과 값이 다르면 그 물건을 넣은 것', 'trace back: a cell that differs from the one above means that item was taken']]);
+  fin(S, 'z', 10.8, [['0/1 배낭: 물건을 쪼갤 수 없을 때 DP로 O(n·W)에 풀어요', '0/1 knapsack: with indivisible items, DP solves it in O(n·W)', 'alx-xs alx-a'], ['W는 입력의 “숫자 크기”라 의사 다항 시간이에요 · 일반적으로는 NP-난해', 'W is a numeric value, so this is pseudo-polynomial · the problem is NP-hard in general'], ['쪼갤 수 있으면(분할 배낭) 가치/무게 순 탐욕이 최적이에요', 'if items can be split (fractional knapsack), greedy by value/weight is optimal']]);
+  S.cap(1, '탐욕은 실패해요', 'Greedy fails').cap(2, 'DP 표 채우기', 'Filling the DP table').cap(3, '넣을까, 말까', 'Take it or leave it').cap(4, '무엇을 넣었나 되짚기', 'Tracing back the choice').cap(5, '0/1 배낭 문제', 'The 0/1 knapsack problem');
+  return S;
+}
+function sKmp() {
+  const S = scene({ id: 'al-kmp', steps: 5, per: 1.6 });
+  const TX = 'ABABABCAB', P = 'ABABC', CW = 2.2, X = i => 1 + i * CW;
+  [...TX].forEach((c, i) => { box2(S, 't' + i, X(i), 1.2, 2, 1.2, c, 'line', 0, { pct: 22 }); T(S, 'ti' + i, X(i), 2.45, String(i), 'cz-tc cz-mono alx-tiny', 0, { w: 2 }); });
+  T(S, 'ptr', X(4), .05, 'i ▼', 'cz-tc cz-mono alx-xs alx-a', 1, { w: 2 }); S.move('ptr', 2, X(1), .05); S.move('ptr', 4, X(6), .05);
+  [...P].forEach((c, j) => { box2(S, 'p' + j, X(j), 3.3, 2, 1.2, c, 'accent', 0, { pct: 18 }); S.move('p' + j, 4, X(2 + j), 3.3); });
+  const tc = (k, list) => tsets(S, k, list);
+  for (let j = 0; j < 4; j++) { tc('p' + j, [[1, 'ok', 40], [2, 'accent', 18], [4, j < 2 ? 'accent' : 'ok', j < 2 ? 30 : 40]]); tc('t' + j, [[1, 'ok', 35], [2, 'line', 22]]); }
+  tc('p4', [[1, 'danger', 35], [2, 'accent', 18], [4, 'ok', 40]]); tc('t4', [[1, 'danger', 30], [2, 'line', 22], [4, 'ok', 35]]);
+  [5, 6].forEach(i => tc('t' + i, [[4, 'ok', 35]])); tc('t2', [[4, 'accent', 25]]); tc('t3', [[4, 'accent', 25]]);
+  [...P].forEach((c, j) => box2(S, 'g' + j, X(1 + j), 5.0, 2, 1.2, c, j ? 'line' : 'danger', 2, { pct: j ? 8 : 30, off: 3, css: 'border-style:dashed' }));
+  T(S, 'gl', X(6) + .4, 5.2, ['처음부터 다시…', 'start over…'], 'alx-xs alx-r', 2, { off: 3 });
+  T(S, 'found', X(2), 5.0, ['위치 2에서 찾았어요 ✓', 'found at index 2 ✓'], 'alx-xs alx-g', 4);
+  box2(S, 'pP', 22, 1.2, 1.6, 1.15, 'P', 'ink-3', 3, { pct: 12 }); box2(S, 'pPi', 22, 2.55, 1.6, 1.15, 'π', 'ink-3', 3, { pct: 12 });
+  const PI = [0, 0, 1, 2, 0];
+  [...P].forEach((c, j) => { box2(S, 'q' + j, 23.8 + j * 1.5, 1.2, 1.35, 1.15, c, 'line', 3, { pct: 22 }); box2(S, 'r' + j, 23.8 + j * 1.5, 2.55, 1.35, 1.15, String(PI[j]), j === 3 ? 'ok' : 'line', 3, { pct: j === 3 ? 45 : 22 }); });
+  tsets(S, 'q0', [[3, 'accent', 40]]); tsets(S, 'q1', [[3, 'accent', 40]]); tsets(S, 'q2', [[3, 'warn', 40]]); tsets(S, 'q3', [[3, 'warn', 40]]);
+  T(S, 'qn', 22, 3.95, ['AB…AB: 접두사 = 접미사', 'AB…AB: prefix = suffix'], 'alx-tiny', 3);
+  stepT(S, 'k', 1, 7.0, [['앞의 4글자가 맞다가 5번째에서 어긋났어요 (A ≠ C)', 'the first 4 characters match, then the 5th differs (A ≠ C)'], ['단순한 방법: 한 칸 밀고 처음부터 다시 비교 → 최악 O(n·m)', 'naive: shift by one and compare from scratch → worst case O(n·m)'], ['실패 함수 π: 이미 맞은 ABAB의 접두사 AB = 접미사 AB → 2글자는 다시 볼 필요 없음', 'failure function π: in the matched ABAB, prefix AB = suffix AB → 2 characters need no recheck'], ['KMP: 패턴을 π[3] = 2에 맞춰 밀고 i는 4부터 그대로 계속 → 발견', 'KMP: slide the pattern to π[3] = 2 and keep going from i = 4 → found']]);
+  fin(S, 'z', 8.4, [['KMP: 텍스트 포인터가 절대 뒤로 가지 않아 O(n + m)에 찾아요', 'KMP never moves the text pointer backward, so it runs in O(n + m)', 'alx-xs alx-a'], ['π는 패턴만 보고 미리 계산 · 어긋나면 π를 따라 패턴만 점프해요', 'π is precomputed from the pattern alone; on a mismatch only the pattern jumps'], ['라빈-카프(롤링 해시), 보이어-무어(뒤에서부터 비교)도 자주 쓰는 문자열 검색이에요', 'Rabin–Karp (rolling hash) and Boyer–Moore (compare from the end) are other common choices']]);
+  S.cap(1, '어긋난 순간', 'The mismatch').cap(2, '단순한 방법의 낭비', 'What the naive way wastes').cap(3, '실패 함수 π', 'The failure function π').cap(4, '뒤로 가지 않고 점프', 'Jump without going back').cap(5, 'KMP 문자열 검색', 'KMP string search');
+  return S;
+}
+
+/* ================= graphs ================= */
+function sBellman() {
+  const S = scene({ id: 'al-bellman', steps: 5, per: 1.6 });
+  const N = { S: [2.5, 5.2], A: [9, 1.8], B: [9, 8.6], C: [15.5, 5.2] }, R = 1.1;
+  Object.entries(N).forEach(([k, [x, y]]) => stt(S, 'n' + k, x, y, k, k === 'S' ? 'accent' : 'line', 0, { r: R, pct: k === 'S' ? 25 : 14 }));
+  ['A', 'B', 'C'].forEach(k => tsets(S, 'n' + k, [[4, 'danger', 22], [5, 'line', 14]]));
+  const E = [['SA', 'S', 'A', '4', -.6], ['SB', 'S', 'B', '5', .6], ['BA', 'B', 'A', '−3', 1.2], ['AC', 'A', 'C', '2', -.6]];
+  E.forEach(([k, a, b, w, ld]) => { ga(S, 'e' + k, N[a], N[b], k === 'BA' ? 'danger' : 'ink-3', 0, R); const [mx, my] = mid(N[a], N[b], ld); T(S, 'w' + k, mx - 1.5, my - .45, w, 'cz-tc cz-mono alx-xs' + (k === 'BA' ? ' alx-r' : ''), 0, { w: 3 }); });
+  ga(S, 'eCB', N.C, N.B, 'danger', 4, R, { dash: 1, off: 5 }); const [cx, cy] = mid(N.C, N.B, -.7); T(S, 'wCB', cx - 1.5, cy - .45, '−8', 'cz-tc cz-mono alx-xs alx-r', 4, { w: 3, off: 5 });
+  const CX = j => 22.6 + j * 2.2, RY = r => 2.5 + r * 1.3;
+  ['S', 'A', 'B', 'C'].forEach((h, j) => T(S, 'h' + j, CX(j), 1.25, h, 'cz-tc cz-mono alx-xs', 1, { w: 2 }));
+  const ROWS = [[['다익스트라', 'Dijkstra'], ['0', '4', '5', '6'], 1, [3, 'danger']], [['1회차', 'round 1'], ['0', '2', '5', '6'], 2, [1, 'ok']], [['2회차', 'round 2'], ['0', '2', '5', '4'], 3, [3, 'ok']], [['3회차', 'round 3'], ['0', '2', '5', '4'], 3, null]];
+  ROWS.forEach(([lab, vals, st, hi], r) => { box2(S, 'rl' + r, 18, RY(r), 4.4, 1.1, lab, 'ink-3', st, { pct: 12 }); vals.forEach((v, j) => box2(S, `c${r}_${j}`, CX(j), RY(r), 2, 1.1, v, hi && hi[0] === j ? hi[1] : 'line', st, { pct: hi && hi[0] === j ? 35 : 22 })); });
+  T(S, 'r3n', 18, 7.7, ['3회차: 변화 없음 → 일찍 종료', 'round 3: no change → stop early'], 'alx-xs alx-g', 3);
+  stepT(S, 'k', 1, 10.4, [['다익스트라: A를 4로 먼저 확정 → B→A(−3)로 2가 되는 걸 놓쳐 C = 6 ✗', 'Dijkstra finalizes A at 4 too early, misses 2 via B→A (−3) and gets C = 6 ✗'], ['벨만-포드: 모든 간선을 한 번씩 완화하는 일을 V − 1번 반복해요', 'Bellman–Ford relaxes every edge, V − 1 rounds in a row'], ['2회차에 A의 개선이 C로 전파돼 C = 4 · 3회차엔 변화가 없어요', 'round 2 carries A’s improvement on to C = 4 · round 3 changes nothing'], ['C→B(−8)를 더하면 B→A→C→B의 합이 −9인 음수 사이클', 'add C→B (−8) and B→A→C→B sums to −9: a negative cycle']], 'alx-xs', 5);
+  T(S, 'k4b', 1, 11.5, ['V번째 회차에도 값이 줄어들면 “최단 경로 없음”을 알아내요', 'if round V still improves something, no shortest path exists'], 'alx-xs alx-r', 4, { off: 5 });
+  fin(S, 'z', 10.4, [['벨만-포드: 음수 간선이 있어도 되고 음수 사이클도 찾아내는 최단 경로 알고리즘, O(V·E)', 'Bellman–Ford handles negative edges and detects negative cycles, in O(V·E)', 'alx-xs alx-a'], ['다익스트라는 더 빠르지만 (O(E log V)) 음수 간선이 없어야 해요', 'Dijkstra is faster (O(E log V)) but needs non-negative edges'], ['거리 벡터 라우팅(RIP)이 같은 아이디어로 동작해요', 'distance-vector routing (RIP) works on the same idea']]);
+  S.cap(1, '음수 간선과 다익스트라', 'A negative edge breaks Dijkstra').cap(2, '모든 간선 완화', 'Relax every edge').cap(3, '개선이 전파돼요', 'Improvements propagate').cap(4, '음수 사이클 감지', 'Detecting a negative cycle').cap(5, '벨만-포드', 'Bellman–Ford');
+  return S;
+}
+function sFloyd() {
+  const S = scene({ id: 'al-floyd', steps: 5, per: 1.6 });
+  const N = { 1: [2.5, 2.2], 2: [11, 2.2], 3: [11, 9], 4: [2.5, 9] }, R = 1.05;
+  Object.entries(N).forEach(([k, [x, y]]) => stt(S, 'n' + k, x, y, k, 'line', 0, { r: R }));
+  tsets(S, 'n1', [[2, 'accent', 35], [3, 'line', 14]]); tsets(S, 'n2', [[3, 'accent', 35], [4, 'line', 14]]);
+  [['12', '3', -.6], ['13', '8', .6], ['23', '2', -.6], ['34', '1', -.6], ['41', '2', -.6]].forEach(([k, w, ld]) => { const a = N[k[0]], b = N[k[1]]; ga(S, 'e' + k, a, b, 'ink-3', 0, R); const [mx, my] = mid(a, b, ld); T(S, 'w' + k, mx - 1.5, my - .45, w, 'cz-tc cz-mono alx-xs', 0, { w: 3 }); });
+  const CX = j => 16.8 + j * 3.4, RY = i => 2.4 + i * 1.45;
+  [1, 2, 3, 4].forEach((h, j) => { T(S, 'hc' + j, CX(j), 1.2, String(h), 'cz-tc cz-mono alx-xs alx-a', 0, { w: 3.2 }); T(S, 'hr' + j, 15, RY(j) + .2, String(h), 'cz-tc cz-mono alx-xs alx-a', 0, { w: 1.6 }); });
+  const D0 = [['0', '3', '8', '∞'], ['∞', '0', '2', '∞'], ['∞', '∞', '0', '1'], ['2', '∞', '∞', '0']];
+  const CH = { '4_2': [[2, '5']], '4_3': [[2, '10'], [3, '7']], '1_3': [[3, '5']], '1_4': [[4, '6']], '2_4': [[4, '3']], '2_1': [[4, '5']], '3_1': [[4, '3']], '3_2': [[4, '6']] };
+  D0.forEach((row, i) => row.forEach((v, j) => {
+    const k = `${i + 1}_${j + 1}`, ch = CH[k] || [];
+    box2(S, 'm' + k, CX(j), RY(i), 3.2, 1.25, '', i === j ? 'ink-3' : 'line', 0, { pct: i === j ? 10 : 22 });
+    const tl = []; ch.forEach(([s]) => { tl.push([s, 'warn', 45]); tl.push([s + 1, 'line', 22]); }); if (tl.length) tsets(S, 'm' + k, tl);
+    ver(S, 'v' + k + '_', CX(j), RY(i) + .2, [[0, v], ...ch], 'cz-tc cz-mono alx-xs', 3.2);
+  }));
+  frame(S, 'fr1', 16.65, RY(0) - .12, 13.8, 1.5, 'accent', 2, { w: .1, off: 3 }); frame(S, 'fc1', CX(0) - .12, 2.28, 3.44, 5.9, 'accent', 2, { w: .1, off: 3 });
+  frame(S, 'fr2', 16.65, RY(1) - .12, 13.8, 1.5, 'accent', 3, { w: .1, off: 4 }); frame(S, 'fc2', CX(1) - .12, 2.28, 3.44, 5.9, 'accent', 3, { w: .1, off: 4 });
+  ver(S, 'kl', 15, 8.4, [[1, ['D⁰: 간선 하나로 가는 거리', 'D⁰: one-edge distances']], [2, ['k = 1: 정점 1을 거쳐 가면?', 'k = 1: via vertex 1?']], [3, ['k = 2: 정점 2를 거쳐 가면?', 'k = 2: via vertex 2?']], [4, ['k = 3, 4까지 끝: 완성', 'k = 3 and 4 done: complete']]], 'alx-xs alx-a');
+  code(S, 'cd', 15, 9.7, 16.6, [['for k in V:      # 경유 정점', 'for k in V:      # via vertex'], '  for i in V:', '    for j in V:', '      D[i][j] = min(D[i][j], D[i][k] + D[k][j])'], [], { st: 1 });
+  stepT(S, 's', 1, 16.0, [['처음엔 간선 하나로 바로 가는 거리 (없으면 ∞)', 'start with direct edge lengths (∞ if none)'], ['4→1→2 = 2 + 3 = 5, 4→1→3 = 2 + 8 = 10 으로 갱신', 'update 4→1→2 = 2 + 3 = 5 and 4→1→3 = 2 + 8 = 10'], ['1→2→3 = 5 < 8, 4→2→3 = 7 < 10 으로 더 짧아져요', '1→2→3 = 5 < 8 and 4→2→3 = 7 < 10 get shorter'], ['k = 3, 4에서 남은 칸이 채워져 모든 쌍의 최단 거리가 완성돼요', 'k = 3 and 4 fill the rest: every pair now has its shortest distance']]);
+  fin(S, 'z', 17.3, [['플로이드-워셜: 경유 정점을 하나씩 허용하며 모든 쌍의 최단 거리를 구하는 DP', 'Floyd–Warshall: a DP that allows one more via-vertex per round to get all-pairs shortest paths', 'alx-xs alx-a'], ['세 겹 반복이라 O(V³) · 음수 간선 OK · 대각선이 음수가 되면 음수 사이클', 'three nested loops, O(V³) · negative edges OK · a negative diagonal means a negative cycle']]);
+  S.cap(1, '거리 행렬 D⁰', 'The distance matrix D⁰').cap(2, '정점 1을 거쳐 가기', 'Going through vertex 1').cap(3, '정점 2를 거쳐 가기', 'Going through vertex 2').cap(4, '모든 쌍 완성', 'All pairs done').cap(5, '플로이드-워셜', 'Floyd–Warshall');
+  return S;
+}
+function sFlow() {
+  const S = scene({ id: 'al-flow', steps: 5, per: 1.6 });
+  const N = { s: [2.5, 5.5], a: [10, 1.9], b: [10, 9.1], t: [17.5, 5.5] }, R = 1.1;
+  Object.entries(N).forEach(([k, [x, y]]) => stt(S, 'n' + k, x, y, k, k === 's' || k === 't' ? 'accent' : 'line', 0, { r: R, pct: k === 's' || k === 't' ? 25 : 14 }));
+  const E = { sa: ['s', 'a', -.7], sb: ['s', 'b', .7], ab: ['a', 'b', .8], at: ['a', 't', -.7], bt: ['b', 't', .7] };
+  const FL = { sa: [[0, '0/2'], [2, '2/2']], sb: [[0, '0/2'], [3, '2/2']], ab: [[0, '0/2'], [2, '2/2'], [3, '0/2']], at: [[0, '0/2'], [3, '2/2']], bt: [[0, '0/2'], [2, '2/2']] };
+  Object.entries(E).forEach(([k, [a, b, ld]]) => { ga(S, 'e' + k, N[a], N[b], 'ink-3', 0, R); const [mx, my] = mid(N[a], N[b], ld); ver(S, 'f' + k + '_', mx - 1.5, my - .45, FL[k], 'cz-tc cz-mono alx-xs', 3); });
+  ['sa', 'ab', 'bt'].forEach(k => acol(S, 'e' + k, 2, 'warn'));
+  acol(S, 'esa', 3, 'accent'); acol(S, 'ebt', 3, 'accent'); acol(S, 'eab', 3, 'ink-3'); acol(S, 'esb', 3, 'ok'); acol(S, 'eat', 3, 'ok');
+  acol(S, 'esb', 4, 'accent'); acol(S, 'eat', 4, 'accent');
+  ar(S, 'rv', [10.75, 8.3], [10.75, 2.7], 'ok', 3, { h: .1, dash: 1, off: 4 }); T(S, 'rvl', 11.2, 5.1, ['역방향 2', 'reverse 2'], 'alx-tiny alx-g', 3, { off: 4 });
+  seg(S, 'cutl', [6.3, .6], [6.3, 10.6], 4, 'danger', .08, { dash: 1, off: 5 }); T(S, 'cutt', 4.6, 10.7, ['컷', 'cut'], 'alx-tiny alx-r', 4, { off: 5 });
+  T(S, 'p1', 21, 1.4, ['경로 1: s→a→b→t  +2', 'path 1: s→a→b→t  +2'], 'cz-mono alx-xs alx-w', 2);
+  T(S, 'p2', 21, 2.7, ['경로 2: s→b→a→t  +2', 'path 2: s→b→a→t  +2'], 'cz-mono alx-xs alx-g', 3);
+  ver(S, 'tot', 21, 4.2, [[2, ['총 유량 2', 'total flow 2']], [3, ['총 유량 4', 'total flow 4']]], 'alx-s alx-a');
+  T(S, 'cutv', 21, 5.8, ['최소 컷 = 2 + 2 = 4', 'min cut = 2 + 2 = 4'], 'alx-xs alx-r', 4);
+  stepT(S, 'k', 1, 11.8, [['s에서 t로 최대 몇 단위를 흘릴 수 있을까요? (간선 숫자 = 흐름/용량)', 'how much can flow from s to t? (edge labels are flow/capacity)'], ['아무 경로나 골라 병목만큼 흘려요: s→a→b→t로 2 · 이제 더 갈 길이 없어 보여요', 'push the bottleneck along a path: 2 via s→a→b→t · now no path seems left'], ['잔여 그래프엔 보낸 만큼 되돌리는 역방향 간선이 있어요 → s→b→a→t로 2 더', 'the residual graph has reverse edges that undo flow → 2 more via s→b→a→t'], ['a→b의 흐름은 상쇄돼 0 · 총 4 = s를 잘라 내는 최소 컷 용량', 'a→b cancels to 0 · the total of 4 equals the min cut around s']]);
+  fin(S, 'z', 13.2, [['포드-풀커슨: 잔여 그래프에 증가 경로가 없을 때까지 흘려 보내면 최대 유량', 'Ford–Fulkerson: push along augmenting paths in the residual graph until none remain', 'alx-xs alx-a'], ['최대 유량 = 최소 컷 · BFS로 가장 짧은 증가 경로를 고르면 에드몬드-카프 O(V·E²)', 'max flow = min cut · picking the shortest augmenting path by BFS gives Edmonds–Karp, O(V·E²)'], ['이분 매칭, 작업 배정, 이미지 분할, 네트워크 용량 계산에 쓰여요', 'used for bipartite matching, assignment, image segmentation and network capacity']]);
+  S.cap(1, '용량이 있는 네트워크', 'A network with capacities').cap(2, '첫 번째 증가 경로', 'The first augmenting path').cap(3, '역방향 간선으로 되돌리기', 'Undoing flow with a reverse edge').cap(4, '최대 유량 = 최소 컷', 'Max flow = min cut').cap(5, '최대 유량', 'Maximum flow');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'al-tech': [
+    item('al-master', '분할 정복과 마스터 정리', 'Divide and conquer and the master theorem', '문제를 작은 문제로 쪼개 풀고 합치는 분할 정복의 실행 시간은 T(n) = a·T(n/b) + f(n) 꼴 점화식으로 나타나요. 재귀 트리나 마스터 정리로 풀어요.', '병합 정렬은 T(n) = 2T(n/2) + n이에요. 재귀 트리를 그리면 층마다 합치는 비용이 n이고 층이 log₂n개라 Θ(n log n)이 돼요. 일반형에선 f(n)을 n^(log_b a)와 비교해, f가 작으면 리프가 지배(8T(n/2)+n² → Θ(n³)), 같으면 층마다 같아 log가 붙고(병합 정렬, 이진 탐색 Θ(log n)), 크면 뿌리가 지배(2T(n/2)+n² → Θ(n²))해요. 카라츠바 곱셈, 슈트라센 행렬 곱셈, 가장 가까운 점 쌍도 이 틀로 분석해요.', 'Divide and conquer splits a problem into smaller ones, solves them and combines the results; its running time is a recurrence T(n) = a·T(n/b) + f(n), solved with a recursion tree or the master theorem.', 'Merge sort is T(n) = 2T(n/2) + n. In its recursion tree each level costs n to merge and there are log₂n levels, giving Θ(n log n). In general you compare f(n) with n^(log_b a): if f is smaller the leaves dominate (8T(n/2) + n² → Θ(n³)); if equal, every level costs the same and a log factor appears (merge sort, or Θ(log n) for binary search); if larger the root dominates (2T(n/2) + n² → Θ(n²)). Karatsuba multiplication, Strassen’s matrix multiply and closest pair are analysed the same way.', sMaster()),
+    item('al-knapsack', '0/1 배낭 문제', 'The 0/1 knapsack problem', '무게 제한이 있는 가방에 가치의 합이 최대가 되도록 물건을 고르는 문제예요. 물건을 쪼갤 수 없으면 탐욕으로는 안 되고 DP로 풀어요.', '용량 5에 A(무게 1, 가치 6), B(2, 10), C(3, 12)가 있을 때 가치/무게 순 탐욕은 A·B로 16에서 멈추지만, 정답은 B·C로 22예요. dp[i][c]를 “i번째 물건까지, 용량 c로 얻는 최대 가치”로 두고 dp[i][c] = max(dp[i−1][c], dp[i−1][c−w] + v)로 표를 채워요. 표를 거꾸로 따라가며 위 칸과 값이 다른 행의 물건을 고르면 선택이 복원돼요. 시간은 O(n·W)지만 W가 숫자 크기라 의사 다항 시간이고, 문제 자체는 NP-난해예요. 쪼갤 수 있는 분할 배낭은 탐욕이 최적이에요.', 'Pick items for a weight-limited bag so their total value is as large as possible; when items can’t be split, greedy fails and dynamic programming is needed.', 'With capacity 5 and items A (weight 1, value 6), B (2, 10) and C (3, 12), greedy by value per weight stops at A + B = 16, but the best is B + C = 22. Define dp[i][c] as the best value using items up to i with capacity c and fill the table with dp[i][c] = max(dp[i−1][c], dp[i−1][c−w] + v). Walking back up the table, a row whose value differs from the row above marks a chosen item. The time is O(n·W), pseudo-polynomial because W is a numeric value, and the problem is NP-hard in general. The fractional version, where items can be split, is solved optimally by greedy.', sKnap()),
+    item('al-kmp', 'KMP 문자열 검색', 'KMP string search', '긴 텍스트에서 패턴을 찾을 때, 어긋나도 텍스트를 뒤로 되돌아가지 않도록 패턴의 “실패 함수”를 미리 계산하는 알고리즘이에요.', '단순한 방법은 어긋날 때마다 패턴을 한 칸 밀고 처음부터 다시 비교해 최악 O(n·m)이 걸려요. KMP는 패턴의 각 접두부에서 “접두사이면서 접미사인 가장 긴 길이” π를 미리 구해 둬요. ABABC에서 ABAB까지 맞고 어긋나면 π[3] = 2이므로, 이미 맞은 AB를 그대로 살린 채 패턴만 밀고 텍스트 포인터는 그 자리에서 계속 비교해요. 그래서 O(n + m)이에요. 라빈-카프는 롤링 해시로, 보이어-무어는 뒤에서부터 비교하며 크게 건너뛰어요.', 'An algorithm for finding a pattern in long text that precomputes the pattern’s failure function so the text pointer never moves backward after a mismatch.', 'The naive approach shifts the pattern by one after each mismatch and compares from scratch, costing O(n·m) in the worst case. KMP precomputes π, the length of the longest prefix of each pattern prefix that is also its suffix. If ABAB of ABABC matches and the next character fails, π[3] = 2, so the pattern slides while keeping the already-matched AB, and comparison continues at the same text position. That makes it O(n + m). Rabin–Karp uses a rolling hash instead, and Boyer–Moore compares from the end to skip ahead.', sKmp())
+  ],
+  'al-graph': [
+    item('al-bellman', '벨만-포드와 음수 간선', 'Bellman–Ford and negative edges', '음수 가중치 간선이 있어도 최단 거리를 구하고, 음수 사이클까지 찾아내는 알고리즘이에요. 다익스트라가 틀리는 경우를 해결해요.', '다익스트라는 가장 가까운 정점을 한 번 확정하면 다시 보지 않아서, 나중에 음수 간선(B→A = −3)으로 더 짧아지는 경로를 놓쳐요. 벨만-포드는 모든 간선을 한 번씩 완화하는 일을 V − 1번 반복해요. 최단 경로는 간선이 최대 V − 1개이므로 충분하고, 변화가 없는 회차가 오면 일찍 끝내요. V번째 회차에도 값이 줄어들면 음수 사이클이 있어 최단 경로가 정의되지 않아요. 시간은 O(V·E)이고, 거리 벡터 라우팅(RIP)이 같은 원리예요.', 'A shortest-path algorithm that works with negative edge weights and detects negative cycles, covering the cases where Dijkstra goes wrong.', 'Dijkstra never revisits a vertex once it finalizes it, so it misses a route that a negative edge (B→A = −3) makes shorter later. Bellman–Ford relaxes every edge once per round, for V − 1 rounds; a shortest path has at most V − 1 edges, so that is enough, and a round with no change lets it stop early. If round V still improves a distance, a negative cycle exists and shortest paths are undefined. It runs in O(V·E), and distance-vector routing (RIP) uses the same idea.', sBellman()),
+    item('al-floyd', '플로이드-워셜', 'Floyd–Warshall', '모든 정점 쌍 사이의 최단 거리를 한 번에 구하는 DP예요. “k번 정점까지 거쳐 가도 된다”는 조건을 하나씩 넓혀 가요.', '처음엔 간선 하나로 가는 거리(없으면 ∞)로 행렬을 채우고, k = 1, 2, …마다 모든 (i, j)에 대해 D[i][j] = min(D[i][j], D[i][k] + D[k][j])로 갱신해요. 예를 들어 k = 2에서 1→2→3 = 5가 직접 간선 8보다 짧아 바뀌어요. 세 겹 반복이라 O(V³)이고 코드가 아주 짧아요. 음수 간선도 되고, 끝난 뒤 대각선 D[i][i]가 음수면 음수 사이클이에요. 정점이 적고 모든 쌍이 필요할 때 좋아요.', 'A dynamic program that computes shortest distances between every pair of vertices at once, widening the set of allowed intermediate vertices one at a time.', 'Start with a matrix of direct edge lengths (∞ where there is none), then for k = 1, 2, … update every (i, j) with D[i][j] = min(D[i][j], D[i][k] + D[k][j]). At k = 2, for example, 1→2→3 = 5 beats the direct edge of 8. Three nested loops make it O(V³) with very short code. Negative edges are fine, and a negative diagonal entry D[i][i] at the end reveals a negative cycle. It suits graphs with few vertices when all pairs are needed.', sFloyd()),
+    item('al-flow', '최대 유량', 'Maximum flow', '용량이 있는 네트워크에서 출발점 s부터 도착점 t까지 최대 얼마나 흘려보낼 수 있는지 구하는 문제예요. 포드-풀커슨 방법으로 풀어요.', '경로를 하나 골라 병목 용량만큼 흘리는 일을 반복해요. 그런데 s→a→b→t로 2를 먼저 보내면 더 갈 길이 없어 보여 2에서 멈춰요. 잔여 그래프에는 보낸 만큼 되돌릴 수 있는 역방향 간선(b→a)이 생기므로, s→b→a→t로 2를 더 보내 총 4가 돼요(a→b 흐름은 상쇄). 최대 유량은 s와 t를 가르는 최소 컷의 용량과 같아요. BFS로 가장 짧은 증가 경로를 고르면 에드몬드-카프, O(V·E²)이에요. 이분 매칭과 작업 배정에 쓰여요.', 'Find how much can be pushed from a source s to a sink t through a network whose edges have capacities, using the Ford–Fulkerson method.', 'Repeatedly pick a path and push its bottleneck capacity. Sending 2 along s→a→b→t first seems to leave no path, stuck at 2. But the residual graph gains a reverse edge (b→a) that can undo flow, so s→b→a→t carries 2 more for a total of 4, cancelling the flow on a→b. The maximum flow equals the capacity of the minimum cut separating s from t. Choosing the shortest augmenting path by BFS gives Edmonds–Karp, O(V·E²). It powers bipartite matching and assignment problems.', sFlow())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('al-sort', '정렬', 'Sorting', '실제로 돌려 보는 정렬 알고리즘', 'Sorting algorithms, run for real',
     '같은 숫자들을 정렬해도 방법에 따라 비교와 이동이 전혀 달라요. 주황은 비교, 빨강은 교환, 파랑은 기준(피벗), 초록은 제자리를 찾은 값이에요.', 'The same numbers sort very differently depending on the method. Orange compares, red swaps, blue marks the pivot and green means a value is in its final place.', [
@@ -518,7 +802,7 @@ window.UX = page([
     item('al-heapsort', '힙 정렬', 'Heapsort', '배열을 최대 힙으로 만든 뒤, 맨 위의 최댓값을 끝으로 보내고 다시 힙을 정리하기를 반복해요.', '최악에도 O(n log n), 추가 공간 O(1)이 보장돼요. 캐시 효율이 낮아 평균적으로는 퀵 정렬보다 느려요.', 'Builds a max-heap, then repeatedly moves the top (the maximum) to the end and restores the heap.', 'Guarantees O(n log n) even in the worst case with O(1) extra space, but poor cache behaviour makes it slower than quicksort on average.', sortScene('al-heapsort', [4, 9, 2, 7, 5, 8], heapsort([4, 9, 2, 7, 5, 8]), { per: .45 })),
     item('al-radix', '기수 정렬', 'Radix sort', '비교하지 않고 일의 자리, 십의 자리처럼 자릿수별로 묶어 차례로 정렬해요. 각 단계는 안정 정렬이어야 해요.', '정해진 길이의 정수, 날짜, 문자열 키를 대량으로 정렬할 때 O(n log n)보다 빨라요.', 'Sorts without comparisons by grouping on each digit in turn, ones then tens. Each pass must be stable.', 'Beats O(n log n) for large volumes of fixed-length integers, dates or string keys.', sortScene('al-radix', [53, 27, 91, 18, 72, 35, 64, 40], radix([53, 27, 91, 18, 72, 35, 64, 40]), { per: 1.8, w: 2.4, g: .45 })),
     item('al-stable', '안정 정렬', 'Stable sort', '값이 같은 원소들이 정렬 후에도 원래 순서를 지키면 안정 정렬이에요.', '"날짜순으로 정렬한 다음 이름순으로 정렬"처럼 여러 기준을 차례로 적용할 때 꼭 필요해요. 병합·삽입·팀소트는 안정, 퀵·힙은 보통 불안정해요.', 'A sort is stable if equal elements keep their original order.', 'Essential when sorting by several keys in turn, such as by date then by name. Merge, insertion and Timsort are stable; quick and heap sorts usually are not.', sStable())
-  ]),
+  ].concat(XT.add['al-sort'] || [])),
   sec('al-tech', '탐색·기법', 'Techniques', '문제를 줄이는 기법들', 'Techniques that shrink problems',
     '코딩 테스트와 실무 최적화에 반복해서 나오는 생각의 틀이에요.', 'Patterns of thinking that recur in coding interviews and real optimization work.', [
     item('al-bsearch', '이진 탐색', 'Binary search', '정렬된 배열의 가운데와 비교해서 찾는 범위를 매번 절반으로 줄여요.', '정렬된 데이터 찾기뿐 아니라 "조건을 만족하는 최솟값"을 찾는 매개변수 탐색에도 써요. 경계 조건(lo ≤ hi, mid 계산)에서 실수가 많아요.', 'Compares with the middle of a sorted array and halves the search range every time.', 'Beyond lookups, it finds “the smallest value that satisfies a condition” (parametric search). Off-by-one errors in the bounds are common.', sBsearch()),
@@ -531,7 +815,7 @@ window.UX = page([
     item('al-greedy', '그리디', 'Greedy algorithm', '매 순간 가장 좋아 보이는 선택을 하고 되돌아보지 않아요. 빠르지만 항상 최적인 건 아니에요.', '동전 거스름돈, 회의실 배정, 허프만 압축, 크루스칼·다익스트라가 그리디예요. 최적임을 증명하거나 반례를 확인하고 쓰세요.', 'Make the choice that looks best right now and never look back. Fast, but not always optimal.', 'Making change, meeting-room scheduling, Huffman coding, Kruskal and Dijkstra are greedy. Prove optimality or check for counterexamples first.', sGreedy()),
     item('al-queens', '백트래킹', 'Backtracking', '하나씩 선택해 나가다가 조건을 어기면 바로 이전 선택으로 되돌아가 다른 길을 시도해요.', 'N-퀸, 스도쿠, 조합·순열 생성, 제약 만족 문제에 써요. 안 되는 가지를 일찍 잘라낼수록(가지치기) 빨라져요.', 'Make choices one at a time, and the moment a constraint breaks, undo the last choice and try another path.', 'Used for N-queens, sudoku, generating combinations and permutations, and constraint satisfaction. The earlier you prune dead branches, the faster it is.', sQueens()),
     item('al-bitmask', '비트마스크', 'Bitmask', '정수의 각 비트를 "포함/미포함"으로 써서 부분집합을 숫자 하나로 표현해요.', '부분집합 전체 탐색, 방문 상태를 저장하는 DP(외판원 문제), 권한·옵션 플래그에 써요.', 'Use each bit of an integer as “in or out” to represent a subset with a single number.', 'Used to enumerate subsets, store visited states in DP (travelling salesman) and encode permission or option flags.', sBitmask())
-  ]),
+  ].concat(XT.add['al-tech'] || [])),
   sec('al-graph', '그래프 알고리즘', 'Graph algorithms', '연결을 따라가는 알고리즘', 'Algorithms that follow connections',
     '지도, SNS, 의존성, 네트워크처럼 연결된 데이터를 다루는 방법이에요.', 'How to work with connected data such as maps, social networks, dependencies and networks.', [
     item('al-bfs', '너비 우선 탐색', 'BFS · Breadth-first search', '시작점에서 가까운 정점부터 층층이 넓혀 가요. 큐를 써요.', '가중치 없는 그래프의 최단 거리, 친구의 친구 찾기, 웹 크롤링, 미로 최단 경로에 써요.', 'Expands layer by layer from the start, nearest vertices first, using a queue.', 'Finds shortest paths in unweighted graphs and is used for friends-of-friends, web crawling and maze solving.', sBFS()),
@@ -540,7 +824,8 @@ window.UX = page([
     item('al-topo', '위상 정렬', 'Topological sort', '"A 다음에 B" 같은 선후 관계를 모두 지키는 순서를 만들어요. 들어오는 간선이 없는 것부터 꺼내요.', '빌드 시스템, 패키지 설치 순서, 작업 스케줄링, 엑셀 수식 계산 순서에 써요. 사이클이 있으면 불가능해요.', 'Produces an order that respects every “A before B” dependency by repeatedly taking nodes with no incoming edges.', 'Used by build systems, package installers, job schedulers and spreadsheet recalculation. Impossible if there is a cycle.', sTopo()),
     item('al-mst', '최소 신장 트리', 'Minimum spanning tree · Kruskal', '모든 정점을 가장 적은 비용으로 잇는 트리예요. 크루스칼은 가벼운 간선부터 사이클이 생기지 않는 것만 골라요.', '통신망·전력망·도로 설계, 클러스터링에 써요. 사이클 확인에 유니온 파인드를 써요.', 'The cheapest tree that connects every vertex. Kruskal’s algorithm takes edges lightest first, skipping any that would form a cycle.', 'Used to design telecom, power and road networks and for clustering. Union-find detects the cycles.', sMST()),
     item('al-astar', 'A* 탐색', 'A* search', '지나온 거리에 목표까지의 추정 거리를 더한 값이 작은 칸부터 탐색해서, 목표 쪽으로 똑똑하게 나아가요.', '게임 캐릭터 이동, 로봇 경로 계획, 지도 길찾기에 써요. 추정값이 실제보다 크지 않아야 최단 경로가 보장돼요.', 'Explores cells with the lowest cost so far plus an estimate of the remaining distance, heading intelligently toward the goal.', 'Used for game character movement, robot path planning and map routing. The estimate must never exceed the true distance to guarantee the shortest path.', sAstar())
-  ])
-]);
+  ].concat(XT.add['al-graph'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += '\n.al-big .in{font-size:.95em;font-weight:700;color:var(--ink)}\n.al-dist .in{font-weight:700;color:var(--accent);font-size:.8em}';
 })();
