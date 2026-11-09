@@ -11,9 +11,9 @@
 
 코드 뒤의 원리를 움직임으로 봐요
 
-컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 22개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
+컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 23개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 22" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-22-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 877" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-877-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 23" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-23-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 902" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-902-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -27,7 +27,7 @@
 
 **[https://starrykss.github.io/CS_Study/](https://starrykss.github.io/CS_Study/)**
 
-포털에는 도감 22개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
+포털에는 도감 23개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
 
 ```
 통합 포털  →  도감 카드 선택  →  과목 페이지 (주제별 개념 카드)  →  카드를 눌러 크게 보기
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 21개와 UI/UX 도감, 개념 877개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 22개와 UI/UX 도감, 개념 902개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -106,6 +106,7 @@
 | --- | --- | ---: | :---: | --- |
 | **미적분학**<br><sub>Calculus</sub> | 극한, 미분, 적분, 급수, 다변수 미적분, 벡터해석 | 42 | [열기](https://starrykss.github.io/CS_Study/calculus/) | [`calculus/`](./calculus) |
 | **선형대수학**<br><sub>Linear algebra</sub> | 연립방정식, 행렬, 행렬식, 벡터 공간, 선형변환, 고윳값, 직교성, SVD | 36 | [열기](https://starrykss.github.io/CS_Study/linear-algebra/) | [`linear-algebra/`](./linear-algebra) |
+| **확률·통계**<br><sub>Probability & statistics</sub> | 확률, 베이즈, 확률분포, 중심극한정리, 추정, 가설검정, 회귀, A/B 테스트 | 25 | [열기](https://starrykss.github.io/CS_Study/probability-statistics/) | [`probability-statistics/`](./probability-statistics) |
 | **일반물리학**<br><sub>General physics</sub> | 운동, 힘, 에너지, 회전, 진동, 파동, 열, 전자기, 광학, 현대물리 | 42 | [열기](https://starrykss.github.io/CS_Study/general-physics/) | [`general-physics/`](./general-physics) |
 
 ## 이렇게 볼 수 있어요
@@ -134,7 +135,8 @@ data-structures/          과목 하나 = 폴더 하나
 algorithms/  discrete-math/  theory-of-computation/  digital-logic/  computer-architecture/
 operating-systems/  computer-networks/  programming-languages/  programming-paradigms/
 design-patterns/  software-engineering/  databases/  security/  distributed-systems/
-devops-cloud/  web/  ai-ml/  calculus/  linear-algebra/  general-physics/
+devops-cloud/  web/  ai-ml/  calculus/  linear-algebra/  probability-statistics/
+general-physics/
 ```
 
 ## 내 컴퓨터에서 보기
