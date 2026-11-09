@@ -13,7 +13,7 @@
 
 컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 31개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1205" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1205-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1215" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1215-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 30개와 UI/UX 도감, 개념 1205개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 30개와 UI/UX 도감, 개념 1215개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -51,7 +51,7 @@
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
-| **자료구조**<br><sub>Data structures</sub> | 배열, 리스트, 스택, 큐, 해시, 트리, 힙, 그래프 표현과 실무 자료구조 | 20 | [열기](https://starrykss.github.io/CS_Study/data-structures/) | [`data-structures/`](./data-structures) |
+| **자료구조**<br><sub>Data structures</sub> | 배열, 리스트, 스택, 큐, 해시, 트리, 힙, 그래프 표현과 실무 자료구조 | 30 | [열기](https://starrykss.github.io/CS_Study/data-structures/) | [`data-structures/`](./data-structures) |
 | **알고리즘**<br><sub>Algorithms</sub> | 정렬, 탐색, 분할 정복, DP, 그리디, 백트래킹, 그래프 알고리즘 | 24 | [열기](https://starrykss.github.io/CS_Study/algorithms/) | [`algorithms/`](./algorithms) |
 | **이산수학**<br><sub>Discrete mathematics</sub> | 논리, 집합, 함수, 귀납법, 경우의 수, 모듈러, 확률, 그래프 이론 | 30 | [열기](https://starrykss.github.io/CS_Study/discrete-math/) | [`discrete-math/`](./discrete-math) |
 | **계산 이론**<br><sub>Theory of computation</sub> | 빅오, 복잡도 클래스, 오토마타, 정규식, 튜링 머신, 정지 문제 | 30 | [열기](https://starrykss.github.io/CS_Study/theory-of-computation/) | [`theory-of-computation/`](./theory-of-computation) |
