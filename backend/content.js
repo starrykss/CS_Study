@@ -628,7 +628,7 @@ function sNotifications() {
     draw: (S) => {
       const X = 19.4;
       nd(S, 'ev', X, .8, 4.2, 'order.shipped', 'accent', 0, { h: 1.0 });
-      chip(S, 'pf', X + 4.8, .8, 3.4, ['설정 확인', 'preferences'], 'line', 1, { h: 1.0 }); arw(S, 'a0', [X + 4.25, 1.3], [X + 4.75, 1.3], 1); lbl(S, 'q', X + 8.2, .95, ['22시~8시 푸시 ✗', 'no push 22–8'], 'm r', 1);
+      chip(S, 'pf', X + 4.8, .8, 3.4, ['설정 확인', 'preferences'], 'line', 1, { h: 1.0 }); arw(S, 'a0', [X + 4.25, 1.3], [X + 4.75, 1.3], 1); lbl(S, 'q', X, 1.95, ['22시~8시 푸시 ✗', 'no push 22–8'], 'm r', 1);
       lbl(S, 'n1', X, 6.6, ['사용자가 원하는 채널·시간만 · 마케팅은 동의 필수', 'only the channels and hours users chose; consent for marketing'], 'a', 1, { off: 2, w: 12 });
       nd(S, 'tp', X + 4.2, 2.2, 7.8, ['“주문하신 상품이 출발했어요”', '“Your order has shipped”'], 'ok', 2, { h: 1.0 }); lbl(S, 'n2', X, 6.6, ['템플릿과 사용자 언어로 문구를 만들어요', 'messages come from templates in the user’s language'], 'g', 2, { off: 3, w: 12 });
       ['email', 'push', 'SMS'].forEach((t, i) => nd(S, 'c' + i, X + i * 4.1, 3.6, 3.8, t, 'warn', 3, { h: 1.0 })); lbl(S, 'n3', X, 6.6, ['채널별 큐 · 공급자 장애가 서로 번지지 않게', 'per-channel queues isolate provider outages'], 'w', 3, { off: 4, w: 12 });
