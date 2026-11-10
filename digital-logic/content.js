@@ -632,6 +632,79 @@ function sFpga() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'lgx-xs', i + 1, { off: i + 2 }));
+function sTff() {
+  const S = scene({ id: 'lg-tff', steps: 5, per: 1.7 });
+  const X0 = 5.0, U = 1.5, NH = 16, H = 1.3, n = h => Math.floor((h + 1) / 2);
+  const rows = [['CLK', 5.4, h => (h % 2 ? 0 : 1), 0, 'ink-2', 'f'], ['Q0', 7.9, h => n(h) % 2, 1, 'accent', 'f/2'], ['Q1', 10.4, h => Math.floor(n(h) / 2) % 2, 2, 'ok', 'f/4'], ['Q2', 12.9, h => Math.floor(n(h) / 4) % 2, 2, 'warn', 'f/8']];
+  rows.forEach(([nm, y, f, st, c, fq], r) => { T(S, 'rn' + r, 1, y - 1.1, nm, 'cz-mono lgx-s', st); wave(S, 'w' + r, X0, y, U, [...Array(NH)].map((_, h) => f(h)), H, c, st); T(S, 'fq' + r, X0 + NH * U + .4, y - 1.1, fq, 'cz-mono lgx-s ' + ['', 'lgx-a', 'lgx-g', 'lgx-w'][r], st); });
+  for (let k = 0; k < 8; k++) vl(S, 'g' + k, X0 + (2 * k + 1) * U, 3.8, 13.0, 'ink-3', 1, { w: .05, dash: 1, off: 3 });
+  const FB = [5.0, 10.4, 15.8], FW = 3.4, FY = .7, FH = 2.0;
+  T(S, 'cin', 1, 1.15, 'CLK', 'cz-mono lgx-xs', 0); ar(S, 'a0', [3.0, FY + FH / 2], [FB[0], FY + FH / 2], 'ink-2', 0, { h: .1 });
+  FB.forEach((x, i) => { box2(S, 'ff' + i, x, FY, FW, FH, 'T = 1', i ? 'ok' : 'accent', i ? 2 : 0, { pct: 22 });
+    const nx = i < 2 ? FB[i + 1] : x + FW + 1.6; ar(S, 'a' + (i + 1), [x + FW, FY + FH / 2], [nx, FY + FH / 2], 'ink-2', i ? 2 : 1, { h: .1 });
+    T(S, 'ql' + i, x + FW + .15, FY - .35, 'Q' + i, 'cz-mono lgx-xs', i ? 2 : 1); });
+  for (let v = 0; v < 8; v++) { const cx = v ? X0 + 2 * v * U : X0 + .5 * U, w = v ? 2.6 : 1.5;
+    T(S, 'cn' + v, cx - w / 2, 13.25, v.toString(2).padStart(3, '0'), 'cz-tc cz-mono lgx-xs lgx-a', 3, { w, off: 4 }); }
+  const R = 23.2;
+  T(S, 'r1', R, .4, ['Q2 Q1 Q0 = 0, 1, 2, …, 7', 'Q2 Q1 Q0 = 0, 1, 2, …, 7'], 'cz-mono lgx-xs lgx-a', 3, { off: 4 });
+  T(S, 'r2', R, 1.5, ['n단 = 0 ~ 2ⁿ − 1 카운터', 'n stages count 0 … 2ⁿ − 1'], 'lgx-xs', 3, { off: 4 });
+  T(S, 'r3', R, .4, ['수정 32,768 Hz = 2¹⁵ Hz', 'crystal: 32,768 Hz = 2¹⁵ Hz'], 'cz-mono lgx-xs lgx-w', 4);
+  T(S, 'r4', R, 1.5, ['÷2를 15번 → 1 Hz', 'halve 15 times → 1 Hz'], 'cz-mono lgx-xs lgx-g', 4);
+  T(S, 'r5', R, 2.6, ['시계의 1초 신호', 'a watch’s one-second tick'], 'lgx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['T = 1로 묶은 T 플립플롭은 클록이 떨어질 때마다 출력을 뒤집어요 · 클록 두 번에 Q0가 한 번 오르내려요', 'a T flip-flop with T = 1 flips on every falling clock edge · Q0 cycles once per two clocks'], ['Q0를 다음 단의 클록으로 쓰면 또 절반 · 단마다 주파수가 f/2, f/4, f/8로 줄어요', 'feed Q0 into the next stage as its clock and it halves again · f/2, f/4, f/8'], ['세 출력을 Q2 Q1 Q0 순으로 읽으면 000부터 111까지 2진수로 세요 · 리플 카운터', 'read Q2 Q1 Q0 together and they count 000 to 111 in binary · a ripple counter'], ['시계의 수정 진동자는 32,768 Hz · 15단을 거치면 정확히 1초에 한 번', 'a watch crystal runs at 32,768 Hz · fifteen stages give exactly one tick per second']]);
+  fin(S, 'z', 15.6, [['T 플립플롭은 클록마다 값을 뒤집어 주파수를 절반으로 나누는 분주기예요', 'a T flip-flop toggles on each clock and divides the frequency by two', 'lgx-xs lgx-a'], ['이어 붙이면 리플 카운터 · 단마다 지연이 쌓여 빠른 회로는 동기식 카운터를 써요', 'chained, it is a ripple counter · delays add up per stage, so fast designs use synchronous counters'], ['CPU 클록 분주, 타이머, UART 보드레이트 생성기가 같은 원리예요', 'CPU clock dividers, timers and UART baud-rate generators work the same way']]);
+  S.cap(1, '클록마다 뒤집기', 'Flip on every clock').cap(2, '단마다 절반', 'Half again per stage').cap(3, '2진 리플 카운터', 'A binary ripple counter').cap(4, '32,768 Hz에서 1초', 'From 32,768 Hz to one second').cap(5, 'T 플립플롭과 분주기', 'T flip-flops as dividers');
+  return S;
+}
+
+function sSync() {
+  const S = scene({ id: 'lg-sync', steps: 5, per: 1.7 });
+  rect(S, 'da', .8, .5, 4.8, 3.9, 'accent', 8, 0, { r: .4 }); rect(S, 'db', 6.0, .5, 11.6, 3.9, 'ok', 8, 0, { r: .4 });
+  T(S, 'dal', 1.0, .6, ['클록 A', 'clock A'], 'lgx-xs lgx-a', 0); T(S, 'dbl', 6.2, .6, ['클록 B', 'clock B'], 'lgx-xs lgx-g', 0);
+  const BY = 1.7, BH = 1.7, my = BY + BH / 2;
+  box2(S, 'src', 1.6, BY, 2.8, BH, 'FF', 'accent', 0, { pct: 22 }); box2(S, 'f1', 7.2, BY, 2.8, BH, 'FF1', 'ok', 0, { pct: 22 });
+  box2(S, 'f2', 11.0, BY, 2.8, BH, 'FF2', 'ok', 2, { pct: 22 }); box2(S, 'lg', 14.8, BY, 2.4, BH, ['로직', 'logic'], 'line', 0, { pct: 18 });
+  ar(S, 'x0', [4.4, my], [7.2, my], 'warn', 0, { h: .12 });
+  ar(S, 'x1', [10.0, my], [14.8, my], 'ink-2', 0, { h: .1, off: 2 }); ar(S, 'x2', [10.0, my], [11.0, my], 'ink-2', 2, { h: .1 }); ar(S, 'x3', [13.8, my], [14.8, my], 'ink-2', 2, { h: .1 });
+  xm(S, 'xx', 12.4, my - .95, 1, { off: 2 });
+  const X0 = 5.0, U = 1.4, H = 1.2, E = k => X0 + (2 * k + 1) * U, XE = X0 + 16 * U, WO = { off: 4 };
+  const rows = [['clk B', 6.6, 0], ['D', 8.9, 0], ['FF1', 11.2, 1], ['FF2', 13.5, 2]];
+  rows.forEach(([nm, y, st], r) => T(S, 'rn' + r, 1, y - 1.0, nm, 'cz-mono lgx-xs', st, WO));
+  wave(S, 'wc', X0, 6.6, U, [...Array(16)].map((_, h) => h % 2), H, 'ink-2', 0, WO);
+  const XD = E(1) - .25;
+  seg(S, 'd0', [X0, 8.9], [XD, 8.9], 0, 'accent', .1, WO); seg(S, 'd1', [XD, 8.9], [XD, 8.9 - H], 0, 'accent', .1, WO); seg(S, 'd2', [XD, 8.9 - H], [XE, 8.9 - H], 0, 'accent', .1, WO);
+  rect(S, 'sw', E(1) - .55, 5.2, .9, 8.9 - 5.2 + .1, 'danger', 14, 1, { off: 4 });
+  const XM = E(1) + 1.9;
+  seg(S, 'q0', [X0, 11.2], [E(1), 11.2], 1, 'ok', .1, WO); rect(S, 'qm', E(1), 11.2 - H, XM - E(1), H, 'danger', 30, 1, { off: 4, r: .1 });
+  T(S, 'qmt', E(1), 11.2 - H - .02, '?', 'cz-tc lgx-s lgx-r', 1, { w: XM - E(1), off: 4 });
+  seg(S, 'q2', [XM, 11.2 - H], [XE, 11.2 - H], 1, 'ok', .1, WO);
+  seg(S, 'p0', [X0, 13.5], [E(2), 13.5], 2, 'ok', .1, WO); seg(S, 'p1', [E(2), 13.5], [E(2), 13.5 - H], 2, 'ok', .1, WO); seg(S, 'p2', [E(2), 13.5 - H], [XE, 13.5 - H], 2, 'ok', .1, WO);
+  ar(S, 'pa', [E(1), 14.3], [E(2), 14.3], 'ok', 2, { h: .08, off: 4 }); ar(S, 'pb', [E(2), 14.3], [E(1), 14.3], 'ok', 2, { h: .08, off: 4 });
+  T(S, 'pt', E(2) + .3, 13.8, ['정착할 시간 한 주기', 'one full cycle to settle'], 'lgx-xs lgx-g', 2, { off: 4 });
+  const R = 18.4;
+  T(S, 'r1', R, .6, ['D가 클록 엣지 바로 앞에서 바뀜', 'D changes right at the clock edge'], 'lgx-xs lgx-r', 1, { off: 2 });
+  T(S, 'r1b', R, 1.7, ['→ FF1이 한동안 0도 1도 아님', '→ FF1 hovers between 0 and 1'], 'lgx-xs', 1, { off: 2 });
+  T(S, 'r2', R, .6, ['FF2는 다음 엣지에 읽어요', 'FF2 samples at the next edge'], 'lgx-xs lgx-g', 2, { off: 3 });
+  T(S, 'r2b', R, 1.7, ['그사이 FF1이 거의 확실히 정착', 'by then FF1 has almost surely settled'], 'lgx-xs', 2, { off: 3 });
+  T(S, 'r3', R, .6, 'MTBF ∝ e^(tᵣ / τ)', 'cz-mono lgx-s lgx-a', 3);
+  T(S, 'r3b', R, 1.8, ['τ ≈ 20 ps에서 tᵣ가 1 ns 늘면', 'with τ ≈ 20 ps, 1 ns more settling'], 'lgx-xs', 3);
+  T(S, 'r3c', R, 2.9, ['MTBF × e⁵⁰ ≈ 5 × 10²¹배', 'multiplies MTBF by e⁵⁰ ≈ 5 × 10²¹'], 'cz-mono lgx-xs lgx-g', 3);
+  const BT = [['', ''], ['바뀌기 전 → 후', 'before → after'], ['전환 중에 읽으면', 'read mid-change']], CX = [1.0, 7.2, 17.6];
+  BT.forEach((h, c) => T(S, 'bh' + c, CX[c], 6.0, h, 'lgx-xs lgx-a', 4));
+  T(S, 'b1', CX[0], 7.6, ['2진수', 'binary'], 'lgx-xs', 4); T(S, 'b1v', CX[1], 7.5, '0111 → 1000', 'cz-mono lgx-s', 4);
+  T(S, 'b1r', CX[2], 7.6, ['0000 ~ 1111 아무 값 ✗', 'any of 0000 … 1111 ✗'], 'cz-mono lgx-xs lgx-r', 4);
+  T(S, 'b2', CX[0], 9.4, ['그레이 코드', 'Gray code'], 'lgx-xs', 4); T(S, 'b2v', CX[1], 9.3, '0100 → 1100', 'cz-mono lgx-s', 4);
+  T(S, 'b2r', CX[2], 9.4, ['0100 또는 1100 ✓', '0100 or 1100 ✓'], 'cz-mono lgx-xs lgx-g', 4);
+  T(S, 'b3', CX[0], 11.4, ['비트마다 정착 시점이 달라 여러 비트를 따로 동기화하면 섞인 값이 나와요', 'each bit settles at its own moment, so syncing bits one by one can mix old and new'], 'lgx-xs', 4);
+  T(S, 'b4', CX[0], 12.6, ['→ 한 번에 한 비트만 바뀌는 그레이 코드나 핸드셰이크로 넘겨요', '→ pass Gray-coded values, or use a handshake'], 'lgx-xs lgx-g', 4);
+  notesSplit(S, 'k', 15.6, [['클록 A 쪽 신호를 클록 B의 플립플롭 하나로 받으면, 엣지 직전에 바뀐 값이 메타안정을 일으켜요', 'catching a clock-A signal with one clock-B flip-flop risks metastability when it changes at an edge'], ['플립플롭을 하나 더 두면 FF1은 한 주기 동안 정착하고 FF2는 정리된 값만 받아요', 'a second flip-flop gives FF1 a full cycle to settle, so FF2 only sees a clean value'], ['실패 간격(MTBF)은 정착 시간에 지수적으로 늘어요 · 단 하나 추가로 사실상 0이 돼요', 'mean time between failures grows exponentially with settling time · one more stage makes failure practically vanish'], ['여러 비트짜리 값은 비트를 따로 동기화하면 섞여요 · 그레이 코드는 한 비트만 바뀌어서 안전해요', 'multi-bit values get mixed when bits are synced separately · Gray code changes one bit, so it is safe']]);
+  fin(S, 'z', 15.6, [['2단 동기화기: 다른 클록 영역의 신호를 플립플롭 두 개로 받아 메타안정을 막아요', 'the two-flop synchronizer catches a signal from another clock domain with two flip-flops', 'lgx-xs lgx-a'], ['클록 영역 교차(CDC)는 칩 버그의 단골 · 설계 도구가 CDC 경로를 따로 검사해요', 'clock-domain crossings are a classic source of chip bugs, and tools check CDC paths separately'], ['비동기 FIFO는 읽기·쓰기 포인터를 그레이 코드로 바꿔 이 동기화기로 넘겨요', 'an asynchronous FIFO passes its read and write pointers through these synchronizers in Gray code']]);
+  S.cap(1, '다른 클록에서 온 신호', 'A signal from another clock').cap(2, '플립플롭 하나 더', 'One more flip-flop').cap(3, '지수적으로 늘어나는 MTBF', 'MTBF grows exponentially').cap(4, '여러 비트는 그레이 코드로', 'Gray code for multiple bits').cap(5, '동기화기', 'Synchronizers');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'lg-gates': [
     item('lg-cmos', '트랜지스터와 CMOS 게이트', 'Transistors and CMOS gates', '게이트는 트랜지스터 스위치로 만들어요. CMOS는 1 쪽으로 끌어올리는 PMOS와 0 쪽으로 끌어내리는 NMOS를 짝지어요.', '인버터는 PMOS 하나와 NMOS 하나로, 입력이 0이면 PMOS가 켜져 출력이 1, 입력이 1이면 NMOS가 켜져 출력이 0이 돼요. NAND는 PMOS 두 개를 병렬로, NMOS 두 개를 직렬로 이어 둘 다 1일 때만 0을 내요. 항상 한쪽만 켜져 평소에 전류가 거의 흐르지 않아 저전력이고, NAND가 트랜지스터 4개로 가장 싸서 칩 설계의 기본 단위가 돼요.', 'Gates are built from transistor switches; CMOS pairs PMOS transistors that pull up to 1 with NMOS transistors that pull down to 0.', 'An inverter uses one PMOS and one NMOS: input 0 turns the PMOS on and the output becomes 1; input 1 turns the NMOS on and the output becomes 0. NAND puts two PMOS in parallel and two NMOS in series, giving 0 only when both inputs are 1. Only one side ever conducts, so idle current is tiny, and NAND needs just four transistors, making it the workhorse of chip design.', sCmos()),
@@ -655,6 +728,10 @@ return { css: CSSX, secs: [], add: {
     item('lg-sram', 'SRAM과 메모리 배열', 'SRAM and memory arrays', '서로 물린 인버터 두 개가 비트 하나를 붙잡는 SRAM 셀을 격자로 늘어놓고, 행(워드 라인)과 열(비트 라인)로 읽고 써요.', '주소를 디코더가 풀어 한 워드 라인을 켜면 그 행의 셀들이 비트 라인에 연결되어, 쓰기 땐 값을 밀어 넣고 읽기 땐 감지 증폭기가 값을 읽어요. SRAM은 셀당 트랜지스터 6개로 빠르고 새로고침이 필요 없어 CPU 캐시와 레지스터 파일에 쓰이고, DRAM은 트랜지스터 1개와 커패시터로 촘촘하지만 계속 새로고침해야 해 주 메모리에 써요.', 'SRAM cells, two cross-coupled inverters holding a bit, are tiled into a grid and accessed by rows (word lines) and columns (bit lines).', 'A decoder turns the address into one active word line, connecting that row’s cells to the bit lines: writes drive values in, reads let sense amplifiers detect them. SRAM uses six transistors per cell, is fast and needs no refresh, so it serves CPU caches and register files; DRAM uses one transistor and a capacitor, denser but constantly refreshed, for main memory.', sSram()),
     item('lg-fpga', 'LUT와 FPGA', 'LUTs and FPGAs', 'LUT는 진리표를 담은 작은 메모리예요. 내용만 바꾸면 어떤 함수든 되고, 수많은 LUT를 배선으로 연결한 칩이 FPGA예요.', '2입력 LUT는 4칸 메모리와 멀티플렉서로, 입력이 칸을 골라 그 값을 내보내요. 0110을 넣으면 XOR, 0001을 넣으면 AND가 돼요. FPGA는 LUT·플립플롭 블록과 프로그래머블 배선으로 이뤄져, Verilog·VHDL로 쓴 회로를 합성 도구가 비트스트림으로 바꿔 올려요. 칩 시제품, 통신 장비, 초저지연 거래에 쓰이고 대량 생산은 전용 칩(ASIC)이 유리해요.', 'A LUT is a tiny memory holding a truth table, so rewriting it changes the function; an FPGA is thousands of LUTs joined by programmable wiring.', 'A 2-input LUT is four memory bits and a multiplexer: the inputs select a slot and its value comes out, so 0110 makes XOR and 0001 makes AND. An FPGA combines LUT/flip-flop blocks with programmable routing; circuits written in Verilog or VHDL are synthesized into a bitstream that configures it. FPGAs serve chip prototypes, telecom gear and low-latency trading, while ASICs win at high volume.', sFpga())
   ]
+},
+after: {
+  'lg-jk': [item('lg-tff', 'T 플립플롭과 분주기', 'T flip-flops as dividers', 'T = 1인 T 플립플롭은 클록마다 출력을 뒤집어 주파수를 절반으로 나눠요. 여러 개를 이으면 2진 카운터가 돼요.', 'T 플립플롭은 T = 1이면 클록 엣지마다 출력을 뒤집고, T = 0이면 유지해요. 클록 두 번에 출력이 한 번 오르내리므로 출력 주파수는 클록의 절반(f/2)이에요. 이 출력을 다음 T 플립플롭의 클록으로 쓰면 다시 절반이 되어 f/4, f/8, …로 줄어요. 각 단의 출력 Q2 Q1 Q0를 함께 읽으면 000, 001, …, 111로 2진수를 세는 리플 카운터가 되고, n단이면 0부터 2ⁿ − 1까지 세요. 손목시계의 수정 진동자는 32,768 Hz = 2¹⁵ Hz라서 15단을 거치면 정확히 1 Hz, 즉 1초 신호가 나와요. 리플 카운터는 앞 단이 바뀐 뒤에야 다음 단이 바뀌어 지연이 단마다 쌓이고, 그동안 잠깐 엉뚱한 값이 보일 수 있어요. 그래서 빠른 회로는 모든 단이 같은 클록을 받는 동기식 카운터를 써요. CPU 클록 분주, 타이머, UART 보드레이트 생성기가 같은 원리예요.', 'A T flip-flop with T = 1 flips its output on every clock edge, dividing the frequency by two; chained together they form a binary counter.', 'A T flip-flop toggles its output on each clock edge when T = 1 and holds it when T = 0. The output rises and falls once per two clock cycles, so its frequency is half the clock’s (f/2). Feeding that output into the next T flip-flop as its clock halves it again, giving f/4, f/8 and so on. Read together, the outputs Q2 Q1 Q0 count 000, 001, …, 111 in binary, forming a ripple counter; n stages count from 0 to 2ⁿ − 1. A watch crystal oscillates at 32,768 Hz = 2¹⁵ Hz, so fifteen stages produce exactly 1 Hz, a one-second tick. In a ripple counter each stage changes only after the previous one, so delays accumulate and wrong values can flash briefly; fast designs therefore use synchronous counters in which every stage shares the same clock. CPU clock dividers, timers and UART baud-rate generators work on the same principle.', sTff())],
+  'lg-setup': [item('lg-sync', '동기화기', 'Synchronizers', '다른 클록 영역에서 온 신호를 플립플롭 두 개로 받아 메타안정이 퍼지지 않게 하는 회로예요.', '클록 A로 움직이는 신호를 클록 B의 플립플롭으로 받으면, 신호가 클록 B의 엣지와 언제 겹칠지 알 수 없어 셋업·홀드 위반이 반드시 가끔 일어나요. 그러면 첫 플립플롭(FF1)이 한동안 0도 1도 아닌 메타안정 상태가 될 수 있어요. 2단 동기화기는 FF1 뒤에 FF2를 하나 더 두어, FF1에 한 클록 주기 전체를 정착할 시간으로 주고 FF2는 정리된 값만 받게 해요. 실패 사이 평균 시간은 MTBF ∝ e^(tᵣ/τ)로 정착 시간 tᵣ에 지수적으로 늘어요. τ가 20 ps 정도인 공정에서 정착 시간이 1 ns 늘면 MTBF가 e⁵⁰ ≈ 5 × 10²¹배가 되어 사실상 실패하지 않아요(아주 빠른 클록에서는 3단을 쓰기도 해요). 여러 비트짜리 값은 비트마다 정착 시점이 달라 따로 동기화하면 0111 → 1000 전환 중에 1111 같은 엉뚱한 값을 읽을 수 있어요. 그래서 한 번에 한 비트만 바뀌는 그레이 코드로 넘기거나, 요청·응답 핸드셰이크를 써요. 비동기 FIFO가 읽기·쓰기 포인터를 그레이 코드로 바꿔 동기화기로 넘기는 대표적인 예예요. 설계 도구는 이런 클록 영역 교차(CDC) 경로를 따로 검사해요.', 'A circuit that catches a signal from another clock domain with two flip-flops so metastability does not spread.', 'When a signal driven by clock A is captured by a flip-flop on clock B, nothing controls when it changes relative to B’s edges, so setup and hold violations are bound to happen now and then, and the first flip-flop (FF1) can go metastable, sitting between 0 and 1 for a while. A two-flop synchronizer adds a second flip-flop (FF2), giving FF1 a full clock period to settle so that FF2 only sees a clean value. The mean time between failures grows exponentially with settling time, MTBF ∝ e^(tᵣ/τ): in a process with τ around 20 ps, one extra nanosecond of settling multiplies the MTBF by e⁵⁰ ≈ 5 × 10²¹, so failures practically vanish (very fast clocks sometimes use three stages). Multi-bit values are a trap: each bit settles at its own moment, so syncing bits separately during a 0111 → 1000 change can read a bogus 1111. Such values are passed in Gray code, where only one bit changes at a time, or with a request–acknowledge handshake. An asynchronous FIFO, which converts its read and write pointers to Gray code before synchronizing them, is the classic example, and design tools check these clock-domain-crossing (CDC) paths separately.', sSync())]
 } };
 })();
 
@@ -684,6 +761,7 @@ window.UX = page([
   ].concat(XT.add['lg-seq'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .lg-v .in{font-family:var(--f-mono);font-size:.95em;font-weight:800}
 .lg-g .in{font-size:.8em;font-weight:900;letter-spacing:.04em}

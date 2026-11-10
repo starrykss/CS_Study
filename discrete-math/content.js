@@ -581,6 +581,35 @@ function sPlanar() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'dmx-xs', i + 1, { off: i + 2 }));
+function sAugment() {
+  const S = scene({ id: 'dm-augment', steps: 5, per: 1.7 });
+  const LY = i => 2.4 + i * 3.1, LX = 4, RX = 13.6, LN = ['A', 'B', 'C', 'D'], RN = ['1', '2', '3', '4'];
+  const E = [[0, 0], [0, 1], [1, 1], [1, 3], [2, 0], [2, 2], [3, 1]], M0 = [[0, 0], [1, 1], [2, 2]], M1 = [[0, 0], [1, 3], [2, 2], [3, 1]];
+  const P = (a, b) => [[LX + 1.1, LY(a)], [RX - 1.1, LY(b)]];
+  LN.forEach((n, i) => gnode(S, 'l' + i, LX, LY(i), n, 'accent', 0, { r: 1.0, pct: 20 })); RN.forEach((n, i) => gnode(S, 'r' + i, RX, LY(i), n, 'warn', 0, { r: 1.0, pct: 20 }));
+  T(S, 'lh', LX - 2, .2, ['사람', 'people'], 'cz-tc dmx-xs dmx-a', 0, { w: 4 }); T(S, 'rh', RX - 2, .2, ['일', 'jobs'], 'cz-tc dmx-xs dmx-w', 0, { w: 4 });
+  E.forEach(([a, b], i) => seg(S, 'e' + i, ...P(a, b), 0, 'line', .08));
+  M0.forEach(([a, b], i) => seg(S, 'm' + i, ...P(a, b), 2, 'ok', .24, { off: a === 1 ? 4 : 0 }));
+  tsets(S, 'l3', [[2, 'danger', 35], [4, 'ok', 30]]); tsets(S, 'r3', [[2, 'danger', 35], [4, 'ok', 30]]);
+  [[3, 1, 'warn'], [1, 1, 'danger'], [1, 3, 'warn']].forEach(([a, b, c], i) => seg(S, 'ap' + i, ...P(a, b), 3, c, .14, { dash: c === 'warn' ? 1 : 0, off: 4 }));
+  [[3, 1], [1, 3]].forEach(([a, b], i) => seg(S, 'n' + i, ...P(a, b), 4, 'ok', .24));
+  const R = 17.6;
+  T(S, 'r1', R, .8, ['매칭: 겹치지 않게 짝지은 간선들', 'a matching: edges with no shared vertex'], 'dmx-xs', 1, { w: 13.4 });
+  T(S, 'r2', R, 2.4, ['욕심껏 3쌍 · D와 4가 남았어요', 'greedy finds 3 pairs · D and 4 are left'], 'dmx-xs dmx-r', 2, { w: 13.4 });
+  T(S, 'r3', R, 4.2, ['증가 경로: 빈 정점에서 빈 정점까지', 'augmenting path: free vertex to free vertex'], 'dmx-xs dmx-w', 3, { w: 13.4 });
+  T(S, 'r4', R, 5.4, ['D – 2 = B – 4', 'D – 2 = B – 4'], 'cz-mono dmx-s dmx-w', 3);
+  T(S, 'r5', R, 6.6, ['안 쓴 간선(–)과 쓴 간선(=)이 번갈아', 'unused (–) and used (=) edges alternate'], 'dmx-xs', 3, { w: 13.4 });
+  T(S, 'r6', R, 8.4, ['경로의 간선을 모두 뒤집으면', 'flip every edge on the path'], 'dmx-xs dmx-g', 4, { w: 13.4 });
+  T(S, 'r7', R, 9.6, ['쓴 것 1개 → 안 씀, 안 쓴 것 2개 → 씀', '1 used → unused, 2 unused → used'], 'dmx-xs', 4, { w: 13.4 });
+  T(S, 'r8', R, 10.8, ['매칭 3 → 4 (완전 매칭) ✓', 'matching 3 → 4 (perfect) ✓'], 'dmx-s dmx-g', 4);
+  notesSplit(S, 'k', 15.6, [['사람 4명과 일 4개, 할 수 있는 조합이 간선이에요 · 겹치지 않게 최대한 많이 짝지으려 해요', 'four people, four jobs, edges for who can do what · pair up as many as possible without sharing'], ['앞에서부터 욕심껏 짝지으면 3쌍에서 막혀요 · D와 4번 일이 남아요', 'greedy pairing from the top gets stuck at 3 · D and job 4 are left over'], ['빈 D에서 시작해 안 쓴 간선과 쓴 간선을 번갈아 밟아 빈 4에 닿는 길이 증가 경로', 'a path from free D to free 4 that alternates unused and used edges is an augmenting path'], ['그 길의 간선을 모두 뒤집으면 짝이 하나 늘어요 · B는 4번 일로 옮기고 D가 2번을 맡아요', 'flipping its edges adds one pair · B moves to job 4 and D takes job 2']]);
+  fin(S, 'z', 15.6, [['베르주 정리: 증가 경로가 없을 때에만 최대 매칭이에요', 'Berge’s theorem: a matching is maximum exactly when no augmenting path exists', 'dmx-xs dmx-a'], ['증가 경로를 BFS·DFS로 찾아 반복 · 호프크로프트–카프는 O(E√V)', 'repeat with BFS or DFS to find paths · Hopcroft–Karp runs in O(E√V)'], ['배정 문제(가중치가 있으면 헝가리안 알고리즘), 최대 유량 문제와 같은 원리예요', 'assignment problems (the Hungarian algorithm with weights) and maximum flow share the idea']]);
+  S.cap(1, '누가 어떤 일을 할 수 있나', 'Who can do which job').cap(2, '욕심껏 짝지으면 3쌍', 'Greedy stops at three').cap(3, '증가 경로 찾기', 'Find an augmenting path').cap(4, '뒤집으면 하나 더', 'Flip it for one more').cap(5, '증가 경로와 최대 매칭', 'Augmenting paths and maximum matching');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'dm-sets': [
     item('dm-proof', '증명 기법', 'Proof techniques', '수학에서 “항상 참”임을 보이는 대표적인 방법: 직접 증명, 대우 증명, 귀류법, 그리고 반례예요.', '직접 증명은 가정에서 결론으로 바로 가요(n이 홀수면 n² = 2(2k² + 2k) + 1도 홀수). 대우 증명은 p → q 대신 동치인 ¬q → ¬p를 보이고, 귀류법은 결론의 부정을 가정해 모순을 끌어내요(√2가 유리수라면 분자·분모가 모두 짝수가 되어 모순). “모든 ~”이라는 주장은 반례 하나로 무너뜨릴 수 있어요. 알고리즘의 정확성 증명(루프 불변식)도 이 도구들을 써요.', 'The standard ways to show something is always true: direct proof, contrapositive, contradiction, and counterexamples.', 'A direct proof goes from hypothesis to conclusion (if n is odd, n² = 2(2k² + 2k) + 1 is odd). A contrapositive proof shows the equivalent ¬q → ¬p instead of p → q, and proof by contradiction assumes the negation and derives an absurdity (if √2 were rational, numerator and denominator would both be even). A single counterexample refutes a “for all” claim. Algorithm correctness proofs (loop invariants) use the same tools.', sProof()),
@@ -604,6 +633,9 @@ return { css: CSSX, secs: [], add: {
     item('dm-bipartite', '이분 그래프와 매칭', 'Bipartite graphs and matching', '정점을 두 쪽으로 나눠 간선이 항상 양쪽을 잇는 그래프예요. 사람과 일을 겹치지 않게 짝짓는 매칭 문제의 무대예요.', 'BFS로 번갈아 두 색을 칠해 충돌이 없으면 이분 그래프이고, 홀수 길이 사이클이 있으면 아니에요. 매칭은 서로 겹치지 않는 간선 집합으로, 증가 경로를 찾아 늘려 가며 최대 매칭을 구해요(호프크로프트–카프 O(E√V)). 홀의 정리: 왼쪽의 어떤 k명도 오른쪽 이웃이 k개 이상이면 모두 짝지을 수 있어요. 업무 배정, 수강 신청, 추천 시스템에 쓰여요.', 'A graph whose vertices split into two sides with every edge crossing between them: the stage for matching people to jobs.', 'Coloring alternately with BFS succeeds exactly when the graph is bipartite; an odd cycle makes it fail. A matching is a set of edges sharing no vertex, and maximum matchings grow along augmenting paths (Hopcroft–Karp in O(E√V)). Hall’s theorem: everyone on the left can be matched iff every group of k left vertices has at least k neighbors. Used for task assignment, course allocation and recommenders.', sBipartite()),
     item('dm-planar', '평면 그래프와 오일러 공식', 'Planar graphs and Euler’s formula', '간선이 교차하지 않게 평면에 그릴 수 있는 그래프예요. 정점·간선·면의 수는 항상 V − E + F = 2를 만족해요.', 'K₄는 대각선 하나를 바깥으로 돌려 그리면 교차가 사라지고, 정점 4·간선 6·면 4(바깥 포함)로 4 − 6 + 4 = 2예요. 이 공식에서 평면 그래프는 E ≤ 3V − 6이어야 함이 나오고, K₅는 E = 10 > 9라 평면에 그릴 수 없어요. 쿠라토프스키 정리에 따르면 K₅나 K₃,₃를 품은 그래프만 비평면이에요. 회로 기판 배선, 지도 색칠(4색 정리)과 이어져요.', 'A graph that can be drawn without crossing edges; its vertices, edges and faces always satisfy V − E + F = 2.', 'K₄ loses its crossing once one diagonal is rerouted outside, leaving 4 vertices, 6 edges and 4 faces (including the outer one): 4 − 6 + 4 = 2. The formula implies E ≤ 3V − 6 for planar graphs, so K₅ with E = 10 > 9 can’t be drawn flat. Kuratowski’s theorem says a graph is nonplanar exactly when it contains a subdivision of K₅ or K₃,₃. Related to circuit-board routing and map coloring (the four color theorem).', sPlanar())
   ]
+},
+after: {
+  'dm-bipartite': [item('dm-augment', '증가 경로와 최대 매칭', 'Augmenting paths and maximum matching', '짝이 없는 두 정점을, 안 쓴 간선과 쓴 간선을 번갈아 밟으며 잇는 길을 찾아 뒤집으면 매칭이 하나 늘어요. 이런 길이 없으면 최대 매칭이에요.', '매칭은 정점을 공유하지 않는 간선들의 집합이에요. 앞에서부터 욕심껏 짝지으면 더 늘릴 수 없는 극대 매칭에서 멈출 수 있지만, 그게 최대라는 보장은 없어요. 증가 경로는 짝이 없는 정점에서 시작해 매칭에 없는 간선과 있는 간선을 번갈아 지나 짝이 없는 다른 정점에서 끝나는 경로예요. 이 경로의 간선을 모두 뒤집으면(있던 것은 빼고 없던 것은 넣으면) 안 쓴 간선이 하나 더 많으므로 매칭 크기가 정확히 1 늘어요. 예시에서 욕심쟁이 매칭은 3쌍이지만, D–2=B–4라는 증가 경로를 뒤집어 B를 4번 일로 옮기고 D가 2번 일을 맡으면 4쌍의 완전 매칭이 돼요. 베르주 정리에 따르면 증가 경로가 하나도 없을 때가 바로 최대 매칭이에요. 이분 그래프에서는 BFS·DFS로 증가 경로를 반복해서 찾으면 되고, 여러 경로를 한꺼번에 찾는 호프크로프트–카프는 O(E√V)예요. 가중치가 있는 배정 문제는 헝가리안 알고리즘으로 풀고, 최대 유량 문제와도 같은 원리예요. 쾨니그 정리에 따르면 이분 그래프의 최대 매칭 크기는 최소 정점 덮개의 크기와 같아요.', 'Find a path between two unmatched vertices that alternates unused and used edges, flip it, and the matching grows by one; when no such path exists, the matching is maximum.', 'A matching is a set of edges sharing no vertex. Greedy pairing can stop at a maximal matching that cannot be extended, with no guarantee that it is maximum. An augmenting path starts at an unmatched vertex, alternates between edges outside and inside the matching, and ends at another unmatched vertex. Flipping its edges, removing the matched ones and adding the others, increases the matching by exactly one because the path has one more unmatched edge. In the example the greedy matching has three pairs, but flipping the augmenting path D–2=B–4 moves B to job 4 and gives job 2 to D, a perfect matching of four. Berge’s theorem says a matching is maximum exactly when no augmenting path exists. In bipartite graphs, repeatedly finding augmenting paths with BFS or DFS solves the problem, and Hopcroft–Karp, which finds many at once, runs in O(E√V). Weighted assignment problems use the Hungarian algorithm, maximum flow rests on the same idea, and König’s theorem says that in bipartite graphs the maximum matching size equals the minimum vertex cover size.', sAugment())]
 } };
 })();
 
@@ -638,6 +670,7 @@ window.UX = page([
   ].concat(XT.add['dm-graphs'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .dm-m .in{font-family:var(--f-mono);font-size:.72em;font-weight:700}
 .dm-big .in{font-size:1.15em;font-weight:900;color:var(--ink)}

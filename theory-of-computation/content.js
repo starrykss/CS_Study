@@ -618,6 +618,53 @@ function sRandom() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'tx-xs', i + 1, { off: i + 2 }));
+function sSubset() {
+  const S = scene({ id: 'toc-subset', steps: 5, per: 1.7 });
+  stt(S, 'q0', 3.6, 4.2, 'q0', 'ink-3', 0, { start: 1 }); stt(S, 'q1', 8.8, 4.2, 'q1', 'ink-3', 0); stt(S, 'q2', 14.0, 4.2, 'q2', 'ok', 0, { acc: 1 });
+  lp(S, 'l0', 3.6, 4.2, 'a, b', 0); trn(S, 't01', [3.6, 4.2], [8.8, 4.2], 'a', 0); trn(S, 't12', [8.8, 4.2], [14.0, 4.2], 'b', 0);
+  T(S, 'nl', 1.0, 6.3, ['NFA: "ab"로 끝나는 문자열', 'NFA: strings ending in "ab"'], 'tx-xs', 0);
+  const TX = 17.4, CW = [4.6, 4.6, 4.2], cx = c => TX + CW.slice(0, c).reduce((a, b) => a + b, 0);
+  [['DFA 상태', 'DFA state'], 'a', 'b'].forEach((h, c) => T(S, 'th' + c, cx(c), 1.0, h, 'cz-tc tx-xs tx-a', 1, { w: CW[c] }));
+  const rows = [['{q0}', '{q0,q1}', '{q0}', 2], ['{q0,q1}', '{q0,q1}', '{q0,q2}', 3], ['{q0,q2}', '{q0,q1}', '{q0}', 3]];
+  rows.forEach((r, i) => r.slice(0, 3).forEach((v, c) => cell(S, `tc${i}${c}`, cx(c) + .1, 2.2 + i * 1.35, CW[c] - .2, 1.15, v, c ? 'line' : (i === 2 ? 'ok' : 'accent'), c ? 12 : 26, r[3])));
+  T(S, 'nw', TX, 6.5, ['새로 나온 집합은 표에 행으로 추가', 'each new set becomes a new row'], 'tx-xs tx-w', 3);
+  const D = [[4.6, 11.4], [13.6, 11.4], [22.6, 11.4]], R = 1.55;
+  stt(S, 'd0', ...D[0], '{q0}', 'accent', 4, { r: R, start: 1 }); stt(S, 'd1', ...D[1], '{q0,q1}', 'accent', 4, { r: R }); stt(S, 'd2', ...D[2], '{q0,q2}', 'ok', 4, { r: R, acc: 1 });
+  lp(S, 'dl0', ...D[0], 'b', 4, { r: R }); lp(S, 'dl1', ...D[1], 'a', 4, { r: R });
+  trn(S, 'd01', D[0], D[1], 'a', 4, { r: R, bend: -.45, ld: -.7 }); trn(S, 'd12', D[1], D[2], 'b', 4, { r: R, bend: -.45, ld: -.7 }); trn(S, 'd21', D[2], D[1], 'a', 4, { r: R, bend: -.45, ld: -.7 });
+  elb(S, 'd20', [[D[2][0], D[2][1] + R], [D[2][0], 14.2], [D[0][0], 14.2], [D[0][0], D[0][1] + R + .05]], 'ink-3', 4, { h: .1 }); T(S, 'd20l', 13.0, 13.4, 'b', 'cz-tc cz-mono tx-xs', 4, { w: 1.2 });
+  notesSplit(S, 'k', 15.6, [['NFA는 한 입력에 여러 상태가 동시에 살아 있어요 · 이 NFA는 "ab"로 끝나는 문자열을 받아요', 'an NFA can be in several states at once · this one accepts strings ending in "ab"'], ['“지금 살아 있을 수 있는 상태들의 집합”을 DFA의 상태 하나로 봐요 · 시작은 {q0}', 'treat each set of possibly-active states as one DFA state · start with {q0}'], ['각 집합에서 a, b를 읽은 뒤의 집합을 구하고, 처음 보는 집합이면 새 상태로 추가해요', 'for each set compute where a and b lead, adding any unseen set as a new state'], ['q2를 포함한 집합이 받아들임 상태 · 3개짜리 DFA가 완성돼요', 'sets containing q2 accept · the result is a three-state DFA']]);
+  fin(S, 'z', 15.6, [['부분집합 구성: NFA를 같은 언어의 DFA로 바꾸는 방법', 'the subset construction turns an NFA into a DFA for the same language', 'tx-xs tx-a'], ['최악의 경우 상태가 2ⁿ개까지 늘어요 · 그래서 필요한 집합만 그때그때 만들어요', 'in the worst case the DFA needs 2ⁿ states, so engines build sets lazily as needed'], ['렉서 생성기(flex)와 RE2 같은 정규식 엔진이 이 방법으로 선형 시간 매칭을 보장해요', 'lexer generators (flex) and regex engines such as RE2 use it to guarantee linear-time matching']]);
+  S.cap(1, 'NFA', 'An NFA').cap(2, '상태의 집합을 하나로', 'A set of states as one state').cap(3, '새 집합 찾기', 'Discover new sets').cap(4, '완성된 DFA', 'The finished DFA').cap(5, '부분집합 구성', 'The subset construction');
+  return S;
+}
+
+function sApprox() {
+  const S = scene({ id: 'toc-approx', steps: 5, per: 1.7 });
+  const N = { c1: [4.6, 7.2], c2: [9.8, 7.2], c3: [15.0, 7.2], a1: [1.8, 2.8], a2: [1.8, 11.6], b1: [7.8, 2.4], b2: [11.8, 12.0], d1: [17.6, 2.8], d2: [17.6, 11.6] };
+  const E = [['c1', 'a1'], ['c1', 'a2'], ['c2', 'b1'], ['c2', 'b2'], ['c3', 'd1'], ['c3', 'd2'], ['c1', 'c2'], ['c2', 'c3']];
+  const picks = [['c1', 'a1', 2], ['c2', 'b1', 3], ['c3', 'd1', 3]], dimAt = e => { const st = picks.find(([u, v, s]) => e.includes(u) || e.includes(v)); return st ? st[2] : 0; };
+  E.forEach((e, i) => { seg(S, 'e' + i, N[e[0]], N[e[1]], 0, 'ink-3', .1); const st = picks.findIndex(([u, v]) => (e[0] === u && e[1] === v)); if (st < 0) { const d = dimAt(e); if (d) S.set('e' + i, d, { opacity: '.25' }); } });
+  picks.forEach(([u, v, st], i) => seg(S, 'p' + i, N[u], N[v], st, 'danger', .22));
+  Object.entries(N).forEach(([k, [x, y]]) => { stt(S, 'n' + k, x, y, '', 'ink-3', 0, { r: .7 }); const p = picks.find(([u, v]) => u === k || v === k); if (p) tsets(S, 'n' + k, [[p[2], 'danger', 45]]); });
+  ['c1', 'c2', 'c3'].forEach((k, i) => ring(S, 'opt' + i, N[k][0], N[k][1], 1.15, 'ok', 4, { w: .16 }));
+  const R = 20.4;
+  T(S, 'r1', R, .8, ['정점 덮개', 'vertex cover'], 'tx-s tx-a', 1);
+  T(S, 'r1b', R, 2.0, ['모든 간선의 끝을 하나 이상 덮기', 'touch every edge at least once'], 'tx-xs', 1);
+  T(S, 'r2', R, 3.1, ['가장 작은 덮개 찾기는 NP-난해', 'the smallest one is NP-hard'], 'tx-xs tx-r', 1);
+  T(S, 'r3', R, 4.6, ['간선 하나 → 양 끝 모두 넣기', 'take an edge → add both ends'], 'tx-xs tx-r', 2);
+  T(S, 'r4', R, 6.2, ['우리 답 6개', 'ours: 6'], 'tx-s tx-r', 3); T(S, 'r5', R, 7.5, ['최적 3개', 'optimum: 3'], 'tx-s tx-g', 4);
+  T(S, 'r6', R, 9.0, ['고른 간선 3개는 끝점이 안 겹쳐요', 'the 3 picked edges share no endpoint'], 'tx-xs', 4);
+  T(S, 'r6b', R, 10.0, ['→ 최적도 3개 이상 필요', '→ OPT needs at least 3'], 'tx-xs', 4);
+  T(S, 'r7', R, 11.6, '6 ≤ 2 × 3 ✓', 'cz-mono tx-s tx-g', 4);
+  notesSplit(S, 'k', 15.6, [['정점 덮개: 모든 간선의 한쪽 끝을 덮는 가장 작은 정점 집합 · 정확히 구하는 건 NP-난해예요', 'vertex cover: the fewest vertices touching every edge · finding it exactly is NP-hard'], ['아직 안 덮인 간선 하나를 골라 양 끝을 모두 넣고, 덮인 간선을 지워요', 'pick any uncovered edge, add both its ends, and remove the edges now covered'], ['간선이 남지 않을 때까지 반복하면 덮개 완성 · 여기서는 정점 6개', 'repeat until no edge is left and the cover is done · here, six vertices'], ['최적은 가운데 3개 · 우리 답은 언제나 최적의 2배를 넘지 않아요', 'the optimum is the three middle vertices · ours is never more than twice the optimum']]);
+  fin(S, 'z', 15.6, [['근사 알고리즘: 최적은 못 찾아도, 최적의 몇 배 이내라고 보장하는 빠른 알고리즘', 'an approximation algorithm runs fast and guarantees a result within a known factor of optimal', 'tx-xs tx-a'], ['외판원 문제(삼각 부등식)는 MST로 2배, 크리스토피데스로 1.5배 이내', 'metric TSP: within 2× via the MST, within 1.5× via Christofides'], ['P ≠ NP라면 어떤 배수로도 근사할 수 없는 문제도 있어요 · 일반 TSP, 최대 클리크', 'if P ≠ NP some problems cannot be approximated within any factor · general TSP, maximum clique']]);
+  S.cap(1, 'NP-난해한 정점 덮개', 'Vertex cover is NP-hard').cap(2, '간선의 양 끝을 넣기', 'Take both ends of an edge').cap(3, '덮개 완성', 'The cover is done').cap(4, '최적의 2배 이내', 'Within twice the optimum').cap(5, '근사 알고리즘', 'Approximation algorithms');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'toc-auto': [
     item('toc-lang', '알파벳·문자열·언어', 'Alphabets, strings and languages', '계산 이론은 기호의 유한 집합(알파벳), 그 기호로 만든 문자열, 문자열의 집합(언어)에서 시작해요.', 'Σ*는 빈 문자열 ε를 포함해 Σ로 만들 수 있는 모든 문자열이고, 언어는 그 부분집합이에요. 언어끼리는 이어 붙이기(·), 합집합(∪), 클리니 스타(*)로 새 언어를 만들어요. “입력이 언어 L에 속하는가?”라는 형태로 모든 결정 문제를 표현할 수 있어서, 어떤 기계가 어떤 언어를 인식하는지가 이론 전체의 뼈대가 돼요.', 'The theory starts from a finite set of symbols (an alphabet), strings over it, and sets of strings (languages).', 'Σ* contains every string over Σ, including the empty string ε, and a language is any subset of it. Languages combine by concatenation (·), union (∪) and the Kleene star (*). Every decision problem can be phrased as “is the input in language L?”, so which machines recognize which languages is the backbone of the whole theory.', sLang()),
@@ -644,6 +691,10 @@ return { css: CSSX, secs: [], add: {
     item('toc-space', '시간·공간 복잡도 클래스', 'Time and space complexity classes', '문제를 필요한 시간과 메모리로 분류하면 L ⊆ P ⊆ NP ⊆ PSPACE ⊆ EXPTIME의 계층이 생겨요.', 'L은 로그 크기 메모리, P는 다항 시간, NP는 다항 시간 검증, PSPACE는 다항 크기 메모리, EXPTIME은 지수 시간으로 풀리는 문제예요. 양화 논리식(QBF)과 일반화한 게임은 PSPACE-완전, 일반화한 체스는 EXPTIME-완전이에요. 공간은 다시 쓸 수 있어 시간보다 강력하고(사비치: NPSPACE = PSPACE), P ≠ EXPTIME은 증명됐지만 나머지 포함 관계는 대부분 미해결이에요.', 'Classifying problems by the time and memory they need gives the hierarchy L ⊆ P ⊆ NP ⊆ PSPACE ⊆ EXPTIME.', 'L uses logarithmic memory, P polynomial time, NP polynomial-time verification, PSPACE polynomial memory and EXPTIME exponential time. Quantified Boolean formulas (QBF) and generalized games are PSPACE-complete; generalized chess is EXPTIME-complete. Space can be reused, making it more powerful than time (Savitch: NPSPACE = PSPACE). P ≠ EXPTIME is proven, but most other separations remain open.', sSpace()),
     item('toc-random', '확률적 알고리즘', 'Randomized algorithms', '무작위성을 써서 아주 작은 오류 확률을 받아들이는 대신 훨씬 빠르게 푸는 알고리즘이에요.', '밀러–라빈 소수 판정은 무작위 밑을 골라 시험하는데, 합성수라면 밑의 3/4 이상이 증거가 되어 한 번에 놓칠 확률이 1/4 이하예요. k번 반복하면 오류 확률이 (1/4)ᵏ로 줄어 RSA 키 생성에 쓰여요(몬테카를로). 답은 항상 정확하고 시간만 무작위인 것은 라스베이거스 알고리즘으로, 무작위 피벗 퀵정렬이 예예요. 이런 알고리즘으로 풀리는 문제의 클래스가 BPP예요.', 'Algorithms that use randomness and accept a tiny chance of error in exchange for far greater speed.', 'Miller–Rabin primality testing picks a random base; for a composite number at least 3/4 of bases are witnesses, so one round misses with probability at most 1/4, and k rounds drive the error to (1/4)ᵏ. It is used for RSA key generation (a Monte Carlo algorithm). Las Vegas algorithms are always correct with random running time, like random-pivot quicksort. Problems solvable this way form the class BPP.', sRandom())
   ]
+},
+after: {
+  'toc-nfa': [item('toc-subset', '부분집합 구성', 'The subset construction', 'NFA가 동시에 머물 수 있는 상태들의 집합을 DFA의 상태 하나로 보고, 입력마다 다음 집합을 구해 같은 언어를 받는 DFA를 만들어요.', 'NFA는 한 입력에 여러 상태로 동시에 갈 수 있지만, 매 순간 “지금 있을 수 있는 상태들의 집합”은 하나로 정해져요. 부분집합 구성은 이 집합 하나하나를 DFA의 상태로 삼아요. 시작 상태는 {q0}(ε-전이가 있으면 ε-폐포)이고, 각 집합에서 기호 a를 읽었을 때 갈 수 있는 모든 상태를 모은 집합이 다음 상태예요. 처음 보는 집합이 나오면 표에 새 행으로 추가하고, 더 새로운 집합이 없을 때까지 반복해요. NFA의 받아들임 상태를 하나라도 포함한 집합이 DFA의 받아들임 상태예요. "ab"로 끝나는 문자열의 NFA(q0 –a→ q1 –b→ q2)에서는 {q0}, {q0,q1}, {q0,q2} 세 상태의 DFA가 나와요. 최악의 경우 n개 상태의 NFA가 2ⁿ개 상태의 DFA가 되므로, 실제 정규식 엔진(RE2 등)은 입력을 읽으면서 필요한 집합만 그때그때 만들고 캐시해요. DFA는 입력 한 글자당 상태 전이 한 번이라서 매칭이 입력 길이에 선형으로 보장되고, 렉서 생성기 flex도 이 방법 뒤에 DFA 최소화를 해요.', 'Treat each set of states an NFA can occupy at once as a single DFA state, compute the next set for every input symbol, and you get a DFA accepting the same language.', 'An NFA may branch into several states on one input, but at every moment the set of states it could be in is uniquely determined. The subset construction makes each such set a DFA state. The start state is {q0} (its ε-closure if there are ε-moves), and the next state on symbol a is the set of all states reachable from the current set by a. Any set not seen before becomes a new row in the table, and the process repeats until no new sets appear. A set containing at least one accepting NFA state is an accepting DFA state. For the NFA of strings ending in "ab" (q0 –a→ q1 –b→ q2), the result is a three-state DFA: {q0}, {q0,q1} and {q0,q2}. In the worst case an n-state NFA needs a 2ⁿ-state DFA, so practical regex engines such as RE2 build sets lazily while reading input and cache them. A DFA takes one transition per character, guaranteeing matching in linear time, and lexer generators like flex follow the construction with DFA minimization.', sSubset())],
+  'toc-tsp': [item('toc-approx', '근사 알고리즘', 'Approximation algorithms', 'NP-난해한 최적화 문제에서 최적해는 포기하는 대신, 빠르게 돌면서 결과가 최적의 몇 배 이내라고 보장하는 알고리즘이에요.', '최소 정점 덮개(모든 간선의 한쪽 끝을 덮는 가장 작은 정점 집합)는 NP-난해해서 큰 그래프에서 정확히 풀 수 없어요. 대신 아직 덮이지 않은 간선 하나를 골라 양 끝을 모두 넣고, 덮인 간선을 지우기를 반복하면 다항 시간에 덮개를 얻어요. 이렇게 고른 간선들은 서로 정점을 공유하지 않으므로, 최적 덮개도 간선마다 적어도 한 정점은 가져야 해서 최적 ≥ 고른 간선 수 k예요. 우리 답은 2k이므로 언제나 최적의 2배 이내이고, 이 배수를 근사 비율이라고 해요. 예시에서 우리 답은 6개, 최적은 가운데 3개라 딱 2배예요. 삼각 부등식이 성립하는 외판원 문제는 최소 신장 트리를 두 번 도는 방법으로 2배, 크리스토피데스 알고리즘으로 1.5배 이내를 보장해요. 원하는 만큼 1에 가깝게 만들 수 있는 근사 방식(PTAS)이 있는 문제도 있고, 반대로 P ≠ NP라면 어떤 상수 배로도 근사할 수 없는 문제(일반 외판원 문제, 최대 클리크)도 있어요. 배송 경로, 시설 배치, 스케줄링 같은 실제 최적화 문제에서 많이 써요.', 'For NP-hard optimization problems, give up on the optimum but run fast and guarantee a result within a known factor of it.', 'Minimum vertex cover, the smallest set of vertices touching every edge, is NP-hard, so large instances cannot be solved exactly. Instead, repeatedly pick an uncovered edge, add both its endpoints and delete the edges now covered; this yields a cover in polynomial time. The picked edges share no vertices, so any optimal cover needs at least one vertex per picked edge: OPT ≥ k. Our cover has 2k vertices, so it is always within twice the optimum, a factor called the approximation ratio. In the example ours has 6 vertices and the optimum 3, exactly twice. For the travelling salesman problem with the triangle inequality, walking a minimum spanning tree twice gives a 2-approximation and Christofides’ algorithm 1.5. Some problems admit schemes that get as close to 1 as desired (PTAS), while others, such as general TSP and maximum clique, cannot be approximated within any constant factor unless P = NP. Approximation algorithms are widely used for routing, facility placement and scheduling.', sApprox())]
 } };
 })();
 
@@ -670,6 +721,7 @@ window.UX = page([
   ].concat(XT.add['toc-cx'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .tc-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .tc-big .in{font-size:1.05em;font-weight:800}

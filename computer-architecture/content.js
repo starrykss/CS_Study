@@ -618,6 +618,51 @@ function sRaid() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'arx-xs', i + 1, { off: i + 2 }));
+function sMcArch() {
+  const S = scene({ id: 'ar-mcarch', steps: 5, per: 1.7 });
+  const CX = i => 1.0 + i * 4.6, CW = 4.0;
+  rect(S, 'die', .5, .3, 18.9, 13.0, 'ink', 4, 0, { r: .6 });
+  for (let i = 0; i < 4; i++) {
+    const x = CX(i);
+    box2(S, 'c' + i, x, .8, CW, 2.2, `Core ${i}`, 'accent', 0, { pct: 22, css: 'align-items:start;padding-top:.3em' });
+    cell(S, 'l1i' + i, x, 3.3, 1.9, 1.0, 'L1i', 'accent', 12, 1); cell(S, 'l1d' + i, x + 2.1, 3.3, 1.9, 1.0, 'L1d', 'accent', 12, 1);
+    cell(S, 'l2' + i, x, 4.6, CW, 1.1, 'L2', 'ok', 14, 1);
+    vl(S, 'v' + i, x + CW / 2, 5.7, 7.6, 'ink-3', 2, { w: .1 });
+    cell(S, 'l3' + i, x + .3, 8.3, CW - .6, 1.2, ['L3 조각', 'L3 slice'], 'warn', 16, 2);
+  }
+  frame(S, 'ring', .9, 7.6, 17.9, 2.6, 'ink-3', 2, { r: 1.3, w: .14 });
+  T(S, 'rl', 1.3, 10.4, ['링 연결망', 'ring interconnect'], 'arx-xs', 2);
+  vl(S, 'mv', 9.85, 10.2, 11.4, 'ink-3', 2, { w: .1 }); cell(S, 'mc', 6.6, 11.4, 6.5, 1.2, ['메모리 컨트롤러 → DRAM', 'memory controller → DRAM'], 'line', 16, 2);
+  [['T0', 'T1'], ['T0', 'T1'], ['T0'], ['T0']].forEach((ts, i) => ts.forEach((t, j) => cell(S, `t${i}${j}`, CX(i) + .3 + j * 1.8, 2.0, 1.6, .8, t, i < 2 ? 'accent' : 'warn', 34, 4)));
+  ['c2', 'c3'].forEach(k => tsets(S, k, [[4, 'warn', 22]]));
+  T(S, 'pl', CX(0), .0, ['P코어', 'P-cores'], 'arx-xs arx-a', 4); T(S, 'el', CX(2), .0, ['E코어', 'E-cores'], 'arx-xs arx-w', 4);
+  ar(S, 'w0', [CX(0) + 3.05, 4.3], [CX(0) + 3.05, 7.7], 'danger', 3, { h: .12, off: 4 });
+  hl(S, 'w1', CX(0) + 3.05, CX(2) + 3.05, 7.6, 'danger', 3, { w: .16, off: 4 });
+  ar(S, 'w2', [CX(2) + 3.05, 7.6], [CX(2) + 3.05, 4.35], 'danger', 3, { h: .12, off: 4 });
+  tsets(S, 'l1d2', [[3, 'danger', 40], [4, 'accent', 12]]);
+  T(S, 'wl', CX(0) + 3.4, 5.9, ['x에 쓰기', 'write x'], 'arx-xs arx-r', 3, { off: 4 });
+  const R = 20.4;
+  T(S, 'r1', R, .8, ['코어마다 전용', 'private per core'], 'arx-s arx-a', 1, { off: 2 });
+  T(S, 'r1b', R, 2.1, ['L1 명령·데이터 각 32~64 KB', 'L1 instr + data, 32–64 KB each'], 'arx-xs', 1, { off: 2 });
+  T(S, 'r1c', R, 3.1, ['L2 1~2 MB', 'L2, 1–2 MB'], 'arx-xs', 1, { off: 2 });
+  T(S, 'r2', R, .8, ['접근 지연 (대략)', 'access latency (roughly)'], 'arx-s arx-a', 2, { off: 3 });
+  [['L1', '4 사이클', '4 cycles'], ['L2', '14 사이클', '14 cycles'], ['L3', '50 사이클', '50 cycles'], ['DRAM', '250+ 사이클', '250+ cycles']].forEach(([a, b, c], i) => { T(S, 'la' + i, R, 2.2 + i * 1.1, a, 'cz-mono arx-xs', 2, { off: 3 }); T(S, 'lb' + i, R + 3.4, 2.2 + i * 1.1, [b, c], 'cz-mono arx-xs ' + (i === 3 ? 'arx-r' : 'arx-g'), 2, { off: 3 }); });
+  T(S, 'r2f', R, 6.8, ['L3는 모든 코어가 나눠 써요', 'every core shares the L3'], 'arx-xs', 2, { off: 3 });
+  T(S, 'r3', R, .8, ['같은 줄을 가진 다른 코어', 'other cores holding the line'], 'arx-xs arx-r', 3, { off: 4 });
+  T(S, 'r3b', R, 1.9, ['→ 링으로 무효화 메시지', '→ invalidated over the ring'], 'arx-xs', 3, { off: 4 });
+  T(S, 'r3c', R, 3.0, ['MESI 같은 일관성 프로토콜', 'a coherence protocol such as MESI'], 'arx-xs arx-a', 3, { off: 4 });
+  T(S, 'r4', R, .8, ['SMT: 코어 하나에 스레드 2개', 'SMT: two threads per core'], 'arx-xs arx-a', 4);
+  T(S, 'r4b', R, 1.9, ['놀던 실행 유닛을 채워 +15~30%', 'fills idle units: +15–30%'], 'arx-xs', 4);
+  T(S, 'r4c', R, 3.4, ['P코어: 크고 빠름', 'P-cores: big and fast'], 'arx-xs arx-a', 4);
+  T(S, 'r4d', R, 4.5, ['E코어: 작고 전력 효율적', 'E-cores: small and frugal'], 'arx-xs arx-w', 4);
+  notesSplit(S, 'k', 15.6, [['멀티코어 칩에는 독립된 코어가 여러 개 · 각 코어는 자기만 쓰는 L1과 L2 캐시를 가져요', 'a multicore chip holds several independent cores, each with its own private L1 and L2 caches'], ['큰 L3는 조각으로 나뉘어 링(또는 메시)으로 이어져 모든 코어가 함께 써요 · 아래로 갈수록 느려요', 'a large L3 is split into slices on a ring (or mesh) that all cores share · each level down is slower'], ['한 코어가 쓰면, 같은 줄을 가진 다른 코어의 복사본을 연결망으로 무효화해 값을 맞춰요', 'when one core writes, copies of that line in other cores are invalidated over the interconnect'], ['코어 하나가 스레드 둘을 번갈아 돌리기도(SMT) 하고, 크고 빠른 코어와 작은 코어를 섞기도 해요', 'a core may run two threads at once (SMT), and chips mix big fast cores with small efficient ones']]);
+  fin(S, 'z', 15.6, [['멀티코어 칩: 전용 L1·L2를 가진 코어들 + 공유 L3 + 이들을 잇는 연결망', 'a multicore chip: cores with private L1/L2, a shared L3 and the interconnect between them', 'arx-xs arx-a'], ['코어가 수십 개면 링 대신 메시를 쓰고, AMD는 여러 칩렛을 한 패키지로 묶어요', 'with dozens of cores a mesh replaces the ring, and AMD packages several chiplets together'], ['멀리 있는 L3 조각과 메모리는 더 느려서 OS가 스레드를 가까운 코어에 배치해요(NUMA)', 'distant L3 slices and memory are slower, so the OS places threads near their data (NUMA)']]);
+  S.cap(1, '코어마다 전용 캐시', 'Private caches per core').cap(2, '함께 쓰는 L3와 연결망', 'A shared L3 and interconnect').cap(3, '코어 사이의 일관성', 'Coherence between cores').cap(4, 'SMT와 P·E 코어', 'SMT and P/E cores').cap(5, '멀티코어 프로세서 구조', 'Multicore processor design');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'ar-data': [
     item('ar-mult', '곱셈과 나눗셈 하드웨어', 'Multiplication and division hardware', '2진 곱셈은 곱하는 수의 비트마다 “1이면 시프트해서 더하기”를 반복하는 세로 곱셈이에요. 나눗셈은 시프트와 빼기의 반복이에요.', '1011(11) × 1101(13)은 비트 0, 2, 3이 1이라 1011을 0, 2, 3칸 시프트한 부분곱을 더해 10001111(143)이 돼요. 하드웨어는 시프트 레지스터와 가산기를 반복 사용하거나, 부스 인코딩(연속된 1을 빼기 한 번으로)과 월리스 트리(부분곱 병렬 덧셈)로 빠르게 해요. 나눗셈은 훨씬 느려서, 컴파일러는 x * 10을 (x << 3) + (x << 1)로, 상수 나눗셈을 곱셈으로 바꿔요.', 'Binary multiplication is long multiplication: for each multiplier bit, shift and add if it is 1. Division repeats shift-and-subtract.', '1011 (11) × 1101 (13) has bits 0, 2 and 3 set, so adding 1011 shifted by 0, 2 and 3 gives 10001111 (143). Hardware loops a shift register and an adder, or speeds things up with Booth encoding (a run of 1s becomes one subtract) and Wallace trees (adding partial products in parallel). Division is much slower, so compilers rewrite x * 10 as (x << 3) + (x << 1) and constant divides as multiplies.', sMult()),
@@ -639,6 +684,9 @@ return { css: CSSX, secs: [], add: {
   'ar-io': [
     item('ar-raid', 'RAID', 'RAID', '여러 디스크를 하나처럼 묶어 속도(스트라이핑)나 안전(미러링, 패리티)을 얻는 방법이에요.', 'RAID 0은 데이터를 나눠 써서 빠르지만 하나만 고장 나도 전부 잃고, RAID 1은 똑같이 복제해 용량이 절반이에요. RAID 5는 패리티를 디스크마다 돌아가며 저장해 용량 (n−1)/n으로 한 개 고장을 견디고, 고장 난 블록은 A3 = A1 ⊕ A2 ⊕ Ap처럼 XOR로 다시 계산해요. RAID 6은 두 개까지, RAID 10은 미러 위에 스트라이프를 얹어요. RAID는 백업이 아니라서 실수로 지운 파일이나 랜섬웨어는 그대로 복제돼요.', 'Grouping several disks to act as one, gaining speed (striping) or safety (mirroring, parity).', 'RAID 0 splits data across disks for speed but loses everything if one fails; RAID 1 mirrors at half capacity. RAID 5 rotates parity across disks for (n−1)/n capacity and survives one failure, rebuilding lost blocks with XOR, e.g. A3 = A1 ⊕ A2 ⊕ Ap. RAID 6 tolerates two failures and RAID 10 stripes across mirrors. RAID is not a backup: accidental deletes and ransomware are faithfully replicated.', sRaid())
   ]
+},
+after: {
+  'ar-multicore': [item('ar-mcarch', '멀티코어 프로세서 구조', 'Multicore processor design', '한 칩에 코어 여러 개가 들어 있고, 코어마다 전용 L1·L2 캐시를, 모두가 나눠 쓰는 L3와 이를 잇는 연결망을 가져요.', '멀티코어 칩의 각 코어는 명령어를 따로 실행하는 완전한 CPU이고, 코어마다 전용 L1 명령·데이터 캐시(각 32~64 KB)와 L2 캐시(1~2 MB)를 가져요. 큰 L3 캐시는 여러 조각으로 나뉘어 링이나 메시 연결망에 붙어 있고 모든 코어가 함께 써요. 접근 지연은 대략 L1 4사이클, L2 14사이클, L3 50사이클, DRAM 250사이클 이상이라 아래로 갈수록 크게 느려져요. 한 코어가 데이터를 쓰면, 같은 캐시 줄을 가진 다른 코어의 복사본은 연결망을 통해 무효화되어 모든 코어가 같은 값을 보게 돼요(MESI 같은 캐시 일관성 프로토콜). 코어 하나가 하드웨어 스레드 두 개를 번갈아 실행하는 SMT(하이퍼스레딩)는 한 스레드가 메모리를 기다릴 때 노는 실행 유닛을 채워 15~30% 정도 처리량을 올려요. 요즘 칩은 크고 빠른 P코어와 작고 전력 효율이 좋은 E코어를 섞고, 운영체제 스케줄러가 일의 성격에 맞게 배치해요. 코어가 수십 개인 서버 칩은 링 대신 메시를, AMD는 여러 칩렛을 한 패키지로 묶어요. 먼 L3 조각이나 다른 소켓의 메모리는 더 느리기 때문에(NUMA) 스레드를 데이터 가까이에 두는 것이 중요해요.', 'A chip holding several cores, each with private L1 and L2 caches, plus a shared L3 and the interconnect that ties them together.', 'Each core on a multicore chip is a complete CPU running its own instruction stream, with private L1 instruction and data caches (32–64 KB each) and an L2 cache (1–2 MB). A large L3 is split into slices attached to a ring or mesh interconnect and shared by every core. Latency rises steeply down the hierarchy: roughly 4 cycles for L1, 14 for L2, 50 for L3 and 250 or more for DRAM. When one core writes, copies of that cache line in other cores are invalidated over the interconnect so every core sees the same value (a coherence protocol such as MESI). Simultaneous multithreading (SMT, Hyper-Threading) lets one core interleave two hardware threads, filling execution units that would sit idle while one thread waits on memory and raising throughput by roughly 15–30%. Recent chips mix big, fast P-cores with small, power-efficient E-cores, and the OS scheduler places work accordingly. Server chips with dozens of cores replace the ring with a mesh, and AMD packages several chiplets together. Distant L3 slices and memory on another socket are slower (NUMA), so keeping threads near their data matters.', sMcArch())]
 } };
 })();
 
@@ -676,6 +724,7 @@ window.UX = page([
   ].concat(XT.add['ar-io'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .ar-m .in{font-family:var(--f-mono);font-size:.66em;font-weight:700}
 .ar-xs .in{font-size:.54em}

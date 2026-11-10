@@ -811,6 +811,67 @@ function sViterbi() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'itx-xs', i + 1, { off: i + 2 }));
+const Hb = ps => -ps.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+function sInfoGain() {
+  const S = scene({ id: 'it-infogain', steps: 5, per: 1.7 });
+  const box = (k, x, y, w, sp, hm, st, off, lab) => { rect(S, k, x, y, w, 2.4, 'line', 14, st, { r: .4, off });
+    for (let i = 0; i < sp + hm; i++) pt(S, k + 'd' + i, x + .7 + (i % 5) * ((w - 1.2) / 4.6), y + .7 + Math.floor(i / 5) * 1.0, st, i < sp ? C.badf : C.cur, .26, { off });
+    if (lab) T(S, k + 'l', x, y + 2.55, lab, 'cz-tc cz-mono itx-xs', st, { w, off }); };
+  const H0 = Hb([.5, .5]), HL = Hb([5 / 6, 1 / 6]), HR = 0, IG1 = H0 - (.6 * HL + .4 * HR), HA = Hb([.6, .4]), IG2 = H0 - HA;
+  box('p', 5.0, 1.0, 7.2, 5, 5, 0, 0, `H = ${H0.toFixed(2)}`);
+  T(S, 'pl', 1, 1.0, ['메일 10통', '10 emails'], 'itx-xs', 0);
+  pt(S, 'lg0', 1.3, 2.45, 0, C.badf, .22); T(S, 'lg0t', 1.8, 2.0, ['스팸', 'spam'], 'itx-xs', 0); pt(S, 'lg1', 1.3, 3.45, 0, C.cur, .22); T(S, 'lg1t', 1.8, 3.0, ['정상', 'ham'], 'itx-xs', 0);
+  T(S, 'q1', 4.8, 4.7, ['링크가 있나?', 'contains a link?'], 'cz-tc itx-s itx-a', 2, { w: 7.6, off: 4 });
+  seg(S, 'b1', [6.8, 5.8], [4.1, 7.4], 2, 'ink-3', .08, { off: 4 }); seg(S, 'b2', [10.4, 5.8], [13.0, 7.4], 2, 'ink-3', .08, { off: 4 });
+  box('L', 0.8, 7.6, 6.6, 5, 1, 2, 4, `H = ${HL.toFixed(2)}`); box('R', 10.0, 7.6, 6.0, 0, 4, 2, 4, 'H = 0');
+  T(S, 'Ll', 0.8, 11.0, ['있음 6통', 'yes: 6'], 'cz-tc itx-xs', 2, { w: 6.6, off: 4 }); T(S, 'Rl', 10.0, 11.0, ['없음 4통', 'no: 4'], 'cz-tc itx-xs', 2, { w: 6.0, off: 4 });
+  T(S, 'A1l', 0.8, 11.0, ['있음 5통', 'yes: 5'], 'cz-tc itx-xs', 4, { w: 6.6 }); T(S, 'A2l', 10.0, 11.0, ['없음 5통', 'no: 5'], 'cz-tc itx-xs', 4, { w: 6.6 });
+  T(S, 'q2', 4.8, 4.7, ['첨부 파일이 있나?', 'has an attachment?'], 'cz-tc itx-s itx-w', 4, { w: 7.6 });
+  seg(S, 'b3', [6.8, 5.8], [4.1, 7.4], 4, 'ink-3', .08); seg(S, 'b4', [10.4, 5.8], [13.3, 7.4], 4, 'ink-3', .08);
+  box('A1', 0.8, 7.6, 6.6, 3, 2, 4, 0, `H = ${HA.toFixed(2)}`); box('A2', 10.0, 7.6, 6.6, 2, 3, 4, 0, `H = ${HA.toFixed(2)}`);
+  const R = 18.4;
+  T(S, 'r1', R, 1.0, ['반반이면 불확실성 최대: 1비트', 'a 50/50 mix is maximally uncertain: 1 bit'], 'itx-xs', 1, { w: 12.6 });
+  T(S, 'r2', R, 2.6, ['나눈 뒤 엔트로피의 가중 평균', 'weighted entropy after the split'], 'itx-xs', 2, { w: 12.6 });
+  T(S, 'r3', R, 3.6, `0.6 × ${HL.toFixed(2)} + 0.4 × 0 = ${(.6 * HL).toFixed(2)}`, 'cz-mono itx-xs', 2);
+  T(S, 'r4', R, 5.2, ['정보 이득 = 줄어든 엔트로피', 'information gain = entropy removed'], 'itx-xs itx-a', 3, { w: 12.6 });
+  T(S, 'r5', R, 6.2, `IG = 1 − ${(.6 * HL).toFixed(2)} = ${IG1.toFixed(2)}`, 'cz-mono itx-s itx-g', 3);
+  T(S, 'r6', R, 8.0, [`첨부 파일로 나누면 IG = ${IG2.toFixed(2)}`, `split on attachments: IG = ${IG2.toFixed(2)}`], 'cz-mono itx-xs itx-w', 4);
+  T(S, 'r7', R, 9.2, ['→ 링크 질문을 먼저 해요', '→ ask about links first'], 'itx-xs itx-g', 4);
+  notesSplit(S, 'k', 15.6, [['스팸 5통과 정상 5통이 섞여 있으면 엔트로피는 1비트, 가장 헷갈리는 상태예요', 'five spam and five ham emails mixed together: 1 bit of entropy, maximum confusion'], ['“링크가 있나?”로 나누면 한쪽은 거의 스팸, 다른 쪽은 모두 정상 · 각 쪽의 엔트로피가 줄어요', 'splitting on “contains a link?” leaves one side mostly spam and the other all ham · each side is purer'], [`줄어든 엔트로피가 정보 이득 · 1 − 0.39 = ${IG1.toFixed(2)}비트를 얻어요`, `the entropy removed is the information gain · 1 − 0.39 = ${IG1.toFixed(2)} bits`], [`첨부 파일로 나누면 섞인 정도가 거의 그대로라 이득은 ${IG2.toFixed(2)}비트뿐이에요`, `splitting on attachments barely unmixes anything: only ${IG2.toFixed(2)} bits gained`]]);
+  fin(S, 'z', 15.6, [['정보 이득 IG = H(Y) − H(Y | X) = 상호정보량 I(X; Y)', 'information gain IG = H(Y) − H(Y | X) = the mutual information I(X; Y)', 'itx-xs itx-a'], ['결정 트리(ID3, C4.5)는 정보 이득이 가장 큰 질문부터 골라 나눠요 · CART는 지니 불순도', 'decision trees (ID3, C4.5) split on the question with the largest gain · CART uses Gini impurity'], ['값이 많은 특징일수록 이득이 부풀려져서 C4.5는 이득 비율로 보정해요', 'features with many values inflate the gain, so C4.5 normalizes it as the gain ratio']]);
+  S.cap(1, '섞여 있는 데이터', 'Mixed-up data').cap(2, '질문으로 나누기', 'Split with a question').cap(3, '줄어든 엔트로피 = 정보 이득', 'Entropy removed = information gain').cap(4, '다른 질문과 비교', 'Compare another question').cap(5, '정보 이득', 'Information gain');
+  return S;
+}
+
+function sCELoss() {
+  const S = scene({ id: 'it-celoss', steps: 5, per: 1.7 });
+  const CL = [['고양이', 'cat'], ['개', 'dog'], ['새', 'bird']], Y = [1, 0, 0], QA = [.7, .2, .1], QB = [.2, .7, .1];
+  const BX = j => 1.6 + j * 2.6, BB = 8.0, BH = 5.2;
+  T(S, 'yt', 1.0, .6, ['정답 (원-핫)', 'label (one-hot)'], 'itx-xs', 0);
+  Y.forEach((v, j) => { rect(S, 'y' + j, BX(j), BB - v * BH * .5 - .02, 2.0, v * BH * .5 + .02, 'ok', 40, 0, { r: .05 }); T(S, 'yl' + j, BX(j) - .3, BB + .1, CL[j], 'cz-tc itx-xs', 0, { w: 2.6 }); });
+  const qbars = (k, q, x0, st, off, c) => q.forEach((v, j) => { rect(S, k + j, x0 + j * 2.6, BB - v * BH, 2.0, v * BH, j ? 'line' : c, j ? 30 : 45, st, { r: .05, off }); T(S, k + 'v' + j, x0 + j * 2.6 - .3, BB - v * BH - 1.0, v.toFixed(1), 'cz-tc cz-mono itx-xs', st, { w: 2.6, off }); T(S, k + 'n' + j, x0 + j * 2.6 - .3, BB + .1, CL[j], 'cz-tc itx-xs', st, { w: 2.6, off }); });
+  T(S, 'qa', 9.6, .6, ['모델 A의 예측', 'model A predicts'], 'itx-xs itx-a', 1, { off: 3 }); qbars('a', QA, 9.6, 1, 3, 'accent');
+  T(S, 'qb', 9.6, .6, ['모델 B의 예측', 'model B predicts'], 'itx-xs itx-r', 3, { off: 4 }); qbars('b', QB, 9.6, 3, 4, 'danger');
+  const F = fr(0.02, 1, 0, 4.2, 18.6, 30.6, 1.4, 11.0);
+  hl(S, 'gx', F.L, F.R, F.B, 'ink-3', 2, { w: .08 }); vl(S, 'gy', F.L, F.T, F.B, 'ink-3', 2, { w: .08 });
+  mplot(S, 'gc', F, p => [p, -Math.log(p)], .02, 1, { st: 2, color: 'accent', h: .12, n: 70 });
+  [0.2, 0.5, 1].forEach(v => T(S, 'gt' + v, F.X(v) - 1, F.B + .1, String(v), 'cz-tc cz-mono itx-xs', 2, { w: 2 }));
+  T(S, 'gxl', F.R - 6, F.B + 1.0, ['정답 클래스의 확률 q', 'probability q of the true class'], 'itx-xs', 2, { w: 6, css: 'text-align:right' });
+  T(S, 'gyl', F.L + .3, F.T - .9, '−ln q', 'cz-mono itx-xs itx-a', 2);
+  mpt(S, 'pa', F, [.7, -Math.log(.7)], 2, C.cur, .26); mT(S, 'pal', F, [.7, -Math.log(.7)], .2, -1.1, `A: ${(-Math.log(.7)).toFixed(2)}`, 'cz-mono itx-xs itx-a', 2);
+  mpt(S, 'pb', F, [.2, -Math.log(.2)], 3, C.badf, .26); mT(S, 'pbl', F, [.2, -Math.log(.2)], .4, -.5, `B: ${(-Math.log(.2)).toFixed(2)}`, 'cz-mono itx-xs itx-r', 3);
+  T(S, 'f1', 1.0, 10.0, ['L = −Σ y log q = −log q(정답)', 'L = −Σ y log q = −log q(true class)'], 'cz-mono itx-s', 2, { off: 4 });
+  T(S, 'f2', 1.0, 11.4, [`A: −ln 0.7 = ${(-Math.log(.7)).toFixed(2)}`, `A: −ln 0.7 = ${(-Math.log(.7)).toFixed(2)}`], 'cz-mono itx-xs itx-a', 2);
+  T(S, 'f3', 1.0, 12.5, [`B: −ln 0.2 = ${(-Math.log(.2)).toFixed(2)} (자신 있게 틀림)`, `B: −ln 0.2 = ${(-Math.log(.2)).toFixed(2)} (confidently wrong)`], 'cz-mono itx-xs itx-r', 3);
+  T(S, 'f4', 1.0, 10.0, ['q → 0이면 손실 → ∞ · 확신한 오답을 크게 벌줘요', 'as q → 0 the loss → ∞ · confident mistakes cost the most'], 'itx-xs itx-w', 4);
+  notesSplit(S, 'k', 15.6, [['정답은 원-핫 분포, 모델은 softmax로 클래스마다 확률을 내요', 'the label is a one-hot distribution; the model outputs a probability per class via softmax'], ['교차 엔트로피 손실은 정답 클래스에 준 확률의 −log뿐이에요 · 0.7이면 0.36', 'cross-entropy loss is just −log of the probability given to the true class · 0.36 for 0.7'], ['정답에 0.2만 준 모델은 손실 1.61 · 맞힐수록 0, 틀릴수록 커져요', 'a model giving the truth only 0.2 pays 1.61 · it shrinks toward 0 as predictions improve'], ['확률이 0에 가까운 오답은 손실이 끝없이 커져요 · 그래서 학습이 확신한 실수부터 고쳐요', 'near-zero probability on the truth sends the loss to infinity, so training fixes confident errors first']]);
+  fin(S, 'z', 15.6, [['교차 엔트로피 손실을 줄이는 것 = 데이터 분포와 모델 분포의 KL 발산을 줄이는 것', 'minimizing cross-entropy loss = minimizing the KL divergence from the data to the model', 'itx-xs itx-a'], ['분류 모델과 LLM의 다음 토큰 예측이 모두 이 손실로 학습해요 · 퍼플렉서티 = e^손실', 'classifiers and LLM next-token prediction both train on it · perplexity = e^loss'], ['과신을 막으려 정답을 0.9 정도로 낮추는 라벨 스무딩도 써요', 'label smoothing softens targets to about 0.9 to curb overconfidence']]);
+  S.cap(1, '정답과 예측', 'Label and prediction').cap(2, '−log q(정답)', '−log q(true class)').cap(3, '틀릴수록 커지는 손실', 'Wrong costs more').cap(4, '확신한 오답', 'Confidently wrong').cap(5, '교차 엔트로피 손실', 'Cross-entropy loss');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'it-ent': [
     item('it-pwent', '비밀번호 엔트로피', 'Password entropy', '무작위로 고른 비밀번호의 강도는 “길이 × log₂(기호 수)” 비트로 잴 수 있어요. 비트가 하나 늘 때마다 공격자가 해 봐야 할 경우의 수가 2배가 돼요.', '숫자 4자리 PIN은 10⁴가지라 13.3비트, 소문자 8자는 37.6비트, 출력 가능한 95가지 문자 8자는 52.6비트예요. 7,776개 단어 목록(다이스웨어)에서 무작위 단어 6개를 고르면 77.5비트로, 초당 100억 번 추측해도 68만 년이 걸려요. 길이를 늘리는 것이 기호 종류를 늘리는 것보다 효과가 커요. 다만 이 계산은 “무작위로 골랐을 때”만 맞고, 사람이 고른 P@ssw0rd1 같은 비밀번호는 사전과 변형 규칙으로 금방 맞혀져요. 그래서 비밀번호 관리자로 무작위 생성하고, 서버는 bcrypt나 Argon2로 해시해 추측을 느리게 만들어요.', 'The strength of a randomly chosen password is length × log₂(number of symbols) bits; each extra bit doubles the guesses an attacker must try.', 'A 4-digit PIN has 10⁴ possibilities, 13.3 bits; 8 lowercase letters give 37.6 bits and 8 of the 95 printable characters 52.6 bits. Six random words from a 7,776-word Diceware list give 77.5 bits, about 680,000 years at ten billion guesses per second. Adding length helps more than adding symbol kinds. The calculation only holds for random choices: human picks like P@ssw0rd1 fall quickly to dictionaries and substitution rules. So generate passwords with a manager, and have servers hash them with bcrypt or Argon2 to slow guessing.', sPwent())
@@ -825,6 +886,10 @@ return { css: CSSX, secs: [], add: {
     item('it-shannon', '섀넌-하틀리 정리', 'The Shannon–Hartley theorem', '잡음이 있는 채널로 오류 없이 보낼 수 있는 최대 속도는 C = B·log₂(1 + S/N)이에요. 대역폭 B와 신호 대 잡음비 S/N이 통신 속도의 천장을 정해요.', '20 MHz Wi-Fi 채널의 SNR이 30 dB(1000배)라면 C = 20M × log₂1001 ≈ 199 Mbps예요. 전력을 2배로 올려 33 dB가 되면 219 Mbps로 10%만 늘지만, 같은 전력으로 대역폭을 2배(40 MHz, SNR은 27 dB로 하락)로 넓히면 359 Mbps로 80% 늘어요. SNR은 로그 안에 있고 대역폭은 밖에서 곱해지기 때문이에요. 실제 시스템은 QAM 변조와 LDPC 부호로 이 한계에 가까이 가고, MIMO로 경로를 늘려요. 5G와 Wi-Fi 6·7이 넓은 채널을 확보하려는 이유예요.', 'The fastest error-free rate over a noisy channel is C = B·log₂(1 + S/N): bandwidth B and the signal-to-noise ratio set the ceiling on speed.', 'A 20 MHz Wi-Fi channel with 30 dB SNR (1000×) gives C = 20M × log₂1001 ≈ 199 Mbps. Doubling the power to 33 dB raises it only 10% to 219 Mbps, while doubling the bandwidth to 40 MHz at the same power (SNR falls to 27 dB) gives 359 Mbps, 80% more, because SNR sits inside the logarithm and bandwidth multiplies outside it. Real systems approach the limit with QAM modulation and LDPC codes, and MIMO adds parallel paths, which is why 5G and Wi-Fi 6/7 chase wider channels.', sShannon()),
     item('it-viterbi', '컨볼루션 부호와 비터비 복호', 'Convolutional codes and Viterbi decoding', '컨볼루션 부호는 최근 몇 비트를 섞어 여분의 비트를 만들고, 비터비 알고리즘은 받은 신호와 가장 가까운 송신 비트열을 격자 위 동적 계획법으로 찾아 오류를 고쳐요.', '부호율 1/2, 구속장 3인 부호는 입력 1비트마다 최근 3비트를 XOR해 2비트를 내보내요(1011 → 11 10 00 01). 상태는 직전 두 비트라 4가지이고, 시간에 따라 펼친 그림이 격자(트렐리스)예요. 받은 비트와 각 경로의 해밍 거리를 누적하고, 상태마다 가장 작은 경로(생존 경로)만 남겨요. 끝에서 거리가 가장 작은 상태부터 거꾸로 따라가면 1비트 오류가 있던 11 11 00 01에서도 1011을 복원해요. 계산량이 길이에 비례해 실시간으로 복호할 수 있고, 위성 통신, 이동 통신, HMM 음성 인식에 널리 쓰였어요.', 'Convolutional codes add redundancy by mixing recent bits, and the Viterbi algorithm corrects errors by finding the sent sequence closest to what arrived, using dynamic programming over a trellis.', 'A rate-1/2 code with constraint length 3 XORs the last 3 bits into 2 output bits per input bit (1011 → 11 10 00 01). The state is the previous two bits, so there are 4, and unrolling them over time gives the trellis. The decoder accumulates each path’s Hamming distance from the received bits and keeps only the best (surviving) path into each state. Tracing back from the final state with the smallest distance recovers 1011 even from 11 11 00 01, which has one flipped bit. Its cost grows linearly with length, so it decodes in real time, and it has been used widely in satellite and mobile links and in HMM speech recognition.', sViterbi())
   ]
+},
+after: {
+  'it-mutual': [item('it-infogain', '정보 이득', 'Information gain', '어떤 질문으로 데이터를 나눴을 때 줄어든 엔트로피예요. 결정 트리는 정보 이득이 가장 큰 질문부터 골라요.', '정보 이득은 IG = H(Y) − H(Y | X), 즉 특징 X를 알고 나서 줄어든 Y의 엔트로피이고 상호정보량 I(X; Y)와 같아요. 스팸 5통과 정상 5통이 섞여 있으면 H = 1비트예요. “링크가 있나?”로 나누면 있음 쪽 6통(스팸 5, 정상 1)의 엔트로피는 0.65, 없음 쪽 4통(모두 정상)은 0이라 가중 평균은 0.6 × 0.65 + 0.4 × 0 = 0.39이고, 정보 이득은 1 − 0.39 = 0.61비트예요. 섞인 정도가 거의 그대로 남는 질문은 이득이 0에 가까워요. ID3와 C4.5 결정 트리는 매 노드에서 이득이 가장 큰 특징으로 나누고, CART는 비슷한 목적으로 지니 불순도를 써요. 값의 종류가 많은 특징(예: 고객 ID)은 잘게 쪼개기만 해도 이득이 커 보이므로 C4.5는 분할 자체의 엔트로피로 나눈 이득 비율을 써요. 특징 선택, 능동 학습에서 다음에 물어볼 질문 고르기에도 같은 계산을 써요.', 'The drop in entropy when you split data by a question. Decision trees pick the question with the largest gain first.', 'Information gain is IG = H(Y) − H(Y | X), the entropy of Y removed by knowing feature X, which equals the mutual information I(X; Y). Five spam and five ham emails mixed together have H = 1 bit. Splitting on “contains a link?” leaves six emails (five spam, one ham) with entropy 0.65 on one side and four ham with entropy 0 on the other, so the weighted entropy is 0.6 × 0.65 + 0.4 × 0 = 0.39 and the gain is 1 − 0.39 = 0.61 bits. A question that leaves the mix about as mixed as before gains almost nothing. ID3 and C4.5 decision trees split each node on the feature with the largest gain, and CART uses Gini impurity for the same purpose. Features with many distinct values (say, a customer ID) look deceptively good because they shatter the data, so C4.5 divides by the entropy of the split itself and uses the gain ratio. The same calculation drives feature selection and choosing the next query in active learning.', sInfoGain())],
+  'it-kl': [item('it-celoss', '교차 엔트로피 손실', 'Cross-entropy loss', '분류 모델이 정답 클래스에 준 확률 q에 −log를 취한 값이에요. 맞힐수록 0에 가깝고, 자신 있게 틀릴수록 끝없이 커져요.', '정답을 원-핫 분포 y로 보면 교차 엔트로피 −Σ y log q는 정답 클래스 하나의 항만 남아 −log q(정답)이 돼요. 고양이 사진에 모델이 고양이 0.7을 주면 손실은 −ln 0.7 = 0.36, 0.2만 주면 −ln 0.2 = 1.61이에요. q가 0에 가까우면 손실이 무한대로 커지기 때문에 학습은 자신 있게 틀린 예측부터 강하게 고쳐요. softmax와 함께 쓰면 로짓에 대한 기울기가 q − y로 아주 간단해서 계산이 안정적이에요. 데이터 분포 P에 대해 이 손실의 평균을 줄이는 것은 H(P)가 상수이므로 KL 발산 D(P‖Q)를 줄이는 것과 같고, 최대 가능도 추정과도 같아요. 언어 모델은 다음 토큰마다 이 손실을 매기고, 평균 손실의 지수 e^손실을 퍼플렉서티라 불러요. 과신을 줄이려고 정답 확률 목표를 0.9 정도로 낮추는 라벨 스무딩, 드문 클래스에 가중치를 주는 가중 교차 엔트로피나 포컬 손실도 써요.', 'The negative log of the probability a classifier gives the true class. It approaches 0 for good predictions and grows without bound for confident mistakes.', 'With the label written as a one-hot distribution y, the cross-entropy −Σ y log q keeps only the true class term and becomes −log q(true class). If a model gives a cat photo 0.7 for “cat” the loss is −ln 0.7 = 0.36; if it gives only 0.2 the loss is −ln 0.2 = 1.61. Because the loss goes to infinity as q approaches 0, training corrects confident mistakes hardest. Paired with softmax, the gradient with respect to the logits is simply q − y, which keeps the computation stable. Minimizing the average loss over a data distribution P is the same as minimizing the KL divergence D(P‖Q), since H(P) is constant, and the same as maximum-likelihood estimation. Language models score every next token with this loss, and e raised to the average loss is called perplexity. Label smoothing lowers the target to about 0.9 to curb overconfidence, and weighted cross-entropy or focal loss give rare classes more weight.', sCELoss())]
 } };
 })();
 
@@ -868,6 +933,7 @@ window.UX = page([
   ].concat(XT.add['it-ch'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .it-b .in{font-weight:800;color:var(--ink)}
 .it-l .in{font-size:.86em;color:var(--ink);font-weight:700}

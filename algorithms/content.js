@@ -777,6 +777,63 @@ function sFlow() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'alx-xs', i + 1, { off: i + 2 }));
+function sEdit() {
+  const S = scene({ id: 'al-edit', steps: 5, per: 1.7 });
+  const A = 'kitten', B = 'sitting', m = A.length, n = B.length, D = [...Array(m + 1)].map((_, i) => [...Array(n + 1)].map((_, j) => (i === 0 ? j : j === 0 ? i : 0)));
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + (A[i - 1] === B[j - 1] ? 0 : 1));
+  const CW = 1.55, CH = 1.12, X0 = 3.2, Y0 = 2.0, cx = j => X0 + j * CW, cy = i => Y0 + i * CH;
+  ['', ...B].forEach((c, j) => T(S, 'hb' + j, cx(j), Y0 - 1.1, c || 'ε', 'cz-tc cz-mono alx-s', 0, { w: CW }));
+  ['', ...A].forEach((c, i) => T(S, 'ha' + i, X0 - 1.5, cy(i) + .1, c || 'ε', 'cz-tc cz-mono alx-s', 0, { w: 1.2 }));
+  const path = []; { let i = m, j = n; path.push([i, j]); while (i > 0 || j > 0) { const c = D[i][j]; if (i && j && D[i - 1][j - 1] + (A[i - 1] === B[j - 1] ? 0 : 1) === c) { i--; j--; } else if (i && D[i - 1][j] + 1 === c) i--; else j--; path.push([i, j]); } }
+  const onP = (i, j) => path.some(([a, b]) => a === i && b === j);
+  for (let i = 0; i <= m; i++) for (let j = 0; j <= n; j++) { const st = (i === 0 || j === 0) ? 1 : 3; cell(S, `c${i}_${j}`, cx(j), cy(i), CW - .08, CH - .08, String(D[i][j]), 'line', 14, st); if (onP(i, j)) tsets(S, `c${i}_${j}`, [[4, 'warn', 45]]); }
+  const hi = [1, 1];
+  cell(S, 'hx', cx(hi[1]), cy(hi[0]), CW - .08, CH - .08, '?', 'accent', 40, 2, { off: 3 });
+  [[hi[0] - 1, hi[1] - 1, 'ok'], [hi[0] - 1, hi[1], 'warn'], [hi[0], hi[1] - 1, 'danger']].forEach(([i, j, c], q) => frame(S, 'nb' + q, cx(j) - .04, cy(i) - .04, CW, CH, c, 2, { off: 3, w: .12, r: .2 }));
+  const R = 16.4;
+  T(S, 'r0', R, .6, ['kitten → sitting, 최소 몇 번 고칠까', 'kitten → sitting in how few edits?'], 'alx-xs', 1);
+  T(S, 'r1', R, 1.8, ['첫 행·열: 빈 문자열에서 하나씩 넣기·지우기', 'first row and column: inserts or deletes from empty'], 'alx-xs', 1, { w: 14.4 });
+  T(S, 'r2', R, 3.6, 'D[i][j] = min(', 'cz-mono alx-xs', 2);
+  T(S, 'r3', R + .6, 4.6, ['D[i−1][j−1] + (다르면 1)  교체', 'D[i−1][j−1] + (a≠b)  substitute'], 'cz-mono alx-xs alx-g', 2);
+  T(S, 'r4', R + .6, 5.6, ['D[i−1][j] + 1  삭제', 'D[i−1][j] + 1  delete'], 'cz-mono alx-xs alx-w', 2);
+  T(S, 'r5', R + .6, 6.6, ['D[i][j−1] + 1 )  삽입', 'D[i][j−1] + 1 )  insert'], 'cz-mono alx-xs alx-r', 2);
+  T(S, 'r6', R, 8.2, [`오른쪽 아래 = 편집 거리 ${D[m][n]}`, `bottom-right = edit distance ${D[m][n]}`], 'alx-s alx-a', 3);
+  T(S, 'r7', R, 9.8, ['되짚기: k→s 교체, e→i 교체, g 삽입', 'trace back: k→s, e→i, insert g'], 'alx-xs alx-w', 4);
+  T(S, 'r8', R, 11.0, 'kitten → sitten → sittin → sitting', 'cz-mono alx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['편집 거리: 한 글자 삽입·삭제·교체를 최소 몇 번 해야 같아지는지 · 첫 행과 열은 빈 문자열과의 거리', 'edit distance counts the fewest single-character inserts, deletes and substitutions · the first row and column compare with the empty string'], ['각 칸은 왼쪽 위(교체), 위(삭제), 왼쪽(삽입)에서 오는 세 값 중 최솟값이에요', 'each cell takes the cheapest of three neighbours: diagonal (substitute), above (delete), left (insert)'], [`표를 다 채우면 오른쪽 아래 칸이 답 · kitten과 sitting은 ${D[m][n]}이에요`, `fill the table and the bottom-right cell is the answer · ${D[m][n]} for kitten and sitting`], ['답 칸에서 거꾸로 따라가면 실제 편집 과정이 나와요', 'tracing back from the answer recovers the actual edits']]);
+  fin(S, 'z', 15.6, [['레벤슈타인 거리: O(mn) 동적 계획법 · 행 두 줄만 있으면 메모리 O(n)', 'Levenshtein distance: O(mn) dynamic programming · two rows suffice for O(n) memory', 'alx-xs alx-a'], ['맞춤법 추천, 퍼지 검색, 중복 데이터 정리, 음성 인식 평가(WER)에 써요', 'used in spelling suggestions, fuzzy search, record deduplication and speech-recognition scoring (WER)'], ['DNA 정렬의 니들먼-분쉬도 같은 표에 점수만 다르게 매겨요', 'DNA alignment (Needleman–Wunsch) fills the same table with different scores']]);
+  S.cap(1, '빈 문자열에서 시작', 'Start from the empty string').cap(2, '세 가지 편집 중 최소', 'The cheapest of three edits').cap(3, '표 채우기', 'Fill the table').cap(4, '되짚어 편집 과정 찾기', 'Trace back the edits').cap(5, '편집 거리', 'Edit distance');
+  return S;
+}
+
+function sPrim() {
+  const S = scene({ id: 'al-prim', steps: 5, per: 1.7 });
+  const N = { A: [3.2, 3.6], B: [10.2, 2.0], C: [17.2, 3.6], D: [3.2, 11.2], E: [10.2, 8.4], F: [17.2, 11.2] };
+  const E = [['A', 'B', 4], ['A', 'D', 3], ['B', 'E', 2], ['B', 'C', 7], ['C', 'E', 5], ['C', 'F', 6], ['D', 'E', 1], ['E', 'F', 8], ['D', 'F', 9]];
+  const key = (a, b) => [a, b].sort().join('');
+  const pick = ['AD', 'DE', 'BE', 'CE', 'CF'], ST = { AD: 2, DE: 3, BE: 3, CE: 4, CF: 4 };
+  E.forEach(([a, b, w]) => { const k = key(a, b), p = N[a], q = N[b]; seg(S, 'e' + k, p, q, 0, 'line', .1);
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, L = Math.hypot(q[0] - p[0], q[1] - p[1]), ux = -(q[1] - p[1]) / L, uy = (q[0] - p[0]) / L;
+    T(S, 'w' + k, mx - ux * .95 - .6, my - uy * .95 - .55, String(w), 'cz-tc cz-mono alx-s', 0, { w: 1.2 });
+    if (ST[k]) { seg(S, 'p' + k, p, q, ST[k], 'ok', .24); T(S, 'o' + k, mx + ux * 1.0 - .6, my + uy * 1.0 - .55, '①②③④⑤'[pick.indexOf(k)], 'cz-tc alx-s alx-g', ST[k], { w: 1.2 }); } });
+  Object.entries(N).forEach(([k, [x, y]]) => { stt(S, 'n' + k, x, y, k, 'line', 0, { r: .95 }); tsets(S, 'n' + k, [[k === 'A' ? 1 : ({ D: 2, E: 3, B: 3, C: 4, F: 4 })[k], 'ok', 40]]); });
+  seg(S, 'fAB', N.A, N.B, 2, 'warn', .1, { dash: 1, off: 3 }); seg(S, 'fAD', N.A, N.D, 2, 'warn', .1, { dash: 1, off: 3 });
+  const R = 20.4;
+  T(S, 'r1', R, 1.0, ['A에서 시작', 'start at A'], 'alx-xs alx-g', 1);
+  T(S, 'r2', R, 2.2, ['트리와 바깥을 잇는 간선 중 가장 가벼운 것', 'take the lightest edge leaving the tree'], 'alx-xs', 2, { w: 10.4 });
+  T(S, 'r3', R, 4.0, ['후보: A–B 4, A–D 3 → A–D', 'candidates: A–B 4, A–D 3 → A–D'], 'cz-mono alx-xs alx-w', 2, { off: 3, w: 10.6 });
+  T(S, 'r4', R, 4.0, ['D–E 1, 그다음 B–E 2', 'D–E 1, then B–E 2'], 'cz-mono alx-xs alx-w', 3, { off: 4 });
+  T(S, 'r5', R, 4.0, ['C–E 5, C–F 6으로 완성', 'C–E 5 and C–F 6 finish it'], 'cz-mono alx-xs alx-w', 4);
+  T(S, 'r6', R, 6.0, ['합계 3 + 1 + 2 + 5 + 6 = 17', 'total 3 + 1 + 2 + 5 + 6 = 17'], 'cz-mono alx-s alx-g', 4);
+  T(S, 'r7', R, 7.4, ['크루스칼도 같은 17 (방법만 달라요)', 'Kruskal also gets 17 (a different route)'], 'alx-xs', 4, { w: 10.6 });
+  notesSplit(S, 'k', 15.6, [['프림 알고리즘은 한 정점에서 시작해 트리를 한 정점씩 키워요', 'Prim’s algorithm grows the tree one vertex at a time from a starting vertex'], ['트리 안과 밖을 잇는 간선(점선) 중 가장 가벼운 것을 골라 그 정점을 붙여요', 'among edges joining the tree to the outside (dashed), it adds the lightest and its vertex'], ['새 정점이 붙으면 그 정점의 간선들이 후보에 들어와요 · D–E 1, B–E 2', 'each new vertex adds its edges to the candidates · D–E 1, then B–E 2'], ['모든 정점이 붙으면 최소 신장 트리 완성 · 가중치 합 17', 'once every vertex is in, the minimum spanning tree is done · total weight 17']]);
+  fin(S, 'z', 15.6, [['프림: 트리에서 뻗는 가장 싼 간선을 반복해서 붙이는 그리디', 'Prim’s algorithm greedily adds the cheapest edge leaving the tree', 'alx-xs alx-a'], ['우선순위 큐(힙)로 O(E log V) · 간선이 빽빽한 그래프는 배열로 O(V²)', 'O(E log V) with a priority queue (heap) · O(V²) with an array on dense graphs'], ['다익스트라와 거의 같은 꼴 · 크루스칼은 간선 정렬과 유니온 파인드를 써요', 'nearly the same code as Dijkstra · Kruskal sorts edges and uses union–find instead']]);
+  S.cap(1, '한 정점에서 시작', 'Start from one vertex').cap(2, '가장 가벼운 바깥 간선', 'The lightest outgoing edge').cap(3, '트리를 키워 가기', 'Grow the tree').cap(4, '완성: 최소 신장 트리', 'Done: the minimum spanning tree').cap(5, '프림 알고리즘', 'Prim’s algorithm');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'al-tech': [
     item('al-master', '분할 정복과 마스터 정리', 'Divide and conquer and the master theorem', '문제를 작은 문제로 쪼개 풀고 합치는 분할 정복의 실행 시간은 T(n) = a·T(n/b) + f(n) 꼴 점화식으로 나타나요. 재귀 트리나 마스터 정리로 풀어요.', '병합 정렬은 T(n) = 2T(n/2) + n이에요. 재귀 트리를 그리면 층마다 합치는 비용이 n이고 층이 log₂n개라 Θ(n log n)이 돼요. 일반형에선 f(n)을 n^(log_b a)와 비교해, f가 작으면 리프가 지배(8T(n/2)+n² → Θ(n³)), 같으면 층마다 같아 log가 붙고(병합 정렬, 이진 탐색 Θ(log n)), 크면 뿌리가 지배(2T(n/2)+n² → Θ(n²))해요. 카라츠바 곱셈, 슈트라센 행렬 곱셈, 가장 가까운 점 쌍도 이 틀로 분석해요.', 'Divide and conquer splits a problem into smaller ones, solves them and combines the results; its running time is a recurrence T(n) = a·T(n/b) + f(n), solved with a recursion tree or the master theorem.', 'Merge sort is T(n) = 2T(n/2) + n. In its recursion tree each level costs n to merge and there are log₂n levels, giving Θ(n log n). In general you compare f(n) with n^(log_b a): if f is smaller the leaves dominate (8T(n/2) + n² → Θ(n³)); if equal, every level costs the same and a log factor appears (merge sort, or Θ(log n) for binary search); if larger the root dominates (2T(n/2) + n² → Θ(n²)). Karatsuba multiplication, Strassen’s matrix multiply and closest pair are analysed the same way.', sMaster()),
@@ -788,6 +845,10 @@ return { css: CSSX, secs: [], add: {
     item('al-floyd', '플로이드-워셜', 'Floyd–Warshall', '모든 정점 쌍 사이의 최단 거리를 한 번에 구하는 DP예요. “k번 정점까지 거쳐 가도 된다”는 조건을 하나씩 넓혀 가요.', '처음엔 간선 하나로 가는 거리(없으면 ∞)로 행렬을 채우고, k = 1, 2, …마다 모든 (i, j)에 대해 D[i][j] = min(D[i][j], D[i][k] + D[k][j])로 갱신해요. 예를 들어 k = 2에서 1→2→3 = 5가 직접 간선 8보다 짧아 바뀌어요. 세 겹 반복이라 O(V³)이고 코드가 아주 짧아요. 음수 간선도 되고, 끝난 뒤 대각선 D[i][i]가 음수면 음수 사이클이에요. 정점이 적고 모든 쌍이 필요할 때 좋아요.', 'A dynamic program that computes shortest distances between every pair of vertices at once, widening the set of allowed intermediate vertices one at a time.', 'Start with a matrix of direct edge lengths (∞ where there is none), then for k = 1, 2, … update every (i, j) with D[i][j] = min(D[i][j], D[i][k] + D[k][j]). At k = 2, for example, 1→2→3 = 5 beats the direct edge of 8. Three nested loops make it O(V³) with very short code. Negative edges are fine, and a negative diagonal entry D[i][i] at the end reveals a negative cycle. It suits graphs with few vertices when all pairs are needed.', sFloyd()),
     item('al-flow', '최대 유량', 'Maximum flow', '용량이 있는 네트워크에서 출발점 s부터 도착점 t까지 최대 얼마나 흘려보낼 수 있는지 구하는 문제예요. 포드-풀커슨 방법으로 풀어요.', '경로를 하나 골라 병목 용량만큼 흘리는 일을 반복해요. 그런데 s→a→b→t로 2를 먼저 보내면 더 갈 길이 없어 보여 2에서 멈춰요. 잔여 그래프에는 보낸 만큼 되돌릴 수 있는 역방향 간선(b→a)이 생기므로, s→b→a→t로 2를 더 보내 총 4가 돼요(a→b 흐름은 상쇄). 최대 유량은 s와 t를 가르는 최소 컷의 용량과 같아요. BFS로 가장 짧은 증가 경로를 고르면 에드몬드-카프, O(V·E²)이에요. 이분 매칭과 작업 배정에 쓰여요.', 'Find how much can be pushed from a source s to a sink t through a network whose edges have capacities, using the Ford–Fulkerson method.', 'Repeatedly pick a path and push its bottleneck capacity. Sending 2 along s→a→b→t first seems to leave no path, stuck at 2. But the residual graph gains a reverse edge (b→a) that can undo flow, so s→b→a→t carries 2 more for a total of 4, cancelling the flow on a→b. The maximum flow equals the capacity of the minimum cut separating s from t. Choosing the shortest augmenting path by BFS gives Edmonds–Karp, O(V·E²). It powers bipartite matching and assignment problems.', sFlow())
   ]
+},
+after: {
+  'al-lcs': [item('al-edit', '편집 거리', 'Edit distance', '한 문자열을 다른 문자열로 바꾸는 데 필요한 한 글자 삽입·삭제·교체의 최소 횟수예요. 2차원 표를 채우는 동적 계획법으로 구해요.', '레벤슈타인 거리 D[i][j]는 A의 앞 i글자를 B의 앞 j글자로 바꾸는 최소 편집 횟수예요. 빈 문자열에서 시작하면 첫 행과 열은 0, 1, 2, …(삽입이나 삭제만)이고, 나머지 칸은 D[i−1][j−1] + (글자가 다르면 1)(교체), D[i−1][j] + 1(삭제), D[i][j−1] + 1(삽입) 중 최솟값이에요. kitten과 sitting의 표를 채우면 오른쪽 아래가 3이고, 그 칸에서 어느 방향으로 왔는지 거꾸로 따라가면 k→s 교체, e→i 교체, 끝에 g 삽입이라는 실제 편집 과정이 나와요. 시간은 O(mn)이고, 바로 위 행만 있으면 되므로 메모리는 O(n)으로 줄일 수 있어요. 맞춤법 검사의 추천 단어, 검색어 오타 보정(퍼지 검색), 중복 고객 데이터 정리, 음성 인식의 단어 오류율(WER) 평가에 쓰여요. git diff가 쓰는 LCS는 교체가 없는 특수한 경우이고, DNA 서열 정렬의 니들먼-분쉬 알고리즘은 같은 표에 일치·불일치·간격마다 다른 점수를 매겨요.', 'The fewest single-character insertions, deletions and substitutions needed to turn one string into another, computed by filling a 2-D table with dynamic programming.', 'The Levenshtein distance D[i][j] is the minimum number of edits turning A’s first i characters into B’s first j. Starting from the empty string, the first row and column read 0, 1, 2, … (only inserts or deletes), and every other cell is the minimum of D[i−1][j−1] + (1 if the characters differ) for a substitution, D[i−1][j] + 1 for a deletion and D[i][j−1] + 1 for an insertion. Filling the table for kitten and sitting gives 3 in the bottom-right cell, and tracing back which neighbour each value came from recovers the edits: k→s, e→i and a final inserted g. It takes O(mn) time, and since only the previous row is needed, O(n) memory. It powers spelling suggestions, typo-tolerant (fuzzy) search, deduplication of customer records and the word error rate (WER) used to score speech recognition. The LCS behind git diff is the special case without substitutions, and the Needleman–Wunsch algorithm for DNA alignment fills the same table with different scores for matches, mismatches and gaps.', sEdit())],
+  'al-mst': [item('al-prim', '프림 알고리즘', 'Prim’s algorithm', '한 정점에서 시작해, 지금까지 만든 트리와 바깥을 잇는 간선 중 가장 가벼운 것을 계속 붙여 최소 신장 트리를 만들어요.', '프림 알고리즘은 임의의 정점 하나로 트리를 시작하고, 트리 안의 정점과 밖의 정점을 잇는 간선 중 가중치가 가장 작은 것을 골라 그 바깥 정점을 트리에 붙이기를 정점이 다 찰 때까지 반복해요. 예시 그래프에서 A로 시작하면 A–D(3), D–E(1), B–E(2), C–E(5), C–F(6) 순으로 붙어 가중치 합 17인 최소 신장 트리가 돼요. 컷 성질(어떤 분할을 가로지르는 가장 가벼운 간선은 어떤 최소 신장 트리에 반드시 포함)이 이 욕심쟁이 선택이 옳다는 근거예요. 후보 간선을 우선순위 큐(이진 힙)로 관리하면 O(E log V)이고, 간선이 빽빽한 그래프는 인접 행렬과 배열로 O(V²)이 더 빨라요. 다익스트라 알고리즘과 코드가 거의 같지만, 다익스트라는 시작점부터의 거리를, 프림은 트리까지의 간선 하나의 무게를 비교해요. 간선을 가중치 순으로 정렬해 사이클이 안 생기는 것만 고르는 크루스칼도 같은 합 17을 찾으며, 크루스칼은 간선이 적은 그래프에서 유리해요. 통신망·전력망 설계, 클러스터링, 미로 생성에 쓰여요.', 'Starting from one vertex, repeatedly add the lightest edge joining the tree to the outside, building a minimum spanning tree.', 'Prim’s algorithm starts a tree at any vertex and keeps adding the lightest edge between a vertex inside the tree and one outside, until every vertex is in. Starting from A in the example, it adds A–D (3), D–E (1), B–E (2), C–E (5) and C–F (6), a minimum spanning tree of total weight 17. The cut property, that the lightest edge crossing any partition belongs to some minimum spanning tree, justifies each greedy choice. Keeping candidate edges in a priority queue (a binary heap) gives O(E log V), and on dense graphs an adjacency matrix with a plain array gives a faster O(V²). The code is almost identical to Dijkstra’s, except that Dijkstra compares distances from the start while Prim compares the weight of a single edge to the tree. Kruskal, which sorts edges and keeps those that form no cycle, finds the same total of 17 and suits sparse graphs. MSTs are used to design communication and power networks, for clustering and to generate mazes.', sPrim())]
 } };
 })();
 
@@ -827,5 +888,6 @@ window.UX = page([
   ].concat(XT.add['al-graph'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += '\n.al-big .in{font-size:.95em;font-weight:700;color:var(--ink)}\n.al-dist .in{font-weight:700;color:var(--accent);font-size:.8em}';
 })();

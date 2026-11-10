@@ -653,6 +653,34 @@ function sPersist() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'dsx-xs', i + 1, { off: i + 2 }));
+function sBplus() {
+  const S = scene({ id: 'ds-bplus', steps: 5, per: 1.7 });
+  const KW = 1.7, KH = 1.25, root = [10, 20, 30], RX = 12.6, RY = 1.4;
+  const leaves = [[1, 5, 8], [10, 12, 15], [20, 22, 25], [30, 33, 38]], LX = i => 1.6 + i * 7.6, LY = 7.4;
+  root.forEach((k, j) => cell(S, 'r' + j, RX + j * KW, RY, KW, KH, String(k), 'accent', 22, 0));
+  T(S, 'rl', RX + 3 * KW + .4, RY + .25, ['내부 노드: 길잡이 키만', 'internal node: signpost keys only'], 'dsx-xs dsx-a', 1);
+  leaves.forEach((L, i) => { L.forEach((k, j) => cell(S, `l${i}${j}`, LX(i) + j * KW, LY, KW, KH, String(k), 'ok', 18, 0));
+    const px = RX + i * KW - (i ? 0 : .05); seg(S, 'e' + i, [Math.min(px, RX + 3 * KW), RY + KH], [LX(i) + 1.5 * KW, LY - .05], 0, 'ink-3', .07);
+    T(S, 'rw' + i, LX(i), LY + KH + .2, ['행 ×3', '3 rows'], 'cz-tc dsx-xs', 1, { w: 3 * KW });
+    if (i < 3) ar(S, 'lk' + i, [LX(i) + 3 * KW + .1, LY + KH / 2], [LX(i + 1) - .1, LY + KH / 2], 'ok', 1, { h: .1 }); });
+  T(S, 'll', 1.6, LY + 2.3, ['리프: 모든 키와 실제 데이터 · 옆 리프와 연결', 'leaves: every key with its data · linked side by side'], 'dsx-xs dsx-g', 1);
+  tsets(S, 'r1', [[2, 'warn', 40], [3, 'accent', 22]]); tsets(S, 'l21', [[2, 'danger', 40], [3, 'warn', 40], [4, 'ok', 18]]);
+  seg(S, 'sp', [RX + 2 * KW, RY + KH], [LX(2) + 1.5 * KW, LY - .05], 2, 'danger', .12, { off: 3 });
+  T(S, 'q1', 1.6, 11.6, ['22 찾기: 20 ≤ 22 < 30 → 세 번째 리프로 내려가요', 'find 22: 20 ≤ 22 < 30 → down to the third leaf'], 'cz-mono dsx-xs dsx-r', 2, { off: 3 });
+  ['l11', 'l12', 'l20', 'l22', 'l30', 'l31'].forEach(k => tsets(S, k, [[3, 'warn', 40], [4, 'ok', 18]]));
+  T(S, 'q2', 1.6, 11.6, ['범위 12 ~ 33: 12를 찾은 뒤 옆 리프로 쭉 걸어가요', 'range 12–33: find 12, then walk the leaf links'], 'cz-mono dsx-xs dsx-w', 3, { off: 4 });
+  ar(S, 'walk', [LX(1) + .4, LY + KH + 2.2], [LX(3) + 2 * KW, LY + KH + 2.2], 'warn', 3, { h: .14, off: 4 });
+  T(S, 'f1', 1.6, 11.6, ['16KB 페이지에 키+포인터 ≈ 14B → 노드 하나에 자식 ~1000개', '16 KB page, ≈ 14 B per key + pointer → ~1000 children per node'], 'dsx-xs', 4);
+  T(S, 'f2', 1.6, 12.8, ['3단계만으로 1000³ ≈ 10억 행 · 디스크 읽기 3번', 'three levels reach 1000³ ≈ a billion rows · three disk reads'], 'dsx-xs dsx-a', 4);
+  T(S, 'f3', 1.6, 14.0, ['B-트리는 내부 노드에도 데이터 → 자식 수가 줄고 범위 검색이 위아래를 오가요', 'a B-tree keeps data in inner nodes too → fewer children, and range scans bounce up and down'], 'dsx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['B+트리: 내부 노드는 길을 알려 주는 키만, 실제 데이터는 모두 리프에 있어요', 'a B+ tree keeps only signpost keys inside; all the data lives in the leaves'], ['한 값 찾기는 루트에서 키를 비교하며 리프까지 한 번에 내려가요', 'a point lookup walks down from the root, comparing keys, straight to a leaf'], ['리프끼리 연결돼 있어서, 범위 검색은 시작 리프를 찾은 뒤 옆으로만 걸어가요', 'leaves are linked, so a range scan finds the first leaf and simply walks sideways'], ['내부 노드가 가벼워 자식이 수백~수천 개 · 그래서 트리가 아주 낮아요', 'light inner nodes hold hundreds to thousands of children, so the tree stays very short']]);
+  fin(S, 'z', 15.6, [['B+트리: 데이터는 리프에만, 리프는 연결 리스트 · DB 인덱스의 표준', 'the B+ tree: data only in linked leaves · the standard database index', 'dsx-xs dsx-a'], ['MySQL InnoDB는 기본키 B+트리의 리프에 행 전체를 담아요(클러스터드 인덱스)', 'MySQL InnoDB stores whole rows in the primary-key B+ tree’s leaves (a clustered index)'], ['파일 시스템(NTFS, ext4의 HTree, Btrfs)과 키-값 저장소도 같은 구조를 써요', 'file systems (NTFS, ext4’s HTree, Btrfs) and key-value stores use the same structure']]);
+  S.cap(1, '키는 위, 데이터는 리프', 'Keys above, data in the leaves').cap(2, '한 값 찾기', 'A point lookup').cap(3, '범위 검색', 'A range scan').cap(4, '얕고 넓은 트리', 'Short and wide').cap(5, 'B+트리', 'The B+ tree');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'ds-lin': [
     item('ds-deque', '덱 (Deque)', 'Deques', '앞과 뒤 양쪽에서 O(1)로 넣고 뺄 수 있는 큐예요. 스택과 큐를 하나로 합친 셈이에요.', 'push_front, push_back, pop_front, pop_back이 모두 O(1)이고, 보통 front/back 인덱스를 모듈러로 돌리는 원형 버퍼로 구현해요. 슬라이딩 윈도 최댓값은 덱에 감소하는 후보만 남겨 O(n)에 풀고, 0-1 BFS, 작업 훔치기 스케줄러(주인은 뒤에서, 도둑은 앞에서), 길이 제한이 있는 실행 취소 기록에도 써요. Python collections.deque, Java ArrayDeque가 대표 구현이에요.', 'A queue with O(1) pushes and pops at both the front and the back: a stack and a queue in one.', 'push_front, push_back, pop_front and pop_back are all O(1), usually on a ring buffer whose front/back indices wrap around. Sliding-window maximum keeps only decreasing candidates in a deque for O(n), and deques also power 0-1 BFS, work-stealing schedulers (owners pop the back, thieves steal the front) and capped undo histories. Python’s collections.deque and Java’s ArrayDeque are typical implementations.', sDeque()),
@@ -672,6 +700,9 @@ return { css: CSSX, secs: [], add: {
     item('ds-quadtree', '쿼드트리와 공간 인덱스', 'Quadtrees and spatial indexes', '2차원 공간을 4등분하며 점을 담아, 볼 필요 없는 영역을 통째로 건너뛰게 해 주는 트리예요.', '점이 2개 이상인 칸만 다시 4등분하는 식으로 재귀적으로 나누면, 범위 질의나 가장 가까운 점 찾기에서 질의와 겹치는 칸만 내려가고 나머지는 통째로 건너뛰어요. k-d 트리는 x와 y를 번갈아 2등분하고, R-트리는 겹치는 사각형으로 묶어 PostGIS 같은 공간 DB 인덱스로 쓰여요. 게임 충돌 감지, 지도 타일, 근처 가게 검색, 이미지 압축에 쓰여요.', 'A tree that recursively splits 2D space into quadrants so whole regions can be skipped during searches.', 'Any cell with two or more points is split into four again; a range or nearest-neighbor query then descends only into cells overlapping the query and skips the rest wholesale. k-d trees alternate x and y halvings, and R-trees group overlapping rectangles, serving as spatial indexes in databases such as PostGIS. They power game collision detection, map tiles, “near me” search and image compression.', sQuad()),
     item('ds-persist', '영속 자료구조', 'Persistent data structures', '값을 바꿀 때 원본을 고치지 않고 새 버전을 만들되, 바뀌지 않은 부분은 공유해 효율적인 불변 자료구조예요.', '불변 리스트 v1 = [1, 2, 3] 앞에 0을 붙인 v2는 새 노드 하나만 만들고 나머지를 공유해요. 트리에서 G를 바꾸면 루트까지 경로(A′, C′, G′)만 복사하고 나머지 서브트리는 그대로 가리켜 O(log n)에 새 버전이 생겨요. 옛 버전도 그대로 읽을 수 있어 실행 취소·시간 여행과 동시성에 안전하고, Redux/Immer, Clojure·Scala의 32갈래 벡터, Git 커밋이 같은 원리예요.', 'Immutable structures that create a new version on every change while sharing all unchanged parts with the old one.', 'Prepending 0 to the immutable list v1 = [1, 2, 3] builds a single node and shares the rest as v2. Changing G in a tree copies only its path to the root (A′, C′, G′) and points at every untouched subtree, producing a new version in O(log n). Old versions remain readable, which enables undo, time travel and safe concurrency; Redux/Immer, Clojure and Scala’s 32-way vectors and Git commits all work this way.', sPersist())
   ]
+},
+after: {
+  'ds-btree': [item('ds-bplus', 'B+트리', 'B+ trees', '내부 노드에는 길을 알려 주는 키만 두고, 실제 데이터는 모두 서로 연결된 리프에 두는 B-트리 변형이에요. 데이터베이스 인덱스의 표준 구조예요.', 'B+트리의 내부 노드는 “이 키보다 작으면 왼쪽” 같은 길잡이 키와 자식 포인터만 가지고, 모든 키와 실제 데이터(또는 행 위치)는 리프에 있어요. 리프들은 순서대로 연결 리스트처럼 이어져 있어요. 한 값을 찾을 때는 루트에서 키를 비교하며 리프까지 내려가고, 범위 검색은 시작 리프를 찾은 뒤 옆 리프로 계속 걸어가기만 하면 돼서 B-트리처럼 위아래를 오갈 필요가 없어요. 내부 노드가 데이터 없이 가벼우니 한 페이지에 자식을 아주 많이 담아요: 16KB 페이지에 키와 포인터가 약 14바이트면 자식이 1000개 남짓이라, 3단계만으로 약 10억 개의 행을 디스크 읽기 3번에 찾을 수 있어요. 삽입으로 노드가 넘치면 반으로 나누고 가운데 키를 부모로 올려서 항상 균형을 유지해요. MySQL InnoDB는 기본키 B+트리의 리프에 행 전체를 저장하고(클러스터드 인덱스), PostgreSQL의 btree 인덱스와 NTFS·Btrfs 같은 파일 시스템도 같은 구조를 써요.', 'A B-tree variant that keeps only signpost keys in its inner nodes and stores all data in linked leaves; the standard structure for database indexes.', 'In a B+ tree the inner nodes hold only signpost keys (“smaller than this, go left”) and child pointers, while every key and its data (or row location) lives in the leaves, which are chained in order like a linked list. A point lookup descends from the root to a leaf comparing keys, and a range scan finds the first leaf and simply walks sideways along the links, never bouncing up and down as in a B-tree. Because inner nodes carry no data, a page holds a great many children: with a 16 KB page and about 14 bytes per key and pointer, roughly a thousand, so three levels index about a billion rows with three disk reads. When an insert overfills a node, it splits in half and pushes the middle key up, keeping the tree balanced. MySQL InnoDB stores whole rows in the primary-key B+ tree’s leaves (a clustered index), and PostgreSQL’s btree indexes and file systems such as NTFS and Btrfs use the same structure.', sBplus())]
 } };
 })();
 
@@ -710,4 +741,5 @@ window.UX = page([
   ].concat(XT.add['ds-graphs'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 })();

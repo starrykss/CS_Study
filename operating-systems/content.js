@@ -657,6 +657,74 @@ function sJournal() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'osx-xs', i + 1, { off: i + 2 }));
+function sWs() {
+  const S = scene({ id: 'os-ws', steps: 5, per: 1.7 });
+  const R = [2, 6, 1, 5, 7, 7, 7, 7, 5, 1, 6, 2, 3, 4, 1, 2, 3, 4, 4, 4, 3, 4, 3, 4, 4, 4], D = 10, CW = 1.12, X0 = 1.4, Y0 = 1.4;
+  const cx = i => X0 + i * CW, ws = t => [...new Set(R.slice(t - D + 1, t + 1))].sort((a, b) => a - b);
+  T(S, 'hd', X0, .1, ['페이지 참조열', 'page references'], 'osx-xs', 0);
+  R.forEach((p, i) => cell(S, 'r' + i, cx(i) + .04, Y0, CW - .08, 1.1, String(p), 'line', 10, 0));
+  const win = (k, t, st, off, c) => { frame(S, k, cx(t - D + 1) - .08, Y0 - .2, D * CW + .08, 1.5, c, st, { w: .16, r: .3, off }); T(S, k + 'l', cx(t - D + 1), Y0 + 1.5, `Δ = ${D}`, 'cz-mono osx-xs', st, { off }); };
+  win('w1', 9, 1, 2, 'accent'); win('w2', 25, 2, 3, 'warn');
+  T(S, 'ws1', X0, 4.0, `WS(t₁) = {${ws(9).join(', ')}}   → ${ws(9).length}`, 'cz-mono osx-s osx-a', 1, { off: 2 });
+  T(S, 'ws2', cx(14), 4.0, `WS(t₂) = {${ws(25).join(', ')}}   → ${ws(25).length}`, 'cz-mono osx-s osx-w', 2, { off: 3 });
+  T(S, 'ws1b', X0, 4.0, `WS(t₁) = {${ws(9).join(', ')}}`, 'cz-mono osx-xs osx-a', 2, { off: 3 });
+  const BB = 12.6, BU = .85;
+  hl(S, 'ax', cx(9) - .2, cx(26), BB, 'ink-3', 3, { w: .1, off: 4 });
+  for (let t = 9; t < R.length; t++) { const n = ws(t).length; rect(S, 'b' + t, cx(t) + .14, BB - n * BU, CW - .28, n * BU, n >= 7 ? 'danger' : t < 13 ? 'accent' : t > 19 ? 'warn' : 'ok', 40, 3, { off: 4, r: .1 });
+    T(S, 'bn' + t, cx(t) - .2, BB - n * BU - 1.05, String(n), 'cz-tc cz-mono osx-xs', 3, { w: CW + .4, off: 4 }); }
+  T(S, 'bl', X0, 6.0, ['|WS(t)|', '|WS(t)|'], 'cz-mono osx-xs osx-a', 3, { off: 4 });
+  T(S, 'bt', X0, 7.1, ['국면이 바뀔 때', 'during a phase change'], 'osx-xs osx-r', 3, { off: 4 });
+  T(S, 'bt2', X0, 8.1, ['옛 + 새 페이지 → 7', 'old + new pages → 7'], 'osx-xs osx-r', 3, { off: 4 });
+  const PU = 1.4, PX = 1.4, PS = [['P1', 5, 'accent'], ['P2', 4, 'ok'], ['P3', 6, 'warn']], M = 12;
+  let x = PX; PS.forEach(([n, v, c], i) => { cell(S, 'p' + i, x + .03, 7.2, v * PU - .06, 1.5, `${n}: ${v}`, c, 30, 4); if (i < 2) cell(S, 'q' + i, x + .03, 10.6, v * PU - .06, 1.5, `${n}: ${v}`, c, 30, 4); x += v * PU; });
+  vl(S, 'm', PX + M * PU, 6.2, 12.3, 'danger', 4, { w: .14, dash: 1 });
+  T(S, 'ml', PX + M * PU + .3, 5.9, ['실제 프레임 12개', '12 physical frames'], 'osx-xs osx-r', 4);
+  T(S, 'pt1', PX + 15 * PU + .5, 7.6, ['Σ = 15 > 12 ✗', 'Σ = 15 > 12 ✗'], 'cz-mono osx-xs osx-r', 4);
+  T(S, 'pt2', PX, 12.5, ['P3 잠시 내보냄 → Σ = 9 ✓', 'swap P3 out → Σ = 9 ✓'], 'cz-mono osx-xs osx-g', 4);
+  notesSplit(S, 'k', 15.6, [['워킹 셋 WS(t): 최근 Δ번의 참조에 나온 페이지 집합 · 지금 이 프로세스가 실제로 쓰는 페이지예요', 'the working set WS(t) is the set of pages in the last Δ references · what the process actually uses now'], ['프로그램이 다른 일로 넘어가면 워킹 셋도 바뀌어요 · 여기선 다섯 페이지에서 두 페이지로', 'when the program moves on to another task the working set changes · here, from five pages to two'], ['크기를 따라가 보면 국면이 바뀌는 순간 옛 페이지와 새 페이지가 겹쳐 잠깐 커져요', 'tracked over time, its size briefly peaks while old and new pages overlap'], ['모든 프로세스의 워킹 셋 합이 프레임보다 크면 스래싱 · OS가 하나를 내보내 나머지를 지켜요', 'if the working sets add up to more than memory, thrashing follows · the OS swaps one process out to protect the rest']]);
+  fin(S, 'z', 15.6, [['워킹 셋 모델: 프로세스마다 워킹 셋만큼 프레임을 주고, 합이 넘치면 프로세스 수를 줄여요', 'the working-set model gives each process frames for its working set and admits fewer processes when they no longer fit', 'osx-xs osx-a'], ['정확히 추적하긴 비싸서 참조 비트와 타이머 인터럽트로 근사해요', 'tracking it exactly is costly, so OSes approximate it with reference bits and timer interrupts'], ['페이지 폴트 빈도(PFF): 폴트가 잦으면 프레임을 더 주고, 드물면 회수하는 더 간단한 방법', 'page-fault frequency (PFF) is simpler: add frames when faults are frequent, reclaim them when rare']]);
+  S.cap(1, '최근 Δ번의 참조', 'The last Δ references').cap(2, '국면이 바뀌면 워킹 셋도', 'A new phase, a new working set').cap(3, '워킹 셋 크기의 변화', 'Working-set size over time').cap(4, '합이 메모리를 넘으면', 'When the total exceeds memory').cap(5, '워킹 셋 모델', 'The working-set model');
+  return S;
+}
+
+function sSrtf() {
+  const S = scene({ id: 'os-srtf', steps: 5, per: 1.7 });
+  const P = [['P1', 0, 8, 'accent'], ['P2', 1, 4, 'ok'], ['P3', 2, 2, 'warn'], ['P4', 3, 5, 'danger']], col = n => P.find(p => p[0] === n)[3];
+  const TX = [1.0, 3.4, 6.2], TW = [2.2, 2.6, 2.6];
+  [['', ''], ['도착', 'arrive'], ['실행', 'burst']].forEach((h, c) => T(S, 'th' + c, TX[c], .4, h, 'cz-tc osx-xs osx-a', 0, { w: TW[c], off: 4 }));
+  P.forEach(([n, a, b, c], i) => { cell(S, 'pn' + i, TX[0], 1.5 + i * 1.15, TW[0], 1.0, n, c, 30, 0, { off: 4 }); [a, b].forEach((v, j) => T(S, `pv${i}${j}`, TX[j + 1], 1.55 + i * 1.15, String(v), 'cz-tc cz-mono osx-xs', 0, { w: TW[j + 1], off: 4 })); });
+  const G0 = 4.2, GU = 1.38, gx = t => G0 + t * GU;
+  const gantt = (k, y, segs, st, stOf) => { segs.forEach(([n, a, b], i) => cell(S, k + i, gx(a) + .03, y, (b - a) * GU - .06, 1.4, n, col(n), 32, stOf ? stOf(i) : st));
+    [...new Set(segs.flatMap(([, a, b]) => [a, b]))].forEach(t => T(S, k + 't' + t, gx(t) - .6, y + 1.5, String(t), 'cz-tc cz-mono osx-xs', stOf ? stOf(Math.max(0, segs.findIndex(s => s[1] === t || s[2] === t))) : st, { w: 1.2 })); };
+  const SR = [['P1', 0, 1], ['P2', 1, 2], ['P3', 2, 4], ['P2', 4, 7], ['P4', 7, 12], ['P1', 12, 19]], SJ = [['P1', 0, 8], ['P3', 8, 10], ['P2', 10, 14], ['P4', 14, 19]];
+  T(S, 'g1l', 1.0, 7.8, 'SRTF', 'cz-mono osx-xs osx-a', 1); gantt('s', 7.6, SR, 0, i => (i < 3 ? 2 : 3));
+  T(S, 'g2l', 1.0, 11.0, 'SJF', 'cz-mono osx-xs', 3); gantt('j', 10.8, SJ, 3);
+  [1, 2].forEach((t, i) => { ar(S, 'pa' + i, [gx(t), 6.2], [gx(t), 7.5], 'danger', 2, { h: .1, off: 3 }); });
+  const R = 10.4;
+  T(S, 'r1', R, .5, ['남은 실행 시간이 가장 짧은 프로세스부터', 'always run the shortest remaining time'], 'osx-xs osx-a', 1, { off: 2 });
+  T(S, 'r1b', R, 1.6, ['더 짧은 프로세스가 오면 지금 것을 멈춰요(선점)', 'a shorter arrival preempts the running one'], 'osx-xs', 1, { off: 2 });
+  T(S, 'r2', R, .5, ['t = 1: P2(4) < P1 남은 7 → 선점', 't = 1: P2 (4) < P1’s 7 left → preempt'], 'cz-mono osx-xs osx-r', 2, { off: 3 });
+  T(S, 'r2b', R, 1.6, ['t = 2: P3(2) < P2 남은 3 → 선점', 't = 2: P3 (2) < P2’s 3 left → preempt'], 'cz-mono osx-xs osx-r', 2, { off: 3 });
+  T(S, 'r2c', R, 2.7, ['t = 3: P4(5) > P3 남은 1 → 계속', 't = 3: P4 (5) > P3’s 1 left → keep going'], 'cz-mono osx-xs', 2, { off: 3 });
+  T(S, 'r3', R, .5, ['평균 대기 시간', 'average waiting time'], 'osx-xs osx-a', 3, { off: 4 });
+  [['SRTF', '(11 + 2 + 0 + 4) / 4 = 4.25', 'osx-g'], ['SJF', '(0 + 9 + 6 + 11) / 4 = 6.5', ''], ['FCFS', '(0 + 7 + 10 + 11) / 4 = 7', 'osx-r']].forEach(([a, b, c], i) => { T(S, 'wa' + i, R, 1.6 + i * 1.1, a, 'cz-mono osx-xs', 3, { off: 4 }); T(S, 'wb' + i, R + 3.6, 1.6 + i * 1.1, b, 'cz-mono osx-xs ' + c, 3, { off: 4 }); });
+  const F = fr(0, 7, 0, 14, 1.8, 15.2, 1.0, 5.8), TAU = [10, 8, 6, 6, 5, 9, 11, 12], TT = [6, 4, 6, 4, 13, 13, 13];
+  hl(S, 'fx', F.L, F.R, F.B, 'ink-3', 4, { w: .08 }); vl(S, 'fy', F.L, F.T, F.B, 'ink-3', 4, { w: .08 });
+  poly(S, 'ft', TAU.map((v, i) => [F.X(i), F.Y(v)]), { st: 4, color: 'accent', h: .12 });
+  TAU.forEach((v, i) => mpt(S, 'fp' + i, F, [i, v], 4, C.cur, .2)); TT.forEach((v, i) => mpt(S, 'fa' + i, F, [i, v], 4, C.badf, .2));
+  [0, 7, 14].forEach(v => T(S, 'fyt' + v, F.L - 1.3, F.Y(v) - .5, String(v), 'cz-mono osx-xs', 4, { w: 1.1, css: 'text-align:right' }));
+  T(S, 'fl1', 17.0, 4.5, ['● 예측 τ', '● predicted τ'], 'osx-xs osx-a', 4); T(S, 'fl2', 22.0, 4.5, ['● 실제 t', '● actual t'], 'osx-xs osx-r', 4);
+  T(S, 'f1', 17.0, .7, 'τₙ₊₁ = α·tₙ + (1 − α)·τₙ', 'cz-mono osx-s osx-a', 4);
+  T(S, 'f2', 17.0, 2.0, ['α = 0.5: 최근 값과 과거 예측을 반반', 'α = 0.5: half recent burst, half history'], 'osx-xs', 4);
+  T(S, 'f3', 17.0, 3.1, ['실제 길이는 미리 모르니 예측으로 골라요', 'true bursts are unknown, so it picks by prediction'], 'osx-xs osx-w', 4);
+  notesSplit(S, 'k', 15.6, [['SRTF는 선점형 SJF · 남은 실행 시간이 가장 짧은 프로세스를 먼저 돌려요', 'SRTF is preemptive SJF · it always runs the process with the least time remaining'], ['더 짧은 일이 도착하면 지금 돌던 것을 멈추고 바꿔요 · P1 → P2 → P3', 'a shorter arrival takes over the CPU right away · P1 → P2 → P3'], ['평균 대기 시간은 4.25로, 비선점 SJF(6.5)나 FCFS(7)보다 짧아요 · 이론상 최소예요', 'the average wait is 4.25, shorter than non-preemptive SJF (6.5) or FCFS (7) · the provable minimum'], ['실행 시간은 미리 알 수 없어서, 지난 실행 시간들의 지수 평균으로 예측해요', 'burst lengths are unknown in advance, so they are predicted with an exponential average of past bursts']]);
+  fin(S, 'z', 15.6, [['SRTF: 남은 시간이 가장 짧은 작업을 먼저, 새 작업이 더 짧으면 즉시 선점', 'SRTF runs the shortest remaining job first and preempts when a shorter one arrives', 'osx-xs osx-a'], ['긴 작업은 짧은 작업이 계속 오면 굶을 수 있어요 · 기다린 만큼 우선순위를 올려(에이징) 막아요', 'long jobs can starve under a stream of short ones · aging raises priority as they wait'], ['실제 OS는 예측 대신 MLFQ로 짧은 작업을 자연스럽게 앞세워요', 'real OSes favour short jobs indirectly through multilevel feedback queues instead']]);
+  S.cap(1, '남은 시간이 짧은 순서', 'Shortest remaining time').cap(2, '짧은 작업이 오면 선점', 'Preempt for a shorter job').cap(3, '평균 대기 시간 비교', 'Comparing average waits').cap(4, '실행 시간 예측', 'Predicting burst length').cap(5, 'SRTF (선점형 SJF)', 'SRTF (preemptive SJF)');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'os-sched': [
     item('os-cfs', '리눅스 CFS 스케줄러', 'The Linux CFS scheduler', '각 작업이 실제로 CPU를 쓴 시간(가상 실행 시간)을 재고, 가장 덜 실행된 작업부터 돌려 모두에게 공평하게 나눠 주는 스케줄러예요.', '작업들은 vruntime 순으로 레드-블랙 트리에 정렬되고, 맨 왼쪽(가장 작은 vruntime) 작업이 실행돼요. 실행하면 vruntime이 늘어 오른쪽으로 가고 다음 작업이 앞으로 나와요. nice 값은 가중치가 되어 우선순위가 높을수록 vruntime이 천천히 늘고, 잠들었다 깬 대화형 작업은 작은 vruntime으로 들어와 곧바로 실행돼 반응성이 좋아요. 리눅스 6.6부터는 EEVDF가 CFS를 대체했어요.', 'A scheduler that tracks how much CPU each task has used (virtual runtime) and always runs the least-run task, sharing the CPU fairly.', 'Tasks sit in a red-black tree ordered by vruntime, and the leftmost (smallest vruntime) runs. Running increases its vruntime, moving it right so the next task comes forward. Nice values become weights, so higher-priority tasks accumulate vruntime more slowly, and interactive tasks waking from sleep rejoin with a small vruntime and run promptly. Since Linux 6.6, EEVDF has replaced CFS.', sCfs()),
@@ -673,6 +741,10 @@ return { css: CSSX, secs: [], add: {
   'os-file': [
     item('os-journal', '저널링 파일 시스템', 'Journaling file systems', '파일 시스템을 고치기 전에 바꿀 내용을 저널(로그)에 먼저 기록해, 전원이 나가도 일관성을 지키는 방법이에요.', '파일 하나에 덧붙이는 데도 bitmap, inode, data 세 곳을 고쳐야 해서, 중간에 전원이 나가면 사용 중 표시만 된 블록 같은 불일치가 생겨요. 저널링은 TxB, 바꿀 내용, TxE(커밋)를 먼저 저널에 쓰고 커밋 후 실제 위치에 반영(체크포인트)해요. 재부팅하면 커밋된 트랜잭션만 다시 적용하고 끊긴 것은 버려, 디스크 전체를 훑는 fsck가 필요 없어요. ext4 기본 모드는 data=ordered이고, btrfs·ZFS는 복사 후 쓰기로 같은 문제를 풀어요.', 'Recording intended changes in a journal (log) before touching the file system, so it stays consistent across power failures.', 'Even appending to a file updates three places, bitmap, inode and data, so a crash midway can leave inconsistencies such as a block marked used but owned by nothing. Journaling writes TxB, the changes and TxE (the commit) to the journal first, then applies them to their final locations (checkpointing). After a reboot, committed transactions are replayed and interrupted ones discarded, avoiding a full fsck scan. ext4 defaults to data=ordered, while btrfs and ZFS solve the same problem with copy-on-write.', sJournal())
   ]
+},
+after: {
+  'os-thrash': [item('os-ws', '워킹 셋 모델', 'The working-set model', '최근 Δ번의 참조에 나온 페이지 집합을 워킹 셋이라 해요. 프로세스마다 워킹 셋만큼 프레임을 주고, 합이 메모리를 넘으면 프로세스 수를 줄여요.', '워킹 셋 WS(t, Δ)는 시각 t까지 최근 Δ번의 메모리 참조에 나온 서로 다른 페이지의 집합이에요. 지역성 덕분에 프로그램은 한동안 몇몇 페이지만 쓰므로, 워킹 셋은 지금 이 프로세스에 꼭 필요한 페이지를 잘 나타내요. 예를 들어 참조열 2 6 1 5 7 7 7 7 5 1에서 Δ = 10이면 WS = {1, 2, 5, 6, 7}로 5개이고, 나중에 3 4 4 4 3 4 3 4 4 4 구간에서는 {3, 4}로 2개예요. 프로그램이 다른 일로 넘어가는 순간에는 옛 페이지와 새 페이지가 함께 창 안에 있어 워킹 셋이 잠깐 7까지 커져요. 운영체제는 모든 프로세스의 워킹 셋 크기 합 D = Σ|WSᵢ|를 실제 프레임 수 m과 비교해, D > m이면 스래싱이 일어나므로 프로세스 하나를 잠시 내보내고(스왑 아웃), 여유가 생기면 다시 들여와요. Δ가 너무 작으면 지역성을 다 담지 못하고, 너무 크면 여러 국면이 섞여요. 정확한 추적은 비싸서 참조 비트와 타이머 인터럽트로 근사해요. 더 간단한 페이지 폴트 빈도(PFF) 방식은 폴트가 상한보다 잦으면 프레임을 더 주고, 하한보다 드물면 회수해요. Windows는 프로세스마다 워킹 셋의 최소·최대를 두고 메모리가 부족하면 다듬어요.', 'The working set is the set of pages used in the last Δ references. Give each process frames for its working set, and run fewer processes when the sets no longer fit.', 'The working set WS(t, Δ) is the set of distinct pages touched in the last Δ memory references up to time t. Thanks to locality a program uses only a handful of pages for a while, so the working set captures what the process really needs right now. With Δ = 10, the references 2 6 1 5 7 7 7 7 5 1 give WS = {1, 2, 5, 6, 7}, five pages, while a later stretch 3 4 4 4 3 4 3 4 4 4 gives {3, 4}, just two. As the program moves from one phase to the next, old and new pages share the window and the working set briefly grows to seven. The OS compares the total demand D = Σ|WSᵢ| with the number of frames m: if D > m, thrashing follows, so it suspends a process (swaps it out) and brings it back when room frees up. A Δ that is too small misses part of the locality; one that is too large blends several phases. Tracking working sets exactly is costly, so systems approximate them with reference bits and timer interrupts. The simpler page-fault-frequency (PFF) scheme gives a process more frames when its fault rate rises above an upper bound and takes some away when it drops below a lower one. Windows keeps a minimum and maximum working-set size per process and trims them when memory runs short.', sWs())],
+  'os-fcfs': [item('os-srtf', 'SRTF (선점형 SJF)', 'SRTF (preemptive SJF)', '남은 실행 시간이 가장 짧은 프로세스를 먼저 돌리고, 더 짧은 작업이 도착하면 즉시 바꾸는 스케줄링이에요. 평균 대기 시간이 가장 짧아요.', 'SRTF(Shortest Remaining Time First)는 SJF의 선점형 버전이에요. 새 프로세스가 도착할 때마다 그 실행 시간과 지금 도는 프로세스의 남은 시간을 비교해, 더 짧으면 CPU를 넘겨요. 예를 들어 P1(도착 0, 실행 8), P2(1, 4), P3(2, 2), P4(3, 5)이면 P1이 1만큼 돌다 P2에, P2는 1만큼 돌다 P3에 밀리고, 이어서 P3 2–4, P2 4–7, P4 7–12, P1 12–19 순서가 돼요. 대기 시간은 P1 11, P2 2, P3 0, P4 4로 평균 4.25예요. 같은 작업을 비선점 SJF로 돌리면 P1이 0–8을 독차지해 평균 6.5, FCFS는 7이에요. SRTF는 평균 대기 시간을 최소로 만드는 것이 증명되어 있지만 두 가지 문제가 있어요. 첫째, 실행 시간을 미리 알 수 없어서 지난 실행 시간의 지수 평균 τₙ₊₁ = α·tₙ + (1 − α)·τₙ로 예측해요(α = 0.5면 최근 값과 과거 예측을 반반). 둘째, 짧은 작업이 계속 오면 긴 작업이 굶을 수 있어 기다린 시간만큼 우선순위를 올리는 에이징으로 막아요. 실제 운영체제는 MLFQ처럼 짧은 작업을 간접적으로 앞세우는 방식을 써요.', 'Run the process with the least time remaining, switching immediately when a shorter one arrives. It minimizes the average waiting time.', 'SRTF (shortest remaining time first) is the preemptive form of SJF: whenever a process arrives, its burst is compared with the running process’s remaining time, and the CPU switches if the newcomer is shorter. With P1 (arrives 0, burst 8), P2 (1, 4), P3 (2, 2) and P4 (3, 5), P1 runs for 1 before P2 preempts it, P2 runs for 1 before P3 preempts it, and the rest runs P3 2–4, P2 4–7, P4 7–12 and P1 12–19. Waits are P1 11, P2 2, P3 0 and P4 4, an average of 4.25. Non-preemptive SJF lets P1 hold the CPU from 0 to 8 and averages 6.5, and FCFS averages 7. SRTF provably minimizes the average wait but has two problems. Burst lengths are not known in advance, so they are predicted with an exponential average of past bursts, τₙ₊₁ = α·tₙ + (1 − α)·τₙ (α = 0.5 weighs the latest burst and the history equally). And a stream of short jobs can starve long ones, which aging prevents by raising priority with waiting time. Real operating systems favour short jobs indirectly, for example through multilevel feedback queues.', sSrtf())]
 } };
 })();
 
@@ -717,5 +789,6 @@ window.UX = page([
   ].concat(XT.add['os-file'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += '\n.os-lg .in{font-size:.9em;font-weight:700;color:var(--ink)}';
 })();

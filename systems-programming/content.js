@@ -853,6 +853,79 @@ function sCondvar() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'syx-xs', i + 1, { off: i + 2 }));
+function sCanary() {
+  const S = scene({ id: 'sy-canary', steps: 5, per: 1.7 });
+  const X = 4.4, W = 7.6, SL = [['ret', ['돌아갈 주소', 'return address'], .8, 1.4, 'ok'], ['rbp', ['저장된 rbp', 'saved rbp'], 2.3, 1.4, 'line'], ['can', '', 3.8, 1.4, 'warn'], ['buf', '', 5.3, 3.4, 'accent']];
+  SL.forEach(([k, l, y, h, c]) => cell(S, k, X, y, W, h - .1, l, c, 20, 0));
+  T(S, 'hi', .4, .9, ['높은 주소', 'high'], 'syx-xs', 0, { w: 2.8 }); T(S, 'lo', .4, 8.0, ['낮은 주소', 'low'], 'syx-xs', 0, { w: 2.8 });
+  ar(S, 'gr', [X + W + .6, 8.4], [X + W + .6, 5.6], 'danger', 1, { h: .12 }); T(S, 'grl', X + W - 2.4, 8.75, ['쓰기 방향 ↑', 'writes go up ↑'], 'syx-xs syx-r', 1, { off: 2 });
+  ['ret', 'rbp', 'can', 'buf'].forEach(k => tsets(S, k, [[2, 'danger', 28]]));
+  T(S, 'bufl', X, 7.2, 'buf[16]', 'cz-tc cz-mono syx-s', 0, { w: W });
+  T(S, 'ovt', X, 5.45, 'AAAAAAAAAAAAAAAA…', 'cz-tc cz-mono syx-xs syx-r', 2, { w: W });
+  T(S, 'canl', X, 4.0, ['카나리 0x9f3a51c700', 'canary 0x9f3a51c700'], 'cz-tc cz-mono syx-xs', 0, { w: W, off: 2 });
+  T(S, 'cv', X, 4.0, ['카나리 0x4141414141 ✗', 'canary 0x4141414141 ✗'], 'cz-tc cz-mono syx-xs syx-r', 2, { w: W });
+  code(S, 'cd', 13.6, .6, 17.4, ['void greet(char *s) {', '  char buf[16];', '  strcpy(buf, s);   // 길이 검사 없음', '  return;   // ← 카나리 확인'].map((t, i) => i === 2 ? [t, '  strcpy(buf, s);   // no length check'] : i === 3 ? [t, '  return;   // ← canary checked here'] : t), [[2, 1], [3, 2]], { hoff: 3 });
+  const R = 13.6;
+  T(S, 'r1', R, 7.0, ['s가 16바이트보다 길면 위쪽을 덮어써요', 'a longer s overwrites what lies above'], 'syx-xs', 1, { off: 2 });
+  T(S, 'r2', R, 7.0, ['돌아가기 전에 카나리를 비교', 'the canary is compared before returning'], 'syx-xs syx-a', 2, { off: 3 });
+  T(S, 'r2b', R, 8.1, ['바뀜 → __stack_chk_fail() → 즉시 종료', 'changed → __stack_chk_fail() → abort'], 'cz-mono syx-xs syx-r', 2, { off: 3 });
+  T(S, 'r3', R, 7.0, ['NX: 스택 페이지는 읽기·쓰기만, 실행 금지', 'NX: stack pages are read-write, never executable'], 'syx-xs syx-a', 3, { off: 4 });
+  T(S, 'r3b', R, 8.1, ['buf에 넣은 기계어로 점프해도 실행 안 됨 → 세그폴트', 'jumping into code planted in buf just faults'], 'syx-xs syx-r', 3, { off: 4 });
+  elb(S, 'jp', [[X - .3, 1.5], [X - 1.0, 1.5], [X - 1.0, 7.0], [X - .1, 7.0]], 'danger', 3, { h: .12, off: 4 });
+  xm(S, 'jx', X - 1.7, 4.4, 3, { off: 4 });
+  T(S, 'r4', R, 7.0, ['ASLR: 실행할 때마다 주소가 바뀌어요', 'ASLR: addresses change on every run'], 'syx-xs syx-a', 4);
+  [['1', '0x7ffc3a91d2e0', '0x7f21c4a00000'], ['2', '0x7ffd0b5e6f40', '0x7f8e13200000'], ['3', '0x7ffe77c0a1b0', '0x7f5a90e00000']].forEach(([n, a, b], i) => T(S, 'as' + i, R, 8.2 + i * 1.05, [`#${n}  스택 ${a}  libc ${b}`, `#${n}  stack ${a}  libc ${b}`], 'cz-mono syx-xs', 4));
+  T(S, 'r4c', R, 11.6, ['→ 어디로 뛰어야 할지 짐작할 수 없어요', '→ the attacker cannot guess where to jump'], 'syx-xs syx-g', 4);
+  notesSplit(S, 'k', 15.6, [['스택에서 buf 위에는 저장된 rbp와 돌아갈 주소가 있어요 · 너무 긴 입력은 위쪽으로 넘쳐요', 'above buf on the stack sit the saved rbp and the return address · oversized input spills upward'], ['스택 카나리: 컴파일러가 buf와 돌아갈 주소 사이에 무작위 값을 두고, 함수가 끝날 때 바뀌었는지 확인해요', 'a stack canary is a random value placed between buf and the return address and checked before the function returns'], ['NX(DEP): 스택과 힙을 실행할 수 없게 표시해서, 버퍼에 넣은 기계어를 실행시키지 못해요', 'NX (DEP) marks the stack and heap non-executable, so machine code planted in a buffer cannot run'], ['ASLR: 스택·힙·라이브러리 위치를 실행할 때마다 무작위로 바꿔서 점프할 주소를 모르게 해요', 'ASLR randomizes the stack, heap and library addresses each run, so jump targets are unknown']]);
+  fin(S, 'z', 15.6, [['카나리·NX·ASLR을 겹쳐 써서 버퍼 오버플로를 공격으로 이어지기 어렵게 만들어요', 'canaries, NX and ASLR are layered so an overflow is hard to turn into an exploit', 'syx-xs syx-a'], ['gcc: -fstack-protector-strong, -D_FORTIFY_SOURCE=3, -fPIE -pie, -Wl,-z,relro,-z,now', 'gcc: -fstack-protector-strong, -D_FORTIFY_SOURCE=3, -fPIE -pie, -Wl,-z,relro,-z,now', 'cz-mono syx-xs'], ['기존 코드 조각을 잇는 ROP는 NX를 우회해요 · CFI와 CET 섀도 스택이 막고, 근본 해법은 범위 검사예요', 'ROP chains existing code to dodge NX · CFI and CET shadow stacks stop it; bounds checking is the real cure']]);
+  S.cap(1, '위로 넘치는 버퍼', 'A buffer overflowing upward').cap(2, '스택 카나리', 'The stack canary').cap(3, 'NX: 스택 실행 금지', 'NX: no executing the stack').cap(4, 'ASLR: 주소 무작위화', 'ASLR: randomized addresses').cap(5, '버퍼 오버플로 방어', 'Defending against overflows');
+  return S;
+}
+
+function sSpinlock() {
+  const S = scene({ id: 'sy-spinlock', steps: 5, per: 1.7 });
+  const CX = i => 1.0 + i * 4.5, CW = 3.9;
+  for (let i = 0; i < 4; i++) box2(S, 'c' + i, CX(i), 1.0, CW, 1.6, `Core ${i}`, i ? 'line' : 'accent', 0, { pct: i ? 14 : 24 });
+  T(S, 'own', CX(0), .0, ['락 보유', 'holds lock'], 'cz-tc syx-xs syx-a', 0, { w: CW, off: 3 });
+  const chip = (k, i, lab, c, st, off) => cell(S, k + i, CX(i) + .5, 2.8, CW - 1.0, 1.0, lab, c, 32, st, { off });
+  hl(S, 'bus', .8, 18.4, 5.2, 'ink-3', 0, { w: .12 }); T(S, 'busl', 1.0, 5.45, ['버스·연결망', 'bus / interconnect'], 'syx-xs', 0);
+  cell(S, 'lk', 7.4, 6.5, 6.6, 1.2, 'lock = 1', 'warn', 22, 0, { off: 3 }); cell(S, 'lk0', 7.4, 6.5, 6.6, 1.2, 'lock = 0 → 1', 'ok', 22, 3, { off: 4 });
+  cell(S, 'tk', 7.4, 6.5, 10.4, 1.2, 'next = 10 · serving = 7', 'accent', 18, 4);
+  ['M', 'I', 'I', 'I'].forEach((l, i) => chip('a', i, l, i ? 'line' : 'danger', 1, 2));
+  for (let i = 1; i < 4; i++) { ar(S, 'pp' + i, [CX(i) + CW / 2, 5.1], [CX(i) + CW / 2, 3.9], 'danger', 1, { h: .1, off: 2 }); }
+  hl(S, 'busr', .8, 18.4, 5.2, 'danger', 1, { w: .24, off: 2 });
+  ['S', 'S', 'S', 'S'].forEach((l, i) => chip('b', i, l, 'ok', 2, 3));
+  ['I', 'M', 'I', 'I'].forEach((l, i) => chip('c', i, l, i === 1 ? 'ok' : 'warn', 3, 4));
+  T(S, 'bo2', CX(2), 3.9, 'pause ×2', 'cz-tc cz-mono syx-xs syx-w', 3, { w: CW, off: 4 }); T(S, 'bo3', CX(3), 3.9, 'pause ×4', 'cz-tc cz-mono syx-xs syx-w', 3, { w: CW, off: 4 });
+  T(S, 'win', CX(1), 3.9, ['획득!', 'got it!'], 'cz-tc syx-xs syx-g', 3, { w: CW, off: 4 });
+  ['7 ▶', '8', '9', '—'].forEach((t, i) => cell(S, 'tn' + i, CX(i) + .5, 2.8, CW - 1.0, 1.0, i === 3 ? ['대기 없음', 'idle'] : ['번호 ' + t, 'ticket ' + t], i ? 'line' : 'ok', i ? 14 : 34, 4));
+  const C1 = ['while (atomic_exchange(&lock, 1))', '    ;   // 계속 쓰기 시도'], C2 = ['while (atomic_load(&lock) ||', '       atomic_exchange(&lock, 1))', '    pause();   // 읽기로만 대기'], C3 = ['my = atomic_fetch_add(&next, 1);', 'while (atomic_load(&serving) != my)', '    pause();', '/* … */  serving++;   // 해제'];
+  const tr2 = { '    ;   // 계속 쓰기 시도': '    ;   // keeps trying to write', '    pause();   // 읽기로만 대기': '    pause();   // waits by reading', '/* … */  serving++;   // 해제': '/* … */  serving++;   // release' };
+  const cl = (k, L, st, off) => L.forEach((t, i) => T(S, k + i, 1.2, 8.4 + i * 1.15, tr2[t] ? [t, tr2[t]] : t, 'cz-mono syx-code', st, { off }));
+  rect(S, 'cbg', .8, 8.1, 18.0, 5.0, 'ink', 6, 1, { r: .4 });
+  T(S, 'cn1', 13.6, 8.4, 'TAS', 'cz-mono syx-xs syx-r', 1, { off: 2 }); T(S, 'cn2', 13.6, 8.4, 'TTAS', 'cz-mono syx-xs syx-g', 2, { off: 4 }); T(S, 'cn3', 13.6, 8.4, ['티켓 락', 'ticket lock'], 'syx-xs syx-a', 4);
+  cl('l1', C1, 1, 2); cl('l2', C2, 2, 4); cl('l3', C3, 4, 0);
+  const R = 20.0;
+  T(S, 'r1', R, .6, ['모두가 exchange(쓰기)를 반복', 'everyone keeps doing exchange (a write)'], 'syx-xs syx-r', 1, { off: 2 });
+  T(S, 'r1b', R, 1.7, ['쓰려면 캐시 줄을 독점해야 해서', 'each write needs the line exclusively,'], 'syx-xs', 1, { off: 2 });
+  T(S, 'r1c', R, 2.8, ['줄이 코어 사이를 핑퐁', 'so the line ping-pongs between cores'], 'syx-xs syx-r', 1, { off: 2 });
+  T(S, 'r2', R, .6, ['먼저 읽기로만 확인', 'check with plain reads first'], 'syx-xs syx-g', 2, { off: 3 });
+  T(S, 'r2b', R, 1.7, ['모두 S 상태의 복사본을 읽어', 'everyone reads its own S copy'], 'syx-xs', 2, { off: 3 });
+  T(S, 'r2c', R, 2.8, ['풀릴 때까지 버스가 조용해요', 'the bus stays quiet until release'], 'syx-xs syx-g', 2, { off: 3 });
+  T(S, 'r3', R, .6, ['해제 순간 모두가 한꺼번에 시도', 'on release everyone rushes at once'], 'syx-xs syx-w', 3, { off: 4 });
+  T(S, 'r3b', R, 1.7, ['진 코어는 기다림을 2배씩 늘려요', 'losers double their wait each time'], 'syx-xs', 3, { off: 4 });
+  T(S, 'r3c', R, 2.8, ['지수 백오프', 'exponential backoff'], 'syx-xs syx-a', 3, { off: 4 });
+  T(S, 'r4', R, .6, ['번호표를 뽑고 차례를 기다려요', 'take a ticket and wait your turn'], 'syx-xs syx-a', 4);
+  T(S, 'r4b', R, 1.7, ['도착한 순서대로 → 공정', 'first come, first served → fair'], 'syx-xs syx-g', 4);
+  T(S, 'r4c', R, 2.8, ['리눅스 qspinlock은 각자 자기 변수에서 대기', 'Linux qspinlock: each waiter spins on its own'], 'syx-xs', 4, { w: 11.4 });
+  notesSplit(S, 'k', 15.6, [['가장 단순한 스핀락은 exchange로 1을 쓰며 0이 나올 때까지 반복 · 쓰기마다 캐시 줄이 이동해요', 'the simplest spinlock loops on exchange(1) until it sees 0 · every attempt drags the cache line over'], ['TTAS: 먼저 읽기로만 확인하고, 0으로 보일 때만 exchange · 기다리는 동안 각자 캐시에서 읽어요', 'TTAS reads first and exchanges only when the lock looks free · waiters spin in their own caches'], ['풀리는 순간 모두가 달려들면 다시 혼잡 · 진 쪽은 pause를 늘려 가며 흩어져요', 'a release still triggers a stampede · losers spread out with growing pauses'], ['티켓 락은 fetch_add로 번호표를 나눠 도착 순서대로 락을 넘겨요 · 굶는 코어가 없어요', 'a ticket lock hands out numbers with fetch_add and serves them in order · nobody starves']]);
+  fin(S, 'z', 15.6, [['스핀락의 비용은 캐시 줄을 오가는 트래픽 · 읽기로 기다리고, 한 번에 한 코어만 깨우는 게 핵심', 'a spinlock’s real cost is cache-line traffic · wait with reads and wake one core at a time', 'syx-xs syx-a'], ['x86 pause는 스핀 루프의 전력과 파이프라인 낭비를 줄여요 (ARM은 yield·wfe)', 'x86 pause cuts the power and pipeline waste of a spin loop (ARM: yield, wfe)'], ['커널은 스핀락을 쥔 동안 선점을 끄고, 아주 짧은 구간에만 써요', 'the kernel disables preemption while holding one and keeps the critical section tiny']]);
+  S.cap(1, 'TAS: 쓰기로 돌기', 'TAS: spinning on writes').cap(2, 'TTAS: 읽기로 돌기', 'TTAS: spinning on reads').cap(3, '해제 순간과 백오프', 'Release and backoff').cap(4, '티켓 락', 'Ticket locks').cap(5, '스핀락의 동작', 'How spinlocks work');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'sy-c': [
     item('sy-funcptr', '함수 포인터와 콜백', 'Function pointers and callbacks', '함수도 메모리에 있으므로 그 주소를 변수에 담아 넘길 수 있어요. 이렇게 “부를 동작”을 나중에 끼워 넣는 것이 콜백이에요.', '함수 by_age는 코드 영역의 0x401136에 있고, int (*cmp)(const void*, const void*) = by_age;는 그 주소를 담아요. qsort는 무엇을 기준으로 정렬할지 모르기 때문에 비교 함수를 콜백으로 받아 비교할 때마다 불러요(음수면 앞, 양수면 뒤). 함수 포인터 배열 ops[op](x, y)로 switch 없이 동작을 고를 수 있고, 이것이 C++ 가상 함수 표(vtable)나 리눅스 커널 file_operations의 원리예요. C에는 클로저가 없어 상태는 void *ctx로 함께 넘기고(qsort_r), 시그니처가 다른 함수를 부르면 정의되지 않은 동작이에요.', 'Functions live in memory too, so their addresses can be stored in variables and passed around; plugging in behaviour to be called later this way is a callback.', 'The function by_age sits at 0x401136 in the code section, and int (*cmp)(const void*, const void*) = by_age; stores that address. qsort doesn’t know what to sort by, so it takes a comparison function as a callback and calls it for each comparison (negative → first, positive → after). An array of function pointers, ops[op](x, y), picks behaviour without a switch; that is how C++ vtables and the Linux kernel’s file_operations work. C has no closures, so state travels as a void *ctx (qsort_r), and calling a function through a mismatched signature is undefined behaviour.', sFuncptr()),
@@ -867,6 +940,10 @@ return { css: CSSX, secs: [], add: {
   'sy-io': [
     item('sy-condvar', '조건 변수', 'Condition variables', '조건 변수는 “조건이 참이 될 때까지” 스레드를 효율적으로 재웠다가 깨우는 동기화 도구예요. 항상 mutex와 함께 써요.', '큐가 비어 있을 때 소비자가 빈 루프로 계속 확인하면 CPU만 낭비해요. cond_wait(&cv, &m)은 mutex를 놓고 잠드는 일을 원자적으로 한 번에 해서, 확인과 잠들기 사이에 신호를 놓치지 않아요. 생산자가 mutex를 잡고 항목을 넣은 뒤 cond_signal로 깨우면, 소비자는 mutex를 다시 잡은 상태로 돌아와 조건을 다시 확인하고 항목을 꺼내요. 조건은 if가 아니라 while로 확인해야 해요. 가짜 깨어남(spurious wakeup)이 있을 수 있고, 다른 소비자가 먼저 가져갔을 수도 있기 때문이에요. 기다리는 스레드를 모두 깨우려면 broadcast를 써요.', 'A condition variable lets threads sleep efficiently until a condition becomes true, then wakes them; it is always used together with a mutex.', 'If a consumer spins in a loop while the queue is empty, it only wastes CPU. cond_wait(&cv, &m) atomically releases the mutex and goes to sleep, so no signal can slip in between the check and the sleep. The producer locks the mutex, pushes an item and calls cond_signal; the consumer returns holding the mutex again, re-checks the condition and pops the item. Always check the condition in a while loop rather than an if, because spurious wakeups happen and another consumer may have taken the item first. Use broadcast to wake every waiting thread.', sCondvar())
   ]
+},
+after: {
+  'sy-stack': [item('sy-canary', '버퍼 오버플로 방어', 'Defending against buffer overflows', '스택 카나리, NX, ASLR을 겹쳐 써서 버퍼 오버플로가 코드 실행 공격으로 이어지기 어렵게 만들어요.', '스택에서 지역 배열 buf 위에는 저장된 rbp와 돌아갈 주소가 있어서, 길이 검사 없이 쓰면 이 값들까지 덮어써요. 스택 카나리는 컴파일러가 buf와 돌아갈 주소 사이에 무작위 값을 넣어 두고 함수가 돌아가기 직전에 비교하는 방법이에요. 값이 바뀌었으면 __stack_chk_fail()로 즉시 프로그램을 끝내서 덮어쓴 주소로 점프하지 못하게 해요(탄광의 카나리아처럼 먼저 이상을 알려줘요). NX(DEP)는 스택과 힙 페이지를 실행 불가로 표시해, 버퍼에 넣은 기계어로 점프해도 세그폴트가 나게 해요. ASLR은 스택·힙·공유 라이브러리·실행 파일(PIE)의 위치를 실행할 때마다 무작위로 바꿔 공격자가 점프할 주소를 짐작할 수 없게 해요. 이를 우회하려는 ROP는 이미 있는 코드 조각(가젯)을 돌아갈 주소로 이어 붙이지만, 제어 흐름 무결성(CFI)과 돌아갈 주소를 따로 저장하는 인텔 CET 섀도 스택이 막아요. gcc에서는 -fstack-protector-strong, -D_FORTIFY_SOURCE=3, -fPIE -pie, -Wl,-z,relro,-z,now로 켜요. 그래도 근본 해법은 길이를 받는 함수를 쓰거나 범위를 검사하는 언어를 쓰는 거예요.', 'Stack canaries, NX and ASLR are layered so a buffer overflow is hard to turn into code execution.', 'On the stack, the saved rbp and the return address sit just above a local array, so writing without a length check overwrites them. A stack canary is a random value the compiler places between the buffer and the return address and compares just before the function returns; if it has changed, __stack_chk_fail() aborts the program before it can jump to the overwritten address (warning first, like a canary in a coal mine). NX (DEP) marks stack and heap pages non-executable, so jumping into machine code planted in a buffer simply faults. ASLR randomizes the locations of the stack, heap, shared libraries and position-independent executables on every run, so an attacker cannot guess where to jump. Return-oriented programming tries to get around this by chaining existing code fragments (gadgets) through return addresses, which control-flow integrity (CFI) and Intel CET shadow stacks, a separate copy of return addresses, block. With gcc these protections come from -fstack-protector-strong, -D_FORTIFY_SOURCE=3, -fPIE -pie and -Wl,-z,relro,-z,now. The real cure is still to use length-taking functions or a bounds-checked language.', sCanary())],
+  'sy-spin': [item('sy-spinlock', '스핀락의 동작', 'How spinlocks work', '스핀락은 원자적 쓰기로 락을 얻을 때까지 반복해요. 진짜 비용은 캐시 줄이 코어 사이를 오가는 트래픽이라, 읽기로 기다리고 순서대로 넘기는 방식으로 다듬어요.', '가장 단순한 TAS 스핀락은 while (atomic_exchange(&lock, 1)); 처럼 1을 쓰며 이전 값이 0이 나올 때까지 반복해요. 그런데 exchange는 쓰기라 매번 캐시 줄을 독점(M 상태)해야 해서, 기다리는 코어들이 줄을 서로 빼앗으며 핑퐁하고 락을 가진 코어의 작업까지 느려져요. TTAS(test-and-test-and-set)는 먼저 일반 읽기로 lock이 0인지 확인하고 그때만 exchange를 시도해요. 기다리는 동안 각 코어는 자기 캐시의 S 상태 복사본을 읽기만 하므로 버스가 조용해요. 하지만 해제되는 순간 모든 코어가 한꺼번에 exchange를 시도해 다시 혼잡해지므로, 실패한 코어는 기다리는 시간을 2배씩 늘리는 지수 백오프로 흩어져요. 티켓 락은 fetch_add로 번호표(next)를 나눠 주고 serving이 내 번호가 될 때까지 기다리게 해서 도착한 순서대로 락을 넘겨요. 굶는 코어가 없어 공정해요. 리눅스의 qspinlock(MCS 방식)은 기다리는 코어마다 자기 변수에서 돌게 해 해제 때 한 코어만 깨워요. 스핀 루프 안에는 x86의 pause(ARM은 yield·wfe)를 넣어 전력과 파이프라인 낭비를 줄이고, 커널은 스핀락을 쥔 동안 선점을 꺼서 아주 짧은 구간에만 써요.', 'A spinlock retries an atomic write until it wins. Its real cost is cache-line traffic between cores, so good designs wait with reads and hand the lock over in order.', 'The simplest test-and-set spinlock loops on while (atomic_exchange(&lock, 1)); until the old value is 0. But exchange is a write, so each attempt needs the cache line exclusively (state M); the waiting cores keep stealing the line from one another, ping-ponging it across the chip and slowing even the lock holder. Test-and-test-and-set (TTAS) first checks with a plain read and tries the exchange only when the lock looks free; while waiting, each core reads its own shared (S) copy, so the bus stays quiet. A release still sends every waiter at the lock at once, so losers spread out with exponential backoff, doubling their wait each time. A ticket lock hands out numbers with fetch_add and makes each core wait until serving equals its ticket, granting the lock in arrival order so no core starves. Linux’s qspinlock (an MCS-style lock) has each waiter spin on its own variable, so a release wakes exactly one core. Spin loops include x86 pause (yield or wfe on ARM) to cut power and pipeline waste, and the kernel disables preemption while holding a spinlock and keeps the critical section tiny.', sSpinlock())]
 } };
 })();
 
@@ -910,6 +987,7 @@ window.UX = page([
   ].concat(XT.add['sy-io'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .sy-b .in{font-weight:800;color:var(--ink)}
 .sy-l .in{font-size:.86em;color:var(--ink);font-weight:700}
