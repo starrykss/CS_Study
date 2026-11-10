@@ -838,6 +838,130 @@ function sSdf() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'gxx-xs', i + 1, { off: i + 2 }));
+const gray = (S, k, x, y, w, h, v, st, off) => { S.el(k, { x, y, w, h, css: `background:rgb(${v},${v},${v});border-radius:.15em`, s: st ? hid() : {} }); vis(S, k, st, off); };
+function sGamma() {
+  const S = scene({ id: 'gx-gamma', steps: 5, per: 1.7 });
+  const F = fr(0, 1, 0, 1, 2.6, 12.6, 2.4, 12.4);
+  hl(S, 'fx', F.L, F.R, F.B, 'ink-3', 0, { w: .08 }); vl(S, 'fy', F.L, F.T, F.B, 'ink-3', 0, { w: .08 });
+  mline(S, 'id', F, [0, 0], [1, 1], { st: 0, color: 'ink-3', h: .06, dash: 1 });
+  mplot(S, 'dc', F, t => [t, Math.pow(t, 2.2)], 0, 1, { st: 0, color: 'danger', h: .12, n: 40 });
+  mplot(S, 'ec', F, t => [t, Math.pow(t, 1 / 2.2)], 0, 1, { st: 1, color: 'ok', h: .12, n: 40, off: 3 });
+  T(S, 'dcl', 6.4, .2, ['화면: 빛 = 값^2.2', 'display: L = v^2.2'], 'gxx-xs gxx-r', 0);
+  T(S, 'ecl', 6.4, 1.2, ['인코딩: 값 = 빛^(1/2.2)', 'encode: v = L^(1/2.2)'], 'gxx-xs gxx-g', 1, { off: 3 });
+  mpt(S, 'p5', F, [.5, Math.pow(.5, 2.2)], 0, C.badf, .22); mline(S, 'p5v', F, [.5, 0], [.5, .218], { st: 0, color: 'danger', h: .05, dash: 1 }); mline(S, 'p5h', F, [0, .218], [.5, .218], { st: 0, color: 'danger', h: .05, dash: 1 });
+  T(S, 'p5l', F.X(.5) + .4, F.Y(.218) - .3, ['128 → 빛 22%', '128 → 22% light'], 'cz-mono gxx-xs gxx-r', 0);
+  T(S, 'xl', F.R - 6, F.B + .2, ['저장된 값 (0~1)', 'stored value (0–1)'], 'gxx-xs', 0, { w: 6, css: 'text-align:right' }); T(S, 'yl', F.L + .3, F.T - 1.0, ['나오는 빛', 'light out'], 'gxx-xs', 0);
+  const R = 14.6, SW = 2.0;
+  T(S, 's0', R, .8, ['빛의 양이 고른 8단계', '8 steps even in light'], 'gxx-xs', 2, { off: 3 });
+  for (let i = 0; i < 8; i++) gray(S, 'sa' + i, R + i * SW, 1.9, SW - .1, 1.6, Math.round(255 * Math.pow(i / 7, 1 / 2.2)), 2, 3);
+  T(S, 's1', R, 4.0, ['값이 고른 8단계 (감마 인코딩)', '8 steps even in value (gamma-encoded)'], 'gxx-xs', 2, { off: 3 });
+  for (let i = 0; i < 8; i++) gray(S, 'sb' + i, R + i * SW, 5.1, SW - .1, 1.6, Math.round(255 * i / 7), 2, 3);
+  T(S, 's2', R, 7.2, ['눈은 어두운 쪽 차이에 민감 → 8비트를 어두운 쪽에 더 배분', 'eyes notice dark differences → spend more of 8 bits on darks'], 'gxx-xs gxx-g', 2, { off: 3, w: 16.4 });
+  const SWX = [[R, 0, ['검정', 'black']], [R + 4.2, 255, ['흰색', 'white']], [R + 8.4, 128, ['sRGB 평균 128 ✗', 'sRGB avg 128 ✗']], [R + 12.6, 186, ['선형 평균 186 ✓', 'linear avg 186 ✓']]];
+  T(S, 'b0', R, .8, ['검정과 흰색을 반반 섞으면?', 'mix black and white 50/50?'], 'gxx-xs gxx-a', 3, { off: 4 });
+  SWX.forEach(([x, v, l], i) => { gray(S, 'bw' + i, x, 1.9, 3.8, 2.6, v, 3, 4); T(S, 'bl' + i, x - .2, 4.7, l, 'cz-tc gxx-xs ' + (i === 2 ? 'gxx-r' : i === 3 ? 'gxx-g' : ''), 3, { w: 4.2, off: 4 }); });
+  T(S, 'b5', R, 6.4, ['값끼리 평균하면 빛은 22%뿐이라 너무 어두워요', 'averaging encoded values yields only 22% light: too dark'], 'gxx-xs', 3, { off: 4, w: 16.4 });
+  T(S, 'b6', R, 7.5, ['선형으로 풀고 → 평균 0.5 → 다시 인코딩', 'decode to linear → average 0.5 → re-encode'], 'gxx-xs gxx-g', 3, { off: 4, w: 16.4 });
+  const PL = [['sRGB 텍스처', 'sRGB texture'], ['^2.2 풀기', 'decode ^2.2'], ['조명·블렌딩', 'light & blend'], ['^(1/2.2)', 'encode ^(1/2.2)'], ['화면', 'display']];
+  PL.forEach((l, i) => { const x = R + (i % 3) * 5.6, y = i < 3 ? 1.6 : 4.4; box2(S, 'pl' + i, x, y, 5.0, 1.4, l, i === 2 ? 'accent' : 'line', 4, { pct: 20 }); });
+  ar(S, 'pa0', [R + 5.0, 2.3], [R + 5.6, 2.3], 'ink-2', 4, { h: .08 }); ar(S, 'pa1', [R + 10.6, 2.3], [R + 11.2, 2.3], 'ink-2', 4, { h: .08 }); ar(S, 'pa2', [R + 13.7, 3.0], [R + 2.5, 4.4], 'ink-2', 4, { h: .08 }); ar(S, 'pa3', [R + 5.0, 5.1], [R + 5.6, 5.1], 'ink-2', 4, { h: .08 });
+  T(S, 'pn', R, 6.6, ['GPU가 sRGB 텍스처·프레임버퍼 형식으로 자동 변환', 'GPUs convert automatically with sRGB texture and framebuffer formats'], 'gxx-xs gxx-g', 4, { w: 16.4 });
+  T(S, 'pn2', R, 7.7, ['노멀 맵 같은 데이터 텍스처는 풀면 안 돼요', 'data textures such as normal maps must not be decoded'], 'gxx-xs gxx-w', 4, { w: 16.4 });
+  notesSplit(S, 'k', 15.6, [['화면은 저장된 값을 약 2.2제곱해서 빛으로 내보내요 · 값 128(0.5)은 빛 22%예요', 'displays turn stored values into light by roughly the 2.2 power · 128 (0.5) emits 22% light'], ['그래서 저장할 때는 1/2.2제곱으로 눌러 둬요 · 눈이 민감한 어두운 쪽에 비트를 더 쓰는 셈이에요', 'so images are stored with the 1/2.2 power, spending more bits on the darks our eyes notice'], ['인코딩된 값끼리 섞으면 결과가 너무 어두워요 · 검정과 흰색의 정확한 반반은 186이에요', 'mixing encoded values comes out too dark · the true half of black and white is 186'], ['계산은 선형 빛으로 풀어서 하고 마지막에 다시 인코딩해요 · 데이터 텍스처는 예외예요', 'decode to linear light, compute, and encode at the end, except for data textures']]);
+  fin(S, 'z', 15.6, [['감마 보정: 저장값과 빛 사이의 비선형 곡선을 이해하고 계산은 선형 공간에서 하기', 'gamma correction means respecting the non-linear curve between stored values and light, and computing in linear space', 'gxx-xs gxx-a'], ['틀리면 블렌딩·안티앨리어싱 가장자리가 어둡고, 조명이 너무 강하게 꺾여 보여요', 'getting it wrong darkens blends and antialiased edges and makes lighting fall off too harshly'], ['sRGB 곡선은 정확히는 어두운 끝이 직선인 구간 함수 · 2.2제곱은 근사예요', 'the exact sRGB curve is piecewise with a linear toe; the 2.2 power is an approximation']]);
+  S.cap(1, '화면의 감마 곡선', 'The display’s gamma curve').cap(2, '왜 눌러서 저장하나', 'Why values are encoded').cap(3, '잘못된 섞기', 'Blending done wrong').cap(4, '선형 작업 흐름', 'The linear workflow').cap(5, '감마 보정', 'Gamma correction');
+  return S;
+}
+
+function sGimbal() {
+  const S = scene({ id: 'gx-gimbal', steps: 5, per: 1.7 });
+  const axes = (k, cx, cy, roll, st, off, lock) => {
+    ar(S, k + 'y', [cx, cy], [cx, cy - 4.2], 'accent', st, { h: .14, off }); T(S, k + 'yl', lock ? cx - 3.8 : cx + .3, cy - 4.6, ['yaw 축', 'yaw axis'], 'gxx-xs gxx-a', st, { off, w: 3.5, css: lock ? 'text-align:right' : '' });
+    ar(S, k + 'p', [cx, cy], [cx - 3.0, cy + 2.2], 'ok', st, { h: .14, off }); T(S, k + 'pl', cx - 5.6, cy + 2.3, ['pitch 축', 'pitch axis'], 'gxx-xs gxx-g', st, { off });
+    if (!lock) { ar(S, k + 'r', [cx, cy], [cx + 4.4, cy], 'warn', st, { h: .14, off }); T(S, k + 'rl', cx + 2.0, cy + .3, ['roll 축 (기수)', 'roll axis (nose)'], 'gxx-xs gxx-w', st, { off }); }
+    else { ar(S, k + 'r', [cx + .25, cy], [cx + .25, cy - 4.2], 'danger', st, { h: .14, off }); T(S, k + 'rl', cx + .6, cy - 3.6, ['roll 축도 여기로', 'roll axis lands here too'], 'gxx-xs gxx-r', st, { off }); } };
+  T(S, 'h0', 1, .2, ['평소: 세 축이 서로 수직', 'normally: three perpendicular axes'], 'gxx-xs gxx-a', 0);
+  axes('a', 6.4, 6.2, 0, 0, 0, false);
+  box2(S, 'body', 5.2, 5.6, 2.4, 1.2, '', 'line', 0, { pct: 22 });
+  T(S, 'h1', 16.4, .2, ['pitch = 90° (기수를 위로)', 'pitch = 90° (nose straight up)'], 'gxx-xs gxx-r', 1);
+  axes('b', 22.0, 6.2, 0, 1, 0, true);
+  box2(S, 'body2', 21.4, 4.6, 1.2, 2.4, '', 'line', 1, { pct: 22 });
+  T(S, 'h1b', 16.4, 9.4, ['yaw와 roll이 같은 축 → 자유도 하나를 잃어요', 'yaw and roll share one axis → one degree of freedom is lost'], 'gxx-xs gxx-r', 1, { w: 14.8 });
+  const EQ = [['yaw 30°, pitch 90°, roll 0°', 'yaw 0°, pitch 90°, roll −30°'], ['yaw 20°, pitch 90°, roll 10°', 'yaw 0°, pitch 90°, roll −10°']];
+  T(S, 'e0', 1, 10.6, ['pitch 90°에서는 서로 다른 각도가 같은 자세가 돼요', 'at pitch 90°, different angles give the same orientation'], 'gxx-xs gxx-a', 2, { off: 3 });
+  EQ.forEach(([a, b], i) => { T(S, 'ea' + i, 1, 11.7 + i * 1.1, a, 'cz-mono gxx-xs', 2, { off: 3 }); T(S, 'eq' + i, 11.4, 11.7 + i * 1.1, '=', 'cz-mono gxx-xs gxx-r', 2, { off: 3 }); T(S, 'eb' + i, 12.4, 11.7 + i * 1.1, b, 'cz-mono gxx-xs', 2, { off: 3 }); });
+  T(S, 'e3', 23.4, 11.7, ['yaw − roll만 의미가 있어요', 'only yaw − roll matters'], 'gxx-xs gxx-r', 2, { off: 3 });
+  T(S, 'm0', 1, 10.6, ['애니메이션에서는 이 근처를 지날 때 물체가 갑자기 휙 돌아요', 'animations passing near it make objects suddenly flip around'], 'gxx-xs gxx-w', 3, { off: 4 });
+  T(S, 'm1', 1, 11.7, ['아폴로 11호의 관성 측정 장치도 3축 짐벌이라 이 자세를 피해야 했어요', 'Apollo 11’s three-gimbal IMU also had to avoid this attitude'], 'gxx-xs', 3, { off: 4 });
+  T(S, 'q0', 1, 10.6, ['해결: 자세는 쿼터니언(또는 회전 행렬)으로 저장하고 회전을 곱해 쌓기', 'fix: store orientation as a quaternion (or matrix) and compose rotations by multiplying'], 'gxx-xs gxx-g', 4);
+  T(S, 'q1', 1, 11.7, ['오일러 각은 사람이 입력·표시할 때만 변환해서 써요', 'convert to Euler angles only for human input and display'], 'gxx-xs', 4);
+  T(S, 'q2', 1, 12.8, 'q = (w, x, y, z) · q_new = q_delta × q', 'cz-mono gxx-xs gxx-a', 4);
+  notesSplit(S, 'k', 15.6, [['오일러 각은 yaw·pitch·roll 세 축을 차례로 돌려 자세를 나타내요 · 평소엔 세 축이 서로 수직이에요', 'Euler angles describe orientation by rotating about yaw, pitch and roll in turn, normally three perpendicular axes'], ['pitch가 90°가 되면 roll 축이 yaw 축과 겹쳐요 · 두 각을 바꿔도 같은 방향으로만 돌아요', 'at a pitch of 90° the roll axis lines up with the yaw axis, so both angles rotate about the same direction'], ['그래서 서로 다른 각도 조합이 같은 자세가 되고, 잃어버린 방향으로는 바로 돌 수 없어요', 'different angle combinations then mean the same orientation, and the lost direction is unreachable directly'], ['자세를 쿼터니언으로 저장하고 회전을 곱해 쌓으면 짐벌 락이 생기지 않아요', 'storing orientation as a quaternion and composing rotations by multiplication avoids gimbal lock']]);
+  fin(S, 'z', 15.6, [['짐벌 락: 오일러 각에서 두 회전축이 겹쳐 자유도 하나를 잃는 현상', 'gimbal lock is the loss of one degree of freedom when two Euler rotation axes line up', 'gxx-xs gxx-a'], ['각도 값의 문제이지 실제 회전이 불가능한 건 아니에요 · 표현을 바꾸면 사라져요', 'it is a problem of the angle representation, not of rotation itself, and disappears with another representation'], ['게임 엔진의 Transform도 내부적으로 쿼터니언을 쓰고, 인스펙터에서만 각도로 보여 줘요', 'game-engine transforms store quaternions internally and show angles only in the inspector']]);
+  S.cap(1, '세 개의 회전축', 'Three rotation axes').cap(2, '두 축이 겹치면', 'When two axes line up').cap(3, '같은 자세, 다른 각도', 'Same pose, different angles').cap(4, '실제로 생기는 문제', 'Where it bites').cap(5, '짐벌 락', 'Gimbal lock');
+  return S;
+}
+
+function sTexFilter() {
+  const S = scene({ id: 'gx-filter', steps: 5, per: 1.7 });
+  const TX = [[10, 70, 30, 90], [80, 20, 60, 15], [25, 85, 10, 55], [65, 40, 95, 30]], CS = .9;
+  T(S, 'n0', 1, .2, ['4×4 텍스처를 8×8 픽셀로 확대', 'a 4×4 texture magnified to 8×8 pixels'], 'gxx-xs gxx-a', 0);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { rect(S, `nn${i}${j}`, 1 + j * CS, 1.6 + i * CS, CS - .04, CS - .04, 'accent', TX[i >> 1][j >> 1], 0, { r: 0 }); }
+  T(S, 'nl', 1, 9.0, ['최근접: 계단처럼 각져요', 'nearest: blocky'], 'gxx-xs gxx-r', 0);
+  const bil = (u, v) => { u = Math.max(0, Math.min(3, u)); v = Math.max(0, Math.min(3, v)); const i0 = Math.min(2, Math.floor(v)), j0 = Math.min(2, Math.floor(u)), fu = u - j0, fv = v - i0; return TX[i0][j0] * (1 - fu) * (1 - fv) + TX[i0][j0 + 1] * fu * (1 - fv) + TX[i0 + 1][j0] * (1 - fu) * fv + TX[i0 + 1][j0 + 1] * fu * fv; };
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) rect(S, `bl${i}${j}`, 9.4 + j * CS, 1.6 + i * CS, CS - .04, CS - .04, 'accent', Math.round(bil((j - .5) / 2, (i - .5) / 2)), 1, { r: 0 });
+  T(S, 'bll', 9.4, 9.0, ['쌍선형: 부드러워요', 'bilinear: smooth'], 'gxx-xs gxx-g', 1);
+  const BX = 19.6, BY = 1.6, BS = 3.2;
+  [[0, 0, 'A'], [1, 0, 'B'], [0, 1, 'C'], [1, 1, 'D']].forEach(([a, b, l], i) => cell(S, 'q' + i, BX + a * BS, BY + b * BS, BS - .1, BS - .1, l, 'accent', [20, 60, 40, 80][i], 1, { off: 3 }));
+  pt(S, 'sp', BX + BS * .8, BY + BS * 1.1, 1, C.badf, .25, { off: 3 });
+  T(S, 'w0', BX, 8.4, ['샘플 위치 u = 0.3, v = 0.6', 'sample at u = 0.3, v = 0.6'], 'cz-mono gxx-xs', 2, { off: 3 });
+  T(S, 'w1', BX, 9.5, 'A·0.28 + B·0.12 + C·0.42 + D·0.18', 'cz-mono gxx-xs gxx-a', 2, { off: 3 });
+  T(S, 'w2', BX, 10.6, ['가까운 텍셀일수록 가중치가 커요', 'nearer texels weigh more'], 'gxx-xs', 2, { off: 3 });
+  const MP = [[8, 0], [4, 1], [2, 2], [1, 3]]; let mx = BX;
+  MP.forEach(([n, l], i) => { const s = n * .5; rect(S, 'mp' + i, mx, 1.6, s, s, i === 2 || i === 3 ? 'warn' : 'line', i === 2 || i === 3 ? 40 : 16, 3, { r: .1, off: 4 }); T(S, 'mpl' + i, mx - .2, 1.6 + s + .2, 'L' + l, 'cz-tc cz-mono gxx-xs', 3, { w: s + .4, off: 4 }); mx += s + .5; });
+  T(S, 't0', BX, 7.0, ['멀어서 텍셀 여러 개가 한 픽셀에 → 밉맵', 'far away, many texels per pixel → mipmaps'], 'gxx-xs', 3, { off: 4, w: 11.6 });
+  T(S, 't1', BX, 8.1, ['삼선형: 단계 2.3 = L2 70% + L3 30%', 'trilinear: level 2.3 = 70% L2 + 30% L3'], 'cz-mono gxx-xs gxx-w', 3, { off: 4 });
+  T(S, 't2', BX, 9.2, ['밉 경계에서 선이 보이지 않게 섞어요', 'blends levels so mip seams vanish'], 'gxx-xs', 3, { off: 4 });
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 7; j++) rect(S, `ag${i}${j}`, BX + j * 1.6, 1.4 + i * 1.0, 1.55, .95, 'line', (i + j) % 2 ? 8 : 18, 4, { r: 0 });
+  S.el('fp', { x: BX + .6, y: 2.9, w: 9.6, h: 1.5, css: 'border-radius:50%;border:.14em solid var(--danger)', s: hid() }); vis(S, 'fp', 4);
+  for (let i = 0; i < 4; i++) pt(S, 'as' + i, BX + 2.0 + i * 2.3, 3.65, 4, C.badf, .2);
+  T(S, 'a0', BX, 7.0, ['비스듬한 바닥: 픽셀이 텍스처 위에서 길쭉한 영역', 'oblique floors: a pixel covers a long thin area'], 'gxx-xs', 4, { w: 11.6 });
+  T(S, 'a1', BX, 8.1, ['비등방성: 긴 방향을 따라 여러 번(최대 16×) 샘플', 'anisotropic: several samples (up to 16×) along it'], 'gxx-xs gxx-g', 4, { w: 11.6 });
+  T(S, 'a2', BX, 9.2, ['멀리 있는 바닥도 흐려지지 않고 선명해요', 'distant floors stay sharp instead of blurring'], 'gxx-xs', 4, { w: 11.6 });
+  notesSplit(S, 'k', 15.6, [['텍스처를 크게 확대할 때 가장 가까운 텍셀만 쓰면 계단처럼 각져요', 'magnifying a texture with only the nearest texel looks blocky'], ['쌍선형 필터는 이웃 텍셀 넷을 거리에 따라 섞어요 · 가까울수록 가중치가 커요', 'bilinear filtering blends the four neighbouring texels by distance, nearer ones weighing more'], ['축소될 때는 밉맵 단계를 고르고, 삼선형은 두 단계 사이도 섞어 경계를 없애요', 'when minified, a mip level is chosen, and trilinear also blends between two levels to hide seams'], ['비스듬히 보이는 면은 픽셀 영역이 길쭉해서, 비등방성 필터가 그 방향으로 여러 번 샘플해요', 'surfaces seen at a grazing angle cover long footprints, so anisotropic filtering samples along them']]);
+  fin(S, 'z', 15.6, [['텍스처 필터링: 픽셀 하나에 해당하는 텍스처 영역의 색을 텍셀들을 섞어 정하는 방법', 'texture filtering decides a pixel’s colour by blending the texels its footprint covers', 'gxx-xs gxx-a'], ['최근접(픽셀 아트용) < 쌍선형 < 삼선형 < 비등방성 순으로 품질과 비용이 올라가요', 'nearest (for pixel art) < bilinear < trilinear < anisotropic in quality and cost'], ['GPU의 텍스처 유닛이 하드웨어로 해 줘서, 셰이더에서는 샘플러 설정만 고르면 돼요', 'GPU texture units do it in hardware; shaders just choose sampler settings']]);
+  S.cap(1, '최근접 필터', 'Nearest filtering').cap(2, '쌍선형 필터', 'Bilinear filtering').cap(3, '삼선형과 밉맵', 'Trilinear and mipmaps').cap(4, '비등방성 필터', 'Anisotropic filtering').cap(5, '텍스처 필터링', 'Texture filtering');
+  return S;
+}
+
+function sDrawCall() {
+  const S = scene({ id: 'gx-drawcall', steps: 5, per: 1.7 });
+  T(S, 'h0', 1, .2, ['나무 10,000그루를 하나씩 그리면', 'drawing 10,000 trees one at a time'], 'gxx-xs gxx-a', 0);
+  T(S, 'cl', 1, 1.6, 'CPU', 'cz-mono gxx-xs', 0); T(S, 'gl', 1, 3.2, 'GPU', 'cz-mono gxx-xs', 0);
+  for (let i = 0; i < 24; i++) { rect(S, 'c' + i, 3.4 + i * 1.1, 1.4, .95, 1.1, 'danger', 40, 0, { r: .1, off: 2 }); if (i % 3 === 2) rect(S, 'g' + i, 3.4 + i * 1.1, 3.0, .7, 1.1, 'ok', 40, 0, { r: .1, off: 2 }); }
+  T(S, 'n0', 1, 4.8, ['드로우 콜마다 상태 설정·검증·명령 전송 → CPU가 병목, GPU는 놀아요', 'every draw call sets state, validates and submits → the CPU bottlenecks while the GPU idles'], 'gxx-xs gxx-r', 1, { off: 2 });
+  rect(S, 'c1', 3.4, 1.4, 2.0, 1.1, 'ok', 40, 2, { r: .1 }); rect(S, 'g1x', 5.6, 3.0, 20.0, 1.1, 'ok', 45, 2, { r: .1 });
+  T(S, 'c1l', 5.8, 1.5, ['드로우 콜 1번', 'one draw call'], 'gxx-xs gxx-g', 2); T(S, 'g1l', 6.0, 3.1, ['GPU가 메시를 10,000번 반복', 'the GPU repeats the mesh 10,000 times'], 'gxx-xs', 2);
+  T(S, 'ib', 1, 4.8, ['인스턴싱: 메시 하나 + 인스턴스 버퍼', 'instancing: one mesh + an instance buffer'], 'gxx-xs gxx-a', 2, { off: 3 });
+  [['#', 'pos', 'rot', 'scale'], ['0', '(3, 0, 8)', '40°', '1.1'], ['1', '(7, 0, 2)', '95°', '0.9'], ['…', '…', '…', '…']].forEach((r, i) => r.forEach((v, j) => T(S, `it${i}${j}`, 1 + [0, 1.6, 6.4, 9.6][j], 6.0 + i * 1.0, v, 'cz-mono gxx-xs ' + (i ? '' : 'gxx-a'), 2, { off: 3 })));
+  T(S, 'b0', 1, 4.8, ['재질이 달라 인스턴싱이 안 될 때', 'when materials differ and instancing does not apply'], 'gxx-xs gxx-a', 3, { off: 4 });
+  const D1 = ['A', 'B', 'A', 'C', 'B', 'A', 'C', 'B'], D2 = [...D1].sort(), col = { A: 'accent', B: 'ok', C: 'warn' };
+  T(S, 'b1', 1, 6.1, ['그대로', 'as submitted'], 'gxx-xs', 3, { off: 4 }); T(S, 'b2', 1, 7.6, ['재질별 정렬', 'sorted by material'], 'gxx-xs gxx-g', 3, { off: 4 });
+  D1.forEach((m, i) => cell(S, 'd1' + i, 6.0 + i * 1.6, 5.9, 1.4, 1.1, m, col[m], 30, 3, { off: 4 })); D2.forEach((m, i) => cell(S, 'd2' + i, 6.0 + i * 1.6, 7.4, 1.4, 1.1, m, col[m], 30, 3, { off: 4 }));
+  T(S, 'b3', 19.4, 6.1, ['상태 변경 7번', '7 state changes'], 'gxx-xs gxx-r', 3, { off: 4 }); T(S, 'b4', 19.4, 7.6, ['상태 변경 2번', '2 state changes'], 'gxx-xs gxx-g', 3, { off: 4 });
+  T(S, 'b5', 1, 9.0, ['정적 배칭(메시 합치기)과 텍스처 아틀라스로 같은 재질을 늘려요', 'static batching (merged meshes) and texture atlases let more objects share a material'], 'gxx-xs', 3, { off: 4 });
+  T(S, 'm0', 1, 4.8, ['최신 API와 GPU 주도 렌더링', 'modern APIs and GPU-driven rendering'], 'gxx-xs gxx-a', 4);
+  T(S, 'm1', 1, 6.0, ['Vulkan·DX12·Metal: 호출당 비용이 작고 여러 스레드가 명령을 동시에 기록', 'Vulkan, DX12 and Metal: cheaper calls, with commands recorded on many threads'], 'gxx-xs', 4);
+  T(S, 'm2', 1, 7.1, ['간접 그리기: GPU가 컬링하고 그릴 목록을 스스로 만들어 한 번에 실행', 'indirect draws: the GPU culls and builds its own draw list, executed in one go'], 'gxx-xs', 4);
+  T(S, 'm3', 1, 8.2, ['그래도 측정이 먼저 · 프로파일러에서 드로우 콜 수와 CPU 프레임 시간을 확인', 'measure first: check draw counts and CPU frame time in a profiler'], 'gxx-xs gxx-w', 4);
+  notesSplit(S, 'k', 15.6, [['드로우 콜마다 CPU는 상태를 설정하고 검증해 명령을 보내요 · 수만 번이면 CPU가 먼저 한계예요', 'each draw call makes the CPU set state, validate and submit commands · tens of thousands of them exhaust the CPU first'], ['같은 메시는 인스턴싱으로 한 번에 · 위치·회전만 다른 버퍼를 넘기면 GPU가 반복해서 그려요', 'identical meshes go out in one instanced call, with a buffer of per-instance transforms the GPU repeats'], ['재질이 다르면 재질별로 정렬해 상태 변경을 줄이고, 합칠 수 있는 메시는 합쳐요', 'with different materials, sort by material to cut state changes and merge meshes where possible'], ['최신 API는 호출 비용을 줄이고, GPU가 스스로 그릴 목록을 만드는 방식까지 와 있어요', 'modern APIs cut per-call cost, and GPU-driven pipelines now build their own draw lists']]);
+  fin(S, 'z', 15.6, [['드로우 콜: CPU가 GPU에게 “이 메시를 이 상태로 그려라”라고 보내는 명령 · 개수가 성능을 좌우해요', 'a draw call is the CPU telling the GPU to draw a mesh with given state, and their count drives performance', 'gxx-xs gxx-a'], ['인스턴싱, 배칭, 재질 정렬, 아틀라스, 컬링·LOD가 모두 호출 수를 줄이는 도구예요', 'instancing, batching, material sorting, atlases, culling and LOD all reduce the number of calls'], ['모바일은 CPU 여유가 적어 드로우 콜을 수백 개 단위로 관리하기도 해요', 'on mobile, with little CPU headroom, budgets are often a few hundred draw calls']]);
+  S.cap(1, 'CPU가 병목', 'The CPU bottleneck').cap(2, '인스턴싱', 'Instancing').cap(3, '재질 정렬과 배칭', 'Sorting and batching').cap(4, '최신 API', 'Modern APIs').cap(5, '드로우 콜', 'Draw calls');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'gx-rast': [
     item('gx-clip', '클리핑', 'Clipping', '화면(보이는 영역) 밖으로 나간 도형 부분을 잘라내, 래스터화할 부분만 남기는 단계예요.', '삼각형의 일부가 화면 밖에 있으면 그대로 래스터화하는 건 낭비이고, 카메라 뒤에 있는 점은 원근 나눗셈을 깨뜨려요. 서덜랜드-호지먼 알고리즘은 경계 하나씩(왼쪽, 위, 오른쪽, 아래) 차례로 잘라요. 안쪽 점은 남기고, 경계를 가로지르는 변에는 교점을 새로 추가해요. 결과는 화면 안의 볼록 다각형이고, 한 꼭짓점에서 부채꼴로 나눠 삼각형 여러 개로 래스터라이저에 넘겨요. GPU는 투영 뒤 클립 공간(−w ≤ x, y, z ≤ w)에서 자르고, 가드 밴드를 둬서 실제로 잘라야 하는 경우를 줄여요.', 'Clipping cuts away the parts of a primitive outside the visible region so that only what will be rasterized remains.', 'Rasterizing a triangle partly off-screen wastes work, and vertices behind the camera break the perspective divide. The Sutherland–Hodgman algorithm clips against one boundary at a time (left, top, right, bottom), keeping inside points and adding an intersection point wherever an edge crosses. The result is a convex polygon inside the screen, split into a fan of triangles from one vertex for the rasterizer. GPUs clip in clip space (−w ≤ x, y, z ≤ w) after projection, and a guard band reduces how often real clipping is needed.', sClip()),
@@ -852,6 +976,12 @@ return { css: CSSX, secs: [], add: {
   'gx-adv': [
     item('gx-sdf', 'SDF와 레이 마칭', 'SDFs and ray marching', '부호 거리 함수(SDF)는 공간의 한 점에서 가장 가까운 표면까지의 거리를 알려 줘요. 레이 마칭은 그 거리만큼씩 성큼성큼 전진하며 표면을 찾아 그리는 방법이에요.', '원의 SDF는 |p − c| − r이고, 여러 도형은 min으로 합쳐요. 광선 위 현재 점에서 SDF 값 d 안에는 아무 표면도 없으니 한 번에 d만큼 전진해도 안전해요(구 추적). 표면 근처에서는 걸음이 점점 작아지고, d가 ε보다 작아지면 맞은 것으로 봐요. 식 몇 줄로 부드럽게 녹아 붙은 모양(smooth min), 무한 반복(mod), 값싼 부드러운 그림자를 만들 수 있어 셰이더토이 데모, SDF 글꼴 렌더링, UI 도형, 연기 같은 볼류메트릭 효과에 쓰여요.', 'A signed distance function (SDF) tells you how far a point is from the nearest surface; ray marching finds and draws surfaces by repeatedly stepping forward by that distance.', 'A circle’s SDF is |p − c| − r, and several shapes combine with min. Since no surface lies within the SDF value d of the current point on a ray, it is safe to jump forward by d (sphere tracing). Steps shrink near a surface, and once d falls below ε it counts as a hit. A few lines of math give smoothly blended shapes (smooth min), infinite repetition (mod) and cheap soft shadows, which is why the technique appears in Shadertoy demos, SDF font rendering, UI shapes and volumetric effects such as smoke.', sSdf())
   ]
+},
+after: {
+  'gx-color': [item('gx-gamma', '감마 보정', 'Gamma correction', '화면은 저장된 값을 약 2.2제곱해서 빛으로 내보내요. 그래서 색을 섞거나 조명을 계산할 때는 선형 빛으로 풀어서 하고 마지막에 다시 인코딩해요.', '모니터는 저장된 값 v를 약 v^2.2만큼의 빛으로 내보내서, 값 128(0.5)은 최대 밝기의 약 22%예요. 그래서 이미지는 저장할 때 빛을 1/2.2제곱으로 눌러 둬요(감마 인코딩). 이렇게 하면 사람 눈이 민감한 어두운 쪽에 8비트의 단계를 더 많이 쓰게 돼서, 빛이 고른 8단계는 대부분 밝게 몰려 보이고 값이 고른 8단계가 오히려 고르게 보여요. 문제는 인코딩된 값끼리 산술 연산을 할 때예요. 검정(0)과 흰색(255)을 반반 섞어 128을 만들면 실제 빛은 22%뿐이라 너무 어두워요. 정확히 하려면 두 값을 선형 빛(0과 1)으로 풀어 평균 0.5를 낸 뒤 다시 인코딩해 약 186을 써야 해요. 같은 이유로 감마를 무시하면 블렌딩, 블러, 이미지 축소, 안티앨리어싱 가장자리가 어둡게 뭉개지고 조명 감쇠가 너무 급하게 보여요. 선형 작업 흐름은 sRGB 텍스처를 읽을 때 풀고(^2.2), 조명과 블렌딩을 선형으로 계산하고, 화면에 낼 때 다시 인코딩(^(1/2.2))하는 거예요. GPU는 sRGB 텍스처 형식과 sRGB 프레임버퍼로 이 변환을 하드웨어에서 해 주고, 노멀 맵·러프니스 맵처럼 색이 아닌 데이터 텍스처는 풀면 안 되니 선형 형식으로 읽어요. 실제 sRGB 곡선은 어두운 끝이 직선인 구간 함수이고, 2.2제곱은 그 근사예요.', 'Displays turn stored values into light by roughly the 2.2 power, so blending and lighting are done after decoding to linear light, then re-encoded.', 'A monitor emits roughly v^2.2 of its maximum light for a stored value v, so 128 (0.5) produces about 22% brightness. Images are therefore stored with light compressed by the 1/2.2 power (gamma encoding), which spends more of the 8-bit steps on the dark tones our eyes discriminate best: eight steps even in light look bunched toward bright, while eight steps even in value look even. Trouble starts when arithmetic is done on encoded values. Averaging black (0) and white (255) to 128 gives only 22% light, far too dark; the correct mix decodes both to linear light (0 and 1), averages to 0.5 and re-encodes to about 186. Ignoring gamma likewise darkens and muddies blends, blurs, downscaled images and antialiased edges, and makes lighting fall off too steeply. The linear workflow decodes sRGB textures on read (^2.2), computes lighting and blending linearly, and encodes on output (^(1/2.2)). GPUs do this in hardware with sRGB texture formats and sRGB framebuffers, while non-colour data textures such as normal and roughness maps must be read as linear, not decoded. The exact sRGB curve is piecewise with a linear toe; the 2.2 power is an approximation.', sGamma())],
+  'gx-slerp': [item('gx-gimbal', '짐벌 락', 'Gimbal lock', '오일러 각에서 pitch가 90°가 되면 yaw와 roll의 회전축이 겹쳐 자유도 하나를 잃어요. 자세를 쿼터니언으로 저장하면 생기지 않아요.', '오일러 각은 자세를 yaw(수직축), pitch(날개축), roll(기수축) 세 번의 회전을 정해진 순서로 적용해 나타내요. 평소에는 세 축이 서로 수직이라 어느 방향으로든 돌릴 수 있어요. 그런데 pitch가 90°가 되어 기수가 위를 향하면 roll 축이 yaw 축과 겹쳐요. 이제 yaw를 바꾸든 roll을 바꾸든 같은 축으로만 돌고, 사라진 방향으로는 바로 돌 수 없어요. 실제로 R = Ry(yaw)·Rx(90°)·Rz(roll)을 계산하면 (yaw 30°, roll 0°)와 (yaw 0°, roll −30°)가 정확히 같은 행렬이고, yaw − roll 값만 의미가 있어요. 그래서 이 근처를 지나는 애니메이션이나 카메라는 갑자기 휙 뒤집히거나 보간이 엉뚱한 길로 돌아가요. 아폴로 11호의 관성 측정 장치도 3축 짐벌이라 잠금 근처의 자세를 피해야 했어요. 짐벌 락은 회전 자체의 한계가 아니라 각도 세 개라는 표현 방식의 문제라서, 자세를 쿼터니언(w, x, y, z)이나 회전 행렬로 저장하고 새 회전을 곱해 쌓으면 사라져요. 오일러 각은 사람이 입력하거나 화면에 보여 줄 때만 변환해서 써요. 유니티·언리얼의 Transform도 내부적으로 쿼터니언을 쓰고 인스펙터에서만 각도로 보여 줘요.', 'With Euler angles, a pitch of 90° lines the yaw and roll axes up and one degree of freedom is lost; storing orientation as a quaternion avoids it.', 'Euler angles describe an orientation as three rotations applied in a fixed order: yaw (vertical axis), pitch (wing axis) and roll (nose axis). Normally the three axes are perpendicular and any direction is reachable. When pitch reaches 90° and the nose points straight up, however, the roll axis lines up with the yaw axis: changing either angle now rotates about the same axis, and the lost direction cannot be reached directly. Computing R = Ry(yaw)·Rx(90°)·Rz(roll) shows that (yaw 30°, roll 0°) and (yaw 0°, roll −30°) give exactly the same matrix; only yaw − roll matters. Animations and cameras passing near this pose therefore flip suddenly or interpolate along strange paths, and Apollo 11’s three-gimbal inertial measurement unit had to avoid such attitudes. Gimbal lock is a flaw of the three-angle representation, not of rotation itself, so it disappears when orientation is stored as a quaternion (w, x, y, z) or rotation matrix and new rotations are composed by multiplication, converting to Euler angles only for human input and display. Unity and Unreal transforms store quaternions internally and show angles only in the inspector.', sGimbal())],
+  'gx-mipmap': [item('gx-filter', '텍스처 필터링', 'Texture filtering', '픽셀 하나가 덮는 텍스처 영역의 색을 텍셀들을 섞어 정하는 방법이에요. 최근접, 쌍선형, 삼선형, 비등방성 순으로 품질과 비용이 올라가요.', '텍스처를 화면에 입힐 때 픽셀 중심이 텍셀 사이 어딘가에 떨어지므로 색을 어떻게 정할지가 필터링이에요. 확대할 때 가장 가까운 텍셀 하나만 쓰는 최근접 필터는 계단처럼 각지게 보여서 픽셀 아트에만 써요. 쌍선형 필터는 이웃 텍셀 넷을 거리에 비례해 섞어요. 샘플 위치가 u = 0.3, v = 0.6이면 가중치는 A 0.28, B 0.12, C 0.42, D 0.18로, 가까운 텍셀일수록 크게 반영돼 부드러워요. 멀어서 축소될 때는 텍셀 수십 개가 한 픽셀에 들어오므로 미리 줄여 둔 밉맵 단계를 골라요. 이때 단계가 바뀌는 경계에서 선이 보이지 않도록 두 단계 사이까지 섞는 것이 삼선형 필터예요(단계 2.3이면 L2 70% + L3 30%). 비스듬히 보이는 바닥은 픽셀 하나가 텍스처 위에서 길쭉한 영역을 덮어서, 짧은 쪽 기준으로 고르면 흐리고 긴 쪽 기준이면 깨져요. 비등방성 필터는 긴 방향을 따라 여러 번(최대 16×) 샘플해 멀리 있는 바닥도 선명하게 유지해요. 이 모든 계산은 GPU의 텍스처 유닛이 하드웨어로 하고, 셰이더나 엔진에서는 샘플러의 필터 모드와 비등방성 수준만 정하면 돼요.', 'Deciding a pixel’s colour by blending the texels its footprint covers; nearest, bilinear, trilinear and anisotropic rise in quality and cost.', 'When a texture is mapped onto the screen, pixel centres land somewhere between texels, and filtering decides the resulting colour. Nearest filtering takes the single closest texel and looks blocky when magnified, so it suits only pixel art. Bilinear filtering blends the four neighbouring texels in proportion to distance: at u = 0.3, v = 0.6 the weights are A 0.28, B 0.12, C 0.42 and D 0.18, so nearer texels count more and the result is smooth. When a distant surface is minified, dozens of texels fall into one pixel, so a pre-shrunk mipmap level is chosen; trilinear filtering also blends between two levels so no seam shows where the level changes (level 2.3 means 70% L2 + 30% L3). On a floor seen at a grazing angle a pixel covers a long, thin footprint, so choosing by the short side aliases and by the long side blurs; anisotropic filtering takes several samples (up to 16×) along the long axis to keep distant floors sharp. GPU texture units do all of this in hardware, so shaders and engines only choose the sampler’s filter mode and anisotropy level.', sTexFilter())],
+  'gx-cull': [item('gx-drawcall', '드로우 콜', 'Draw calls', 'CPU가 GPU에게 “이 메시를 이 상태로 그려라”라고 보내는 명령이에요. 호출마다 CPU 비용이 있어서, 개수를 줄이는 게 성능의 핵심이에요.', '드로우 콜 하나마다 CPU와 드라이버는 셰이더·텍스처·버퍼 같은 상태를 설정하고 검증한 뒤 GPU 명령 버퍼에 기록해요. 나무 10,000그루를 하나씩 그리면 이 준비가 10,000번 반복돼 CPU가 먼저 한계에 닿고, GPU는 다음 명령을 기다리며 놀아요(CPU 병목). 같은 메시를 여러 번 그릴 때는 인스턴싱을 써요. 메시는 한 번만 넘기고 위치·회전·크기 같은 인스턴스별 값을 버퍼로 주면, 드로우 콜 한 번으로 GPU가 10,000번 반복해 그려요. 재질이 서로 다르면 인스턴싱이 안 되니, 그리기 순서를 재질별로 정렬해 상태 변경을 줄여요. A B A C B A C B 순서로 그리면 상태가 7번 바뀌지만, A A A B B B C C로 정렬하면 2번이면 돼요. 움직이지 않는 물체는 메시를 미리 합치고(정적 배칭), 여러 텍스처를 한 장에 모은 아틀라스로 같은 재질을 쓰는 물체를 늘려요. 컬링과 LOD도 그릴 대상 자체를 줄여요. Vulkan, DirectX 12, Metal 같은 최신 API는 호출당 비용이 작고 여러 스레드가 명령을 동시에 기록할 수 있으며, GPU 주도 렌더링에서는 GPU가 스스로 컬링하고 그릴 목록을 만들어 간접 그리기 한 번으로 실행해요. 모바일은 CPU 여유가 적어 드로우 콜 수를 수백 개 단위로 관리하기도 하고, 최적화 전에는 프로파일러로 실제 병목을 먼저 확인해요.', 'A command from the CPU telling the GPU to draw a mesh with given state. Every call costs CPU time, so reducing their number is central to performance.', 'For every draw call the CPU and driver set and validate state such as shaders, textures and buffers, then record commands for the GPU. Drawing 10,000 trees one at a time repeats that work 10,000 times, so the CPU hits its limit first while the GPU waits for commands (a CPU bottleneck). Identical meshes call for instancing: send the mesh once with a buffer of per-instance values such as position, rotation and scale, and one draw call makes the GPU draw it 10,000 times. When materials differ and instancing does not apply, sort draws by material to cut state changes: the order A B A C B A C B switches state seven times, while A A A B B B C C needs two. Static objects can be merged ahead of time (static batching), and texture atlases put many textures on one sheet so more objects share a material; culling and LOD shrink the set of things to draw at all. Modern APIs such as Vulkan, DirectX 12 and Metal make calls cheaper and let many threads record commands at once, and GPU-driven rendering has the GPU cull and build its own draw list, executed with a single indirect draw. Mobile games, with little CPU headroom, often budget draw calls in the hundreds, and a profiler should confirm the real bottleneck before optimizing.', sDrawCall())]
 } };
 })();
 
@@ -898,6 +1028,7 @@ window.UX = page([
   ].concat(XT.add['gx-adv'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .gx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .gx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
