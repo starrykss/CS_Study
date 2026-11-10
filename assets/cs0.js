@@ -275,7 +275,7 @@ html[lang=en] .cz .zk,html:not([lang=en]) .cz .ze{display:none}
 (function () {
   if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
   const PAGES = ['calc', 'linalg', 'prob', 'numer', 'phys', 'info'];
-  const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱʲˣˢᵀᵇᵉᵏᵐᵖᶜᴺʰᵃᵈᶠᵍˡᵒʳᵗᵘᵛʷʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴼᴾᴿᵁⱽᵂ', SUPB = '0123456789+−=()nijxsTbekmpcNhadfglortuvwyzABDEGHIJKLMOPRUVW';
+  const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱʲˣˢᵀᵇᵉᵏᵐᵖᶜᴺʰᵃᵈᶠᵍˡᵒʳᵗᵘᵛʷʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴼᴾᴿᵁⱽᵂᵠᵝᵞᵅ', SUPB = '0123456789+−=()nijxsTbekmpcNhadfglortuvwyzABDEGHIJKLMOPRUVWφβγα';
   const SUB = '₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₒₓₕₖₗₘₙₚₛₜᵢᵣᵤᵥⱼᵦᵧᵨᵩᵪ', SUBB = '0123456789+−=()aeoxhklmnpstiruvjβyρφχ';
   const set = s => new Set(s.split(' '));
   const FN = set('sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh sech csch coth log ln lg exp lim max min sup inf arg argmax argmin rms det dim rank nullity span diag tr Tr ker Im Re Col Row Nul Var Cov Corr Cor gcd lcm mod deg sgn sign erf proj adj softmax');
