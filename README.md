@@ -11,9 +11,9 @@
 
 코드 뒤의 원리를 움직임으로 봐요
 
-컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 35개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
+컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 36개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 35" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-35-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1555" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1555-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 36" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-36-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1585" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1585-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -27,7 +27,7 @@
 
 **[https://starrykss.github.io/CS_Study/](https://starrykss.github.io/CS_Study/)**
 
-포털에는 도감 35개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
+포털에는 도감 36개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
 
 ```
 통합 포털  →  도감 카드 선택  →  과목 페이지 (주제별 개념 카드)  →  카드를 눌러 크게 보기
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 34개와 UI/UX 도감, 개념 1555개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 35개와 UI/UX 도감, 개념 1585개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -92,6 +92,7 @@ JavaScript와 TypeScript, CSS, 그리고 React·Next.js·Tailwind·NestJS까지,
 | **TypeScript**<br><sub>TypeScript</sub> | 타입 기초, 함수와 객체, 제네릭과 유틸리티 타입, 고급 타입, 설정과 도구 | 32 | [열기](https://starrykss.github.io/CS_Study/typescript/) | [`typescript/`](./typescript) |
 | **CSS**<br><sub>CSS</sub> | 선택자와 캐스케이드, 박스와 흐름, 레이아웃, 시각 표현, 아키텍처와 성능 | 34 | [열기](https://starrykss.github.io/CS_Study/css/) | [`css/`](./css) |
 | **React**<br><sub>React</sub> | JSX와 컴포넌트, 상태와 렌더링, 이펙트와 훅, 상태 관리와 구조, 최신 React | 33 | [열기](https://starrykss.github.io/CS_Study/react/) | [`react/`](./react) |
+| **Next.js**<br><sub>Next.js</sub> | 라우팅, 렌더링 전략, 데이터, 최적화, 빌드와 운영 | 30 | [열기](https://starrykss.github.io/CS_Study/nextjs/) | [`nextjs/`](./nextjs) |
 
 ### 데이터·인프라 · Data & infrastructure
 
@@ -164,7 +165,7 @@ computer-networks/  programming-languages/  compilers/  programming-paradigms/
 design-patterns/  software-engineering/  databases/  data-engineering/  security/
 distributed-systems/  devops-cloud/  web/  computer-graphics/  mobile-development/  ai-ml/
 calculus/  linear-algebra/  probability-statistics/  numerical-analysis/  general-physics/
-javascript/  typescript/  css/  react/
+javascript/  typescript/  css/  react/  nextjs/
 ```
 
 ## 내 컴퓨터에서 보기

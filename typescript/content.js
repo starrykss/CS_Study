@@ -299,7 +299,7 @@ function sOptional() {
     ],
     notes: [['속성 이름 뒤의 ?는 선택적 속성 · 생략해도 되고, 타입에 undefined가 포함돼요', 'a ? after a property name makes it optional: it may be omitted and its type includes undefined'], ['readonly 속성은 만든 뒤 다시 대입할 수 없어요 · 검사는 컴파일 시점에만 해요', 'a readonly property cannot be reassigned after creation; the check is compile-time only'], ['선택적 속성을 그냥 쓰면 오류 · ?.와 ??로 없을 때를 처리해요', 'using an optional property directly is an error; handle absence with ?. and ??'], ['Readonly<Post>는 모든 속성을 한 번에 readonly로 만들어요 · 안쪽 객체까지는 아니에요', 'Readonly<Post> makes every property readonly at once, though not nested objects']],
     fin: [['?는 “없을 수 있음”, readonly는 “바꿀 수 없음”을 타입에 적는 방법', '? records “may be missing” and readonly records “cannot change” in the type', 'tsx-xs tsx-a'], ['exactOptionalPropertyTypes를 켜면 “없음”과 “undefined를 넣음”을 구분해요', 'exactOptionalPropertyTypes distinguishes a missing property from one set to undefined'], ['런타임에도 막으려면 Object.freeze를 함께 써요', 'pair it with Object.freeze to enforce it at run time']],
-    caps: [['선택적 속성', 'Optional properties'], ['readonly', 'readonly'], ['안전하게 꺼내기', 'Reading safely'], ['Readonly<T>', 'Readonly<T>'], ['선택적 속성과 readonly', 'Optional and readonly properties']]
+    caps: [['선택적 속성', 'Optional properties'], ['readonly', 'readonly'], ['안전하게 꺼내기', 'Reading safely'], ['Readonly 유틸리티', 'The Readonly utility'], ['선택적 속성과 readonly', 'Optional and readonly properties']]
   });
 }
 /* ===== TypeScript · 2. functions and object types ===== */
