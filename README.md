@@ -13,7 +13,7 @@
 
 컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 31개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1344" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1344-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1357" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1357-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 30개와 UI/UX 도감, 개념 1344개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 30개와 UI/UX 도감, 개념 1357개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -122,7 +122,7 @@
 | **선형대수학**<br><sub>Linear algebra</sub> | 연립방정식, 행렬, 행렬식, 벡터 공간, 선형변환, 고윳값, 직교성, SVD | 40 | [열기](https://starrykss.github.io/CS_Study/linear-algebra/) | [`linear-algebra/`](./linear-algebra) |
 | **확률·통계**<br><sub>Probability & statistics</sub> | 확률, 베이즈, 확률분포, 중심극한정리, 추정, 가설검정, 회귀, A/B 테스트 | 34 | [열기](https://starrykss.github.io/CS_Study/probability-statistics/) | [`probability-statistics/`](./probability-statistics) |
 | **수치해석**<br><sub>Numerical analysis</sub> | 부동소수점 오차, 근 찾기, 선형 시스템, 보간과 스플라인, 수치 적분, 미분방정식 풀이 | 32 | [열기](https://starrykss.github.io/CS_Study/numerical-analysis/) | [`numerical-analysis/`](./numerical-analysis) |
-| **일반물리학**<br><sub>General physics</sub> | 운동, 힘, 에너지, 회전, 진동, 파동, 열, 전자기, 광학, 현대물리 | 42 | [열기](https://starrykss.github.io/CS_Study/general-physics/) | [`general-physics/`](./general-physics) |
+| **일반물리학**<br><sub>General physics</sub> | 운동, 힘, 에너지, 회전, 진동, 파동, 열, 전자기, 광학, 현대물리 | 55 | [열기](https://starrykss.github.io/CS_Study/general-physics/) | [`general-physics/`](./general-physics) |
 
 ## 이렇게 볼 수 있어요
 
