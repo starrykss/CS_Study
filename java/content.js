@@ -711,7 +711,7 @@ function sInterface() {
       RW.forEach((r, i) => r.forEach((t, j) => T(S, 'c' + i + '_' + j, TX[j], .95 + i * .75, t, (j ? 'cz-mono ' : '') + 'jvx-tiny', 1, { w: TW[j] })));
       flow(S, 'dm', [['class A', 'accent', 19.0, 2.6], ['X, Y', 'ink-3', 22.1, 2.4], [['hello() 충돌', 'hello() clash'], 'danger', 25.0, 6.2]], 4.4, 2);
       lbl(S, 'l2', 19.0, 5.6, ['규칙: 클래스 메서드가 이김 → 더 구체적인 인터페이스가 이김 → 아니면 직접 재정의하고 X.super.hello()로 고르기', 'rules: the class wins; then the more specific interface; otherwise override and pick with X.super.hello()'], 'r', 2, { w: 12.4 });
-      T(S, 'fi', 19.0, 7.8, ['Shape s = () -> 2.0;   // area()만 구현', 'Shape s = () -> 2.0;   // implements area()'], 'cz-mono jvx-xs jvx-g', 3, { w: 12.4 });
+      T(S, 'fi', 19.0, 7.8, ['Shape s = () -> 2.0;   // area()만 구현', 'Shape s = () -> 2.0;   // area()'], 'cz-mono jvx-xs jvx-g', 3, { w: 12.4 });
       lbl(S, 'l3', 19.0, 8.5, ['추상 메서드가 하나면 함수형 인터페이스 → 람다로 구현 가능', 'with one abstract method it is functional and can be implemented by a lambda'], 'g', 3, { w: 12.4 });
       lbl(S, 'l4', 19.0, 9.9, ['인터페이스로 계약을, 공통 상태가 꼭 필요할 때만 추상 클래스로', 'use interfaces for contracts and abstract classes only when shared state is needed'], 'w', 4, { w: 12.4 });
       lbl(S, 'm2', 1, 8.1, ['자바 8의 default 메서드로 인터페이스에 기능을 추가해도 기존 구현이 안 깨져요', 'Java 8 default methods add features to interfaces without breaking existing implementations'], 'w', 2, { w: 16.0 });
