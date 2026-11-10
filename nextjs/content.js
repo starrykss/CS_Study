@@ -106,7 +106,7 @@ const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1,
 
 
 /* ===== shared helpers for language / framework pages ===== */
-const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'nxx-xs', i + 1, { off: i + 2 }));
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'nxx-xs nxx-wr', i + 1, { off: i + 2, w: 30.4 }));
 const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono nxx-code ' + (o.cls || ''), st, { off }));
 const CLS = { a: 'nxx-a', g: 'nxx-g', r: 'nxx-r', w: 'nxx-w', m: 'cz-mono', s: 'nxx-s' };
 const clsOf = c => (c || '').split(' ').filter(Boolean).map(t => CLS[t] || t).join(' ');
@@ -147,6 +147,7 @@ const CSSX = `
 .nxx-c .in{font-size:.6em;font-weight:700}
 .nxx-c2 .in{font-size:.5em;font-weight:700}
 .nxx-cw .in{font-size:.6em;white-space:pre;color:var(--ink);font-weight:600}
+.nxx-wr .in{white-space:normal!important}
 .nxx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
 .nxx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
 /* ===== Next.js · 1. routing ===== */
@@ -416,7 +417,7 @@ function sPpr() {
 
 function sBoundary() {
   return CW('next-boundary', {
-    code: ['// page.tsx (서버)', 'import LikeButton from "./LikeButton";', 'const post = await getPost(id);', ['<LikeButton postId={post.id} />  // ✓ 값', '<LikeButton postId={post.id} />  // ✓ data'], ['<LikeButton onLike={() => …} />  // ✗ 함수', '<LikeButton onLike={() => …} />  // ✗ function'], '// LikeButton.tsx', ['"use client";  // 이 파일 아래 import 전부', '"use client";  // and everything it imports'], ['import "server-only";  // 서버 전용 표시', 'import "server-only";  // server-only marker']],
+    code: [['// page.tsx (서버)', '// page.tsx (server)'], 'import LikeButton from "./LikeButton";', 'const post = await getPost(id);', ['<LikeButton postId={post.id} />  // ✓ 값', '<LikeButton postId={post.id} />  // ✓ data'], ['<LikeButton onLike={() => …} />  // ✗ 함수', '<LikeButton onLike={() => …} />  // ✗ function'], '// LikeButton.tsx', ['"use client";  // 이 파일 아래 import 전부', '"use client";  // and everything it imports'], ['import "server-only";  // 서버 전용 표시', 'import "server-only";  // server-only marker']],
     hl: [[0, 3], [3, 2, 'warn'], [5, 2, 'warn'], [7, 1, 'ok']],
     draw: (S) => {
       const X = 19.4;
@@ -777,4 +778,5 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 })();

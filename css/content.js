@@ -106,7 +106,7 @@ const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1,
 
 
 /* ===== shared helpers for language / framework pages ===== */
-const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'csx-xs', i + 1, { off: i + 2 }));
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'csx-xs csx-wr', i + 1, { off: i + 2, w: 30.4 }));
 const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono csx-code ' + (o.cls || ''), st, { off }));
 const CLS = { a: 'csx-a', g: 'csx-g', r: 'csx-r', w: 'csx-w', m: 'cz-mono', s: 'csx-s' };
 const clsOf = c => (c || '').split(' ').filter(Boolean).map(t => CLS[t] || t).join(' ');
@@ -147,6 +147,7 @@ const CSSX = `
 .csx-c .in{font-size:.6em;font-weight:700}
 .csx-c2 .in{font-size:.5em;font-weight:700}
 .csx-cw .in{font-size:.6em;white-space:pre;color:var(--ink);font-weight:600}
+.csx-wr .in{white-space:normal!important}
 .csx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
 .csx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
 /* ===== CSS · 1. selectors and the cascade ===== */
@@ -968,4 +969,5 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 })();

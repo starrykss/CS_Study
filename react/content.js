@@ -106,7 +106,7 @@ const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1,
 
 
 /* ===== shared helpers for language / framework pages ===== */
-const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'rcx-xs', i + 1, { off: i + 2 }));
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'rcx-xs rcx-wr', i + 1, { off: i + 2, w: 30.4 }));
 const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono rcx-code ' + (o.cls || ''), st, { off }));
 const CLS = { a: 'rcx-a', g: 'rcx-g', r: 'rcx-r', w: 'rcx-w', m: 'cz-mono', s: 'rcx-s' };
 const clsOf = c => (c || '').split(' ').filter(Boolean).map(t => CLS[t] || t).join(' ');
@@ -147,6 +147,7 @@ const CSSX = `
 .rcx-c .in{font-size:.6em;font-weight:700}
 .rcx-c2 .in{font-size:.5em;font-weight:700}
 .rcx-cw .in{font-size:.6em;white-space:pre;color:var(--ink);font-weight:600}
+.rcx-wr .in{white-space:normal!important}
 .rcx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
 .rcx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
 /* ===== React · 1. JSX and components ===== */
@@ -439,7 +440,7 @@ const timeline = (S, p, X, y, labels, runs, st, off) => {
 
 function sUseEffect() {
   return CW('react-useeffect', {
-    code: ['useEffect(() => {', '  document.title = `${count}개`;', ['});              // 매 렌더 후', '});              // after every render'], 'useEffect(() => {', '  connect(roomId);', ['}, [roomId]);     // roomId가 바뀔 때', '}, [roomId]);     // when roomId changes'], 'useEffect(() => {', '  track("page_view");', ['}, []);           // 처음 한 번', '}, []);           // once, on mount']],
+    code: ['useEffect(() => {', ['  document.title = `${count}개`;', '  document.title = `${count} items`;'], ['});              // 매 렌더 후', '});              // after every render'], 'useEffect(() => {', '  connect(roomId);', ['}, [roomId]);     // roomId가 바뀔 때', '}, [roomId]);     // when roomId changes'], 'useEffect(() => {', '  track("page_view");', ['}, []);           // 처음 한 번', '}, []);           // once, on mount']],
     hl: [[0, 3], [3, 3, 'ok'], [6, 3, 'warn'], null],
     draw: (S) => {
       const X = 19.4, L = ['a', 'a', 'b', 'b'].map((r, i) => 'R' + (i + 1) + ' ' + r);
@@ -843,4 +844,5 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 })();
