@@ -161,7 +161,7 @@ function sMalloc() {
   T(S, 'r3', 16, 10.3, ['남은 2칸은 너무 작아 쓰기 어려운 조각', 'the 2 left over are a hard-to-use sliver'], 'sy-xs sy-r', 3);
   T(S, 'r4', 16, 11.9, ['이웃한 빈 블록을 하나로 병합', 'adjacent free blocks merge into one'], 'sy-xs sy-g', 4);
   T(S, 'r5', 1, 15.8, ['블록 앞 헤더에 크기·사용 여부를 기록 → free(p)는 크기를 몰라도 돼요', 'a header before each block records its size and status → free(p) needs no size'], 'sy-xs', 5);
-  T(S, 'r6', 1, 17.2, ['glibc ptmalloc, jemalloc, tcmalloc, mimalloc: 크기별 풀과 스레드별 캐시로 빠르고 단편화를 줄여요', 'glibc’s ptmalloc, jemalloc, tcmalloc and mimalloc use size classes and per-thread caches for speed and less fragmentation'], 'sy-xs', 5);
+  T(S, 'r6', 1, 17.2, ['glibc ptmalloc, jemalloc, tcmalloc, mimalloc: 크기별 풀과 스레드별 캐시로 빠르고 단편화를 줄여요', 'ptmalloc, jemalloc, tcmalloc and mimalloc use size classes and per-thread caches for speed'], 'sy-xs', 5);
   S.cap(1, 'malloc은 힙의 빈 공간을 잘라 주소를 돌려줘요', 'malloc carves space from the heap and returns its address')
     .cap(2, 'free하면 그 자리가 빈 블록이 되고', 'free turns the block back into free space')
     .cap(3, '새 요청은 맞는 빈 블록을 잘라 써요', 'A new request is cut from a free block that fits')
@@ -183,7 +183,7 @@ function sMembugs() {
     .cap(2, '해제 후 사용: 반환한 메모리를 다시 건드려요', 'Use after free: touching memory you already gave back')
     .cap(3, '이중 해제: 같은 블록을 두 번 반환해요', 'Double free: returning the same block twice')
     .cap(4, '댕글링 포인터: 이미 사라진 대상을 가리켜요', 'Dangling pointer: pointing at something already gone')
-    .cap(5, '대형 C/C++ 코드의 심각한 보안 버그 약 70%가 메모리 안전성 문제', 'About 70% of serious security bugs in big C/C++ codebases are memory-safety bugs');
+    .cap(5, '대형 C/C++ 코드의 심각한 보안 버그 약 70%가 메모리 안전성 문제', 'About 70% of serious C/C++ security bugs are memory-safety bugs');
   return S;
 }
 function sStack() {
@@ -619,6 +619,257 @@ function sSpin() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'syx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono syx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono syx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c syx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono syx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c syx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'syx-s syx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono syx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono syx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono syx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono syx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono syx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'syx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'syx-xs', 5));
+
+
+const CSSX = `
+.syx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.syx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.syx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.syx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.syx-r .in{color:var(--danger);font-weight:800}
+.syx-g .in{color:var(--ok);font-weight:800}
+.syx-a .in{color:var(--accent);font-weight:800}
+.syx-w .in{color:var(--warn);font-weight:800}
+.syx-c .in{font-size:.6em;font-weight:700}
+.syx-c2 .in{font-size:.5em;font-weight:700}
+.syx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.syx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'syx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+
+/* ================= C ================= */
+function sFuncptr() {
+  const S = scene({ id: 'sy-funcptr', steps: 5, per: 1.6 });
+  T(S, 'mt', 1, .2, ['메모리', 'memory'], 'syx-xs syx-a', 0);
+  rect(S, 'code', 1, 1.2, 9.4, 4.4, 'ink-3', 8, 0, { r: .3 }); T(S, 'codel', 1.3, 1.3, 'code (.text)', 'cz-mono syx-tiny', 0);
+  [['by_age · 0x401136', 'ok'], ['by_name · 0x401150', 'line'], ['main · 0x4011a0', 'line']].forEach(([t, c], i) => box2(S, 'fn' + i, 1.4, 2.1 + i * 1.15, 8.6, .95, t, c, 0, { pct: c === 'ok' ? 30 : 20 }));
+  rect(S, 'stk', 1, 6.2, 9.4, 1.9, 'ink-3', 8, 0, { r: .3 }); T(S, 'stkl', 1.3, 6.3, 'stack', 'cz-mono syx-tiny', 0);
+  box2(S, 'cmp', 1.4, 7.0, 8.6, .95, 'cmp = 0x401136', 'accent', 1, { pct: 30 });
+  elb(S, 'cmpa', [[1.35, 7.48], [.6, 7.48], [.6, 2.58], [1.35, 2.58]], 'accent', 1, { h: .08 });
+  code(S, 'cd', 11.6, 1.2, 19.4, ['int by_age(const void *a, const void *b) {', '  return ((P*)a)->age - ((P*)b)->age;', '}', 'int (*cmp)(const void*, const void*) = by_age;', 'qsort(people, n, sizeof(P), cmp);'], [[3, 1], [4, 2]], { hoff: 3 });
+  T(S, 'qs', 11.6, 8.6, ['qsort가 비교할 때마다 cmp를 불러요: 음수면 앞, 양수면 뒤', 'qsort calls cmp for every comparison: negative → first, positive → after'], 'syx-xs syx-a', 2);
+  T(S, 'opsl', 1, 8.7, ['함수 포인터 배열', 'array of function pointers'], 'syx-tiny syx-a', 3);
+  ['ops[0] → add', 'ops[1] → sub', 'ops[2] → mul'].forEach((t, i) => box2(S, 'op' + i, 1, 9.4 + i * 1.1, 9.4, .95, t, i === 1 ? 'warn' : 'line', 3, { pct: i === 1 ? 35 : 20 }));
+  T(S, 'opc', 11.6, 9.8, 'int r = ops[op](x, y);   // op = 1 → sub', 'cz-mono syx-xs', 3);
+  T(S, 'opn', 11.6, 10.9, ['switch 없이 동작 고르기 → C++ 가상 함수 표(vtable), 리눅스 file_operations', 'pick behaviour without a switch → C++ vtables, Linux file_operations'], 'syx-tiny', 3);
+  stepT(S, 'k', 1, 12.8, [['함수도 메모리(코드 영역)에 있어요 · 함수 포인터는 그 주소를 담는 변수예요', 'functions live in memory too (the code section) · a function pointer holds that address'], ['qsort는 비교 방법을 몰라요 → 비교 함수를 콜백으로 넘겨받아 불러요', 'qsort doesn’t know how to compare → it takes a comparison function as a callback'], ['함수 포인터 배열로 동작을 골라요: 가상 함수 표(vtable)의 원리', 'an array of function pointers picks the behaviour: the idea behind vtables'], ['C엔 클로저가 없어서 상태는 void *ctx로 함께 넘겨요 (qsort_r)', 'C has no closures, so state travels alongside as a void *ctx (qsort_r)']], 'syx-xs', 5);
+  T(S, 'k4b', 1, 13.9, ['시그니처가 다른 함수를 포인터로 부르면 정의되지 않은 동작이에요', 'calling through a pointer with the wrong signature is undefined behaviour'], 'syx-xs syx-r', 4, { off: 5 });
+  fin(S, 'z', 12.8, [['함수 포인터: 함수의 주소를 값처럼 저장하고 넘겨서, 부를 동작을 나중에 끼워 넣는 도구', 'function pointers pass a function’s address around like a value, so behaviour can be plugged in', 'syx-xs syx-a'], ['콜백, 이벤트 핸들러, 플러그인, 상태 기계, 가상 함수가 모두 이 원리예요', 'callbacks, event handlers, plug-ins, state machines and virtual functions all build on it']]);
+  S.cap(1, '함수의 주소', 'A function’s address').cap(2, '콜백으로 넘기기', 'Passing it as a callback').cap(3, '함수 포인터 표', 'A table of function pointers').cap(4, '상태와 주의점', 'State and pitfalls').cap(5, '함수 포인터와 콜백', 'Function pointers and callbacks');
+  return S;
+}
+function sAsan() {
+  const S = scene({ id: 'sy-asan', steps: 5, per: 1.6 });
+  code(S, 'cd', 1, .9, 16, ['char *buf = malloc(10);', ["buf[10] = 'x';   // 한 칸 넘침", "buf[10] = 'x';   // one past the end"]], [[1, 1]], { hoff: 2 });
+  const CW = .7, X = i => 1 + i * CW, RY = 5.1;
+  const kind = i => i < 8 ? 'rz' : i < 18 ? 'buf' : i < 24 ? 'pad' : 'rz';
+  for (let i = 0; i < 40; i++) {
+    const k = kind(i), early = i >= 8 && i < 26;
+    const c1 = i < 18 ? 'ok' : 'ink-3', c2 = k === 'buf' ? 'ok' : k === 'pad' ? 'warn' : 'danger';
+    box2(S, 'c' + i, X(i), RY, CW - .08, .9, '', early ? c1 : c2, early ? 1 : 2, { pct: 30 });
+    if (early && c1 !== c2) tsets(S, 'c' + i, [[2, c2, 30]]);
+  }
+  tsets(S, 'c18', [[1, 'danger', 60], [2, 'warn', 30], [4, 'danger', 70], [5, 'warn', 30]]);
+  T(S, 'lb', X(8), 4.35, 'buf (10B)', 'cz-mono syx-tiny syx-g', 1);
+  T(S, 'ln', X(18), 4.35, ['다른 객체', 'another object'], 'syx-tiny', 1, { off: 2 });
+  T(S, 'lr0', X(0), 4.35, ['레드존', 'redzone'], 'syx-tiny syx-r', 2); T(S, 'lp', X(18), 4.35, 'pad', 'cz-mono syx-tiny syx-w', 2); T(S, 'lr1', X(24), 4.35, ['레드존', 'redzone'], 'syx-tiny syx-r', 2);
+  T(S, 'mk', X(18) - .6, 6.15, '▲ buf[10]', 'cz-mono syx-tiny syx-r', 1);
+  T(S, 'm1', X(21), 6.15, ['조용히 덮어씀 → 나중에 엉뚱한 곳에서 터져요', 'silently overwritten → it crashes later, somewhere else'], 'syx-xs syx-r', 1, { off: 2 });
+  [['fa', 'danger'], ['00', 'ok'], ['02', 'warn'], ['fa', 'danger'], ['fa', 'danger']].forEach(([t, c], j) => { box2(S, 'sh' + j, X(j * 8) + .05, 7.9, 8 * CW - .18, 1, t, c, 3, { pct: 35 }); seg(S, 'sv' + j, [X(j * 8) + 2.8, 6.05], [X(j * 8) + 2.8, 7.85], 3, 'ink-3', .05, { dash: 1 }); });
+  T(S, 'leg', 1, 9.1, ['섀도 메모리(8바이트당 1바이트) · 00 = 8바이트 모두 사용 가능 · 02 = 앞 2바이트만 · fa = 레드존', 'shadow memory (1 byte per 8) · 00 = all 8 bytes usable · 02 = first 2 only · fa = redzone'], 'syx-tiny syx-a', 3);
+  tsets(S, 'sh2', [[4, 'danger', 50], [5, 'warn', 35]]);
+  T(S, 'chk', 1, 10.0, 'shadow = *((addr >> 3) + OFFSET);   if (shadow && (addr & 7) >= shadow) report();', 'cz-mono syx-tiny syx-a', 4);
+  box2(S, 'rep', 1, 10.9, 23, 1.1, 'ERROR: AddressSanitizer: heap-buffer-overflow · WRITE of size 1', 'danger', 4, { pct: 25 });
+  stepT(S, 'k', 1, 12.6, [['한 칸 넘친 쓰기가 옆 객체를 조용히 망가뜨려요 · 보통은 바로 안 죽어요', 'the one-past-the-end write quietly corrupts the neighbour · usually nothing crashes yet'], ['ASan의 malloc은 할당 앞뒤에 접근 금지 영역(레드존)을 둬요', 'ASan’s malloc surrounds each allocation with forbidden redzones'], ['메모리 8바이트마다 섀도 1바이트로 “몇 바이트까지 써도 되는지” 기록해요', 'one shadow byte per 8 bytes records how many of them may be used'], ['컴파일러가 모든 읽기·쓰기 앞에 검사를 넣어요 → buf[10]은 02 칸의 3번째 바이트라 바로 보고', 'the compiler puts a check before every load and store → buf[10] is byte 3 of a “02” chunk, reported at once']]);
+  fin(S, 'z', 14.0, [['AddressSanitizer: 레드존과 섀도 메모리로 범위 밖 접근·해제 후 사용·이중 해제를 바로 잡아요', 'AddressSanitizer catches out-of-bounds access, use-after-free and double free on the spot', 'syx-xs syx-a'], ['-fsanitize=address로 빌드 · 약 2배 느려서 테스트·CI용 · UBSan·TSan도 같은 방식이에요', 'build with -fsanitize=address · about 2× slower, so use it in tests and CI · UBSan and TSan work similarly']]);
+  S.cap(1, '조용한 덮어쓰기', 'A silent overwrite').cap(2, '레드존', 'Redzones').cap(3, '섀도 메모리', 'Shadow memory').cap(4, '접근마다 검사', 'A check on every access').cap(5, 'AddressSanitizer', 'AddressSanitizer');
+  return S;
+}
+
+/* ================= build / debug ================= */
+function sGdb() {
+  const S = scene({ id: 'sy-gdb', steps: 5, per: 1.6 });
+  code(S, 'dis', 1, 1.2, 15.6, ['0x401126:  55        push rbp', '0x401127:  48 89 e5  mov  rbp, rsp', '0x40112a:  89 7d fc  mov  [rbp-4], edi', '0x40112d:  8b 45 fc  mov  eax, [rbp-4]', '0x401130:  0f af c0  imul eax, eax'], [[2, 1]], { hoff: 5 });
+  T(S, 'bl', 1, 8.9, ['0x40112a의 첫 바이트', 'first byte at 0x40112a'], 'syx-tiny syx-a', 1);
+  box2(S, 'byte', 6.6, 8.6, 2.4, 1.1, '', 'warn', 1, { pct: 30 }); ver(S, 'bv', 6.6, 8.9, [[1, 'CC'], [4, '89'], [5, 'CC']], 'cz-tc cz-mono syx-xs', 2.4);
+  ver(S, 'bn', 9.4, 8.9, [[1, ['원래 값 89 저장', 'original 89 saved']], [4, ['89 복구 → 한 단계 → CC', 'restore 89 → step → CC']]], 'syx-tiny');
+  ar(S, 'a1', [20.4, 2.55], [20.4, 8.75], 'warn', 1, { h: .1, off: 2 });
+  ar(S, 'a2', [21.4, 8.75], [21.4, 2.55], 'danger', 2, { h: .1, off: 3 });
+  ar(S, 'a3', [22.4, 4.95], [22.4, 2.55], 'accent', 3, { h: .1, off: 4 });
+  ar(S, 'a4', [20.4, 2.55], [20.4, 8.75], 'ok', 4, { h: .1, off: 5 });
+  box2(S, 'gdb', 19.5, 1.2, 11.5, 1.3, 'gdb', 'accent', 0, { pct: 25 });
+  box2(S, 'krn', 19.5, 5.0, 11.5, 1.3, ['커널 (ptrace)', 'kernel (ptrace)'], 'ink-3', 0, { pct: 15 });
+  box2(S, 'prg', 19.5, 8.8, 11.5, 1.3, ['프로그램 (tracee)', 'program (tracee)'], 'ok', 0, { pct: 22 });
+  ver(S, 'al', 23.2, 3.3, [[1, 'POKEDATA 0x40112a ← CC'], [2, ['int3 → SIGTRAP · 멈춤', 'int3 → SIGTRAP · stopped']], [3, 'GETREGS / PEEKDATA'], [4, 'POKE 89 · STEP · POKE CC · CONT']], 'cz-mono syx-tiny');
+  T(S, 'out1', 1, 10.1, 'Breakpoint 1, square (x=7) at sq.c:5', 'cz-mono syx-xs syx-a', 2);
+  T(S, 'out2', 1, 11.0, '(gdb) p x   →   $1 = 7', 'cz-mono syx-xs syx-g', 3);
+  stepT(S, 'k', 1, 12.2, [['break square: 그 주소의 첫 바이트를 0xCC(int3)로 바꾸고 원래 값은 기억해요', 'break square: overwrite the first byte there with 0xCC (int3), remembering the original'], ['CPU가 int3를 만나면 트랩 → 커널이 프로세스를 멈추고 gdb에 SIGTRAP을 알려요', 'when the CPU hits int3 it traps → the kernel stops the process and tells gdb (SIGTRAP)'], ['ptrace로 레지스터·메모리를 읽고, 디버그 정보(-g, DWARF)로 변수·소스 줄을 찾아요', 'ptrace reads registers and memory; debug info (-g, DWARF) maps them to variables and lines'], ['계속하려면 원래 바이트를 되돌리고 한 명령만 실행한 뒤 0xCC를 다시 써요', 'to continue: restore the byte, single-step one instruction, then write 0xCC back']]);
+  fin(S, 'z', 13.6, [['소프트웨어 브레이크포인트 = 코드 한 바이트를 int3로 바꿔치기 + ptrace로 멈춘 프로세스 들여다보기', 'a software breakpoint = one code byte swapped for int3 + ptrace to inspect the stopped process', 'syx-xs syx-a'], ['감시점(watchpoint)은 CPU 디버그 레지스터로, 코어 덤프는 죽은 순간의 메모리로 디버깅해요', 'watchpoints use CPU debug registers; core dumps let you debug the moment of the crash']]);
+  S.cap(1, 'int3로 바꿔치기', 'Swap in int3').cap(2, '트랩과 정지', 'Trap and stop').cap(3, '들여다보기', 'Inspecting').cap(4, '계속 실행', 'Continuing').cap(5, '디버거와 브레이크포인트', 'Debuggers and breakpoints');
+  return S;
+}
+
+/* ================= processes & files ================= */
+function sSocket() {
+  const S = scene({ id: 'sy-socket', steps: 5, per: 1.6 });
+  code(S, 'cd', 1, 1.2, 13.2, ['fd = socket(AF_INET, SOCK_STREAM, 0);', 'bind(fd, 0.0.0.0:8080);', 'listen(fd, 128);', 'c = accept(fd, ...);   // 4', 'read(c, ...); write(c, ...);', 'close(c);'], [[0, 1], [3, 3], [4, 4]], { hoff: 5 });
+  T(S, 'cdl', 1, .3, ['서버', 'server'], 'syx-xs syx-a', 0);
+  rect(S, 'krn', 15, 1.2, 7.6, 8.6, 'ink-3', 8, 0, { r: .4 }); T(S, 'krnl', 15.3, 1.3, ['커널', 'kernel'], 'syx-tiny', 0);
+  box2(S, 'lfd', 15.4, 2.1, 6.8, 1.1, ['fd 3 · 듣기 :8080', 'fd 3 · listen :8080'], 'accent', 1, { pct: 30 });
+  box2(S, 'synq', 15.4, 3.7, 6.8, 1.1, '', 'line', 1, { pct: 18 }); ver(S, 'synqv', 15.4, 3.9, [[1, ['SYN 큐: 비어 있음', 'SYN queue: empty']], [2, ['SYN 큐 → 완성', 'SYN queue → done']]], 'cz-tc syx-tiny', 6.8);
+  box2(S, 'accq', 15.4, 5.3, 6.8, 1.1, '', 'line', 1, { pct: 18 }); ver(S, 'accqv', 15.4, 5.5, [[1, ['수락 큐: 비어 있음', 'accept queue: empty']], [2, ['수락 큐: [연결 1]', 'accept queue: [conn 1]']], [3, ['수락 큐: 비어 있음', 'accept queue: empty']]], 'cz-tc syx-tiny', 6.8);
+  tsets(S, 'accq', [[2, 'warn', 35], [3, 'line', 18]]);
+  box2(S, 'cfd', 15.4, 7.5, 6.8, 1.1, ['fd 4 · 연결 소켓', 'fd 4 · connected'], 'ok', 3, { pct: 35 });
+  box2(S, 'cli', 27, 2.1, 4, 1.4, ['클라이언트', 'client'], 'warn', 0, { pct: 25 });
+  [['SYN', 3.9, 1], ['SYN-ACK', 4.8, -1], ['ACK', 5.7, 1]].forEach(([t, y, d], i) => { ar(S, 'h' + i, d > 0 ? [26.9, y] : [22.7, y], d > 0 ? [22.7, y] : [26.9, y], 'warn', 2, { h: .08 }); T(S, 'hl' + i, 22.7, y - .62, t, 'cz-tc cz-mono syx-tiny syx-w', 2, { w: 4.2 }); });
+  ar(S, 'd1', [26.9, 7.8], [22.7, 7.8], 'ok', 4, { h: .08 }); T(S, 'd1l', 22.7, 7.18, 'GET /', 'cz-tc cz-mono syx-tiny syx-g', 4, { w: 4.2 });
+  ar(S, 'd2', [22.7, 8.7], [26.9, 8.7], 'ok', 4, { h: .08 }); T(S, 'd2l', 22.7, 8.85, '200 OK', 'cz-tc cz-mono syx-tiny syx-g', 4, { w: 4.2 });
+  T(S, 'clc', 27, 3.7, 'connect()', 'cz-mono syx-tiny', 2);
+  stepT(S, 'k', 1, 10.6, [['socket()으로 fd 3을 만들고, bind로 8080번 포트에 묶고, listen으로 받을 준비를 해요', 'socket() makes fd 3, bind() ties it to port 8080 and listen() gets ready to accept'], ['클라이언트가 connect하면 3-way 핸드셰이크는 커널이 처리 → 완성된 연결은 수락 큐로', 'when a client connects, the kernel runs the 3-way handshake → finished connections wait in the accept queue'], ['accept()가 큐에서 하나 꺼내 새 fd 4를 돌려줘요 · fd 3은 계속 다음 손님을 받아요', 'accept() takes one off the queue and returns a new fd 4 · fd 3 keeps listening'], ['fd 4는 파일처럼 read/write · 여러 연결은 스레드나 epoll로 동시에 처리해요', 'fd 4 is read and written like a file · many connections are handled with threads or epoll']]);
+  fin(S, 'z', 12.0, [['소켓: 네트워크 연결을 파일 디스크립터로 다루게 해 주는 OS 인터페이스', 'sockets let programs handle network connections as file descriptors', 'syx-xs syx-a'], ['듣기 소켓은 문지기, accept가 준 소켓은 손님 한 명 전용 창구 · backlog가 차면 새 연결이 밀려요', 'the listening socket is the doorkeeper; each accepted socket serves one client · a full backlog stalls new connections']]);
+  S.cap(1, '소켓 만들고 듣기', 'Create and listen').cap(2, '핸드셰이크는 커널이', 'The kernel does the handshake').cap(3, 'accept로 새 fd', 'accept returns a new fd').cap(4, '파일처럼 읽고 쓰기', 'Read and write like a file').cap(5, '소켓 API', 'The sockets API');
+  return S;
+}
+
+/* ================= concurrency ================= */
+function sCondvar() {
+  const S = scene({ id: 'sy-condvar', steps: 5, per: 1.6 });
+  T(S, 'ct', 1, .3, ['소비자 스레드', 'consumer thread'], 'syx-xs syx-a', 0); T(S, 'pt', 16.4, .3, ['생산자 스레드', 'producer thread'], 'syx-xs syx-w', 0);
+  code(S, 'c', 1, 1.2, 14.6, ['lock(&m);', 'while (q.empty())', '  cond_wait(&cv, &m);', 'item = q.pop();', 'unlock(&m);'], [[1, 1], [2, 2], [3, 3], [1, 4]], { hoff: 5 });
+  code(S, 'p', 16.4, 1.2, 14.6, ['lock(&m);', 'q.push(item);', 'cond_signal(&cv);', 'unlock(&m);'], [[2, 2]], { hoff: 3 });
+  T(S, 'spin', 1, 8.45, ['✗ while (q.empty()) { }  ← CPU만 태움', '✗ while (q.empty()) { }  ← burns CPU'], 'cz-mono syx-xs syx-r', 1, { off: 2 });
+  const chip = (k, x, w, c, list) => { box2(S, k, x, 9.1, w, 1.2, '', c, 1, { pct: 22 }); ver(S, k + 'v', x, 9.4, list, 'cz-tc syx-xs', w); };
+  chip('mx', 1, 9.4, 'accent', [[1, ['🔒 mutex: 소비자', '🔒 mutex: consumer']], [2, ['🔒 mutex: 생산자', '🔒 mutex: producer']], [3, ['🔒 mutex: 소비자', '🔒 mutex: consumer']]]);
+  chip('qq', 11, 8.6, 'warn', [[1, ['큐: [ ]', 'queue: [ ]']], [2, ['큐: [item]', 'queue: [item]']], [3, ['큐: [ ]', 'queue: [ ]']]]);
+  chip('cs', 20.2, 10.8, 'ok', [[1, ['소비자: 비었네?', 'consumer: empty?']], [2, ['소비자: 💤 mutex 놓고 잠듦', 'consumer: 💤 released mutex, asleep']], [3, ['소비자: 깨어나 다시 확인 → 꺼냄', 'consumer: woke, re-checked → popped']], [4, ['while로 다시 확인', 're-check in a while loop']]]);
+  tsets(S, 'cs', [[2, 'ink-3', 20], [3, 'ok', 35]]);
+  stepT(S, 'k', 1, 10.9, [['큐가 비면 소비자는 기다려야 해요 · 빈 루프로 계속 확인하면 CPU만 태워요', 'with an empty queue the consumer must wait · spinning in a loop just burns CPU'], ['cond_wait는 mutex를 놓고 잠드는 일을 한 번에 해요 → 생산자가 넣고 signal로 깨워요', 'cond_wait releases the mutex and sleeps in one atomic step → the producer pushes and signals'], ['깨어나면 mutex를 다시 잡은 채 돌아와 조건을 다시 확인하고 꺼내요', 'on waking it holds the mutex again, re-checks the condition and pops'], ['if가 아니라 while: 가짜 깨어남이나 다른 소비자가 먼저 가져간 경우를 막아요', 'while, not if: it guards against spurious wakeups and other consumers getting there first']]);
+  fin(S, 'z', 12.3, [['조건 변수: 조건이 참이 될 때까지 효율적으로 잠들었다가 깨어나게 하는 동기화 도구', 'a condition variable lets threads sleep efficiently until a condition holds, then wakes them', 'syx-xs syx-a'], ['항상 mutex와 함께 쓰고 조건은 while로 확인 · 기다리는 스레드를 모두 깨우려면 broadcast', 'always pair it with a mutex and check in a while loop · broadcast wakes every waiter']]);
+  S.cap(1, '비어 있으면 기다리기', 'Wait while empty').cap(2, '잠들고 깨우기', 'Sleep and signal').cap(3, '깨어나 다시 확인', 'Wake and re-check').cap(4, 'if가 아니라 while', 'while, not if').cap(5, '조건 변수', 'Condition variables');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'sy-c': [
+    item('sy-funcptr', '함수 포인터와 콜백', 'Function pointers and callbacks', '함수도 메모리에 있으므로 그 주소를 변수에 담아 넘길 수 있어요. 이렇게 “부를 동작”을 나중에 끼워 넣는 것이 콜백이에요.', '함수 by_age는 코드 영역의 0x401136에 있고, int (*cmp)(const void*, const void*) = by_age;는 그 주소를 담아요. qsort는 무엇을 기준으로 정렬할지 모르기 때문에 비교 함수를 콜백으로 받아 비교할 때마다 불러요(음수면 앞, 양수면 뒤). 함수 포인터 배열 ops[op](x, y)로 switch 없이 동작을 고를 수 있고, 이것이 C++ 가상 함수 표(vtable)나 리눅스 커널 file_operations의 원리예요. C에는 클로저가 없어 상태는 void *ctx로 함께 넘기고(qsort_r), 시그니처가 다른 함수를 부르면 정의되지 않은 동작이에요.', 'Functions live in memory too, so their addresses can be stored in variables and passed around; plugging in behaviour to be called later this way is a callback.', 'The function by_age sits at 0x401136 in the code section, and int (*cmp)(const void*, const void*) = by_age; stores that address. qsort doesn’t know what to sort by, so it takes a comparison function as a callback and calls it for each comparison (negative → first, positive → after). An array of function pointers, ops[op](x, y), picks behaviour without a switch; that is how C++ vtables and the Linux kernel’s file_operations work. C has no closures, so state travels as a void *ctx (qsort_r), and calling a function through a mismatched signature is undefined behaviour.', sFuncptr()),
+    item('sy-asan', 'AddressSanitizer', 'AddressSanitizer', '메모리 범위를 넘는 접근이나 해제 후 사용을 그 자리에서 잡아 주는 도구예요. 할당 주변의 레드존과 “섀도 메모리”를 이용해요.', 'malloc(10)으로 받은 버퍼에 buf[10]을 쓰면 옆 객체가 조용히 망가지고, 프로그램은 한참 뒤 엉뚱한 곳에서 죽어요. ASan은 할당마다 앞뒤에 접근 금지 영역(레드존)을 두고, 메모리 8바이트마다 섀도 1바이트에 “몇 바이트까지 쓸 수 있는지”(00 = 전부, 02 = 앞 2바이트, fa = 레드존)를 기록해요. 컴파일러가 모든 읽기·쓰기 앞에 섀도를 확인하는 코드를 넣으므로 buf[10]은 즉시 heap-buffer-overflow로 보고돼요. 해제된 메모리도 독으로 표시하고 잠시 격리해 해제 후 사용을 잡아요. -fsanitize=address로 빌드하며 약 2배 느려서 테스트와 CI에서 써요.', 'A tool that catches out-of-bounds access and use-after-free the moment they happen, using redzones around allocations and “shadow memory”.', 'Writing buf[10] into a malloc(10) buffer quietly corrupts the neighbouring object, and the program crashes much later somewhere unrelated. ASan surrounds each allocation with forbidden redzones and keeps one shadow byte per 8 bytes of memory saying how many of them are usable (00 = all, 02 = first 2, fa = redzone). The compiler inserts a shadow check before every load and store, so buf[10] is reported immediately as a heap-buffer-overflow. Freed memory is poisoned and quarantined too, catching use-after-free. Build with -fsanitize=address; it runs about 2× slower, so it belongs in tests and CI.', sAsan())
+  ],
+  'sy-build': [
+    item('sy-gdb', '디버거와 브레이크포인트', 'Debuggers and breakpoints', '디버거는 실행 중인 프로그램을 멈추고 들여다봐요. 소프트웨어 브레이크포인트는 코드 한 바이트를 int3 명령으로 바꿔치기해서 만들어요.', 'break square를 하면 gdb는 ptrace로 그 함수 첫 명령의 첫 바이트(0x89)를 저장하고 0xCC(int3)로 덮어써요. CPU가 그 주소에 도달해 int3를 실행하면 트랩이 일어나고, 커널이 프로세스를 멈춘 뒤 SIGTRAP으로 gdb에 알려요. gdb는 ptrace로 레지스터와 메모리를 읽고, -g로 넣은 디버그 정보(DWARF)를 이용해 주소를 변수 이름과 소스 줄로 바꿔 보여 줘요. 계속 실행할 때는 원래 바이트를 되돌리고 명령 포인터를 한 칸 뒤로 옮겨 한 명령만 실행한 뒤 0xCC를 다시 써요. 감시점은 CPU 디버그 레지스터를 쓰고, 코어 덤프로는 죽은 순간의 상태를 분석해요.', 'A debugger stops a running program and lets you look inside; a software breakpoint is made by swapping one byte of code for the int3 instruction.', 'On break square, gdb uses ptrace to save the first byte of the function’s first instruction (0x89) and overwrite it with 0xCC (int3). When the CPU reaches that address and executes int3, it traps; the kernel stops the process and reports SIGTRAP to gdb. gdb then reads registers and memory through ptrace and uses the debug info added by -g (DWARF) to map addresses to variable names and source lines. To continue, it restores the byte, moves the instruction pointer back one, single-steps one instruction and writes 0xCC back. Watchpoints use CPU debug registers, and core dumps capture the state at the moment of a crash.', sGdb())
+  ],
+  'sy-proc': [
+    item('sy-socket', '소켓 API와 TCP 서버', 'The sockets API and a TCP server', '소켓은 네트워크 연결을 파일 디스크립터로 다루게 해 주는 OS 인터페이스예요. 서버는 socket → bind → listen → accept 순서로 연결을 받아요.', 'socket()이 fd 3을 만들고, bind()가 0.0.0.0:8080에 묶고, listen(fd, 128)이 연결을 받을 준비를 해요. 클라이언트가 connect()하면 SYN, SYN-ACK, ACK의 3-way 핸드셰이크는 애플리케이션 코드 없이 커널이 처리하고, 완성된 연결은 수락 큐에서 기다려요. accept()는 큐에서 하나를 꺼내 그 손님 전용의 새 fd 4를 돌려주고, 듣기 소켓 fd 3은 계속 다음 연결을 받아요. fd 4는 파일처럼 read/write하고 close로 닫아요. 연결이 많으면 스레드를 나누거나 epoll로 여러 fd를 한꺼번에 기다려요. backlog가 가득 차면 새 연결이 지연되거나 거절돼요.', 'Sockets are the OS interface that lets programs treat network connections as file descriptors; a server accepts connections with socket → bind → listen → accept.', 'socket() creates fd 3, bind() ties it to 0.0.0.0:8080 and listen(fd, 128) gets ready for connections. When a client calls connect(), the kernel performs the SYN, SYN-ACK, ACK handshake with no application code, and finished connections wait in the accept queue. accept() takes one off the queue and returns a new fd 4 dedicated to that client, while the listening fd 3 keeps taking new connections. fd 4 is read and written like a file and closed with close. With many connections, use threads or epoll to wait on many fds at once; when the backlog fills, new connections are delayed or refused.', sSocket())
+  ],
+  'sy-io': [
+    item('sy-condvar', '조건 변수', 'Condition variables', '조건 변수는 “조건이 참이 될 때까지” 스레드를 효율적으로 재웠다가 깨우는 동기화 도구예요. 항상 mutex와 함께 써요.', '큐가 비어 있을 때 소비자가 빈 루프로 계속 확인하면 CPU만 낭비해요. cond_wait(&cv, &m)은 mutex를 놓고 잠드는 일을 원자적으로 한 번에 해서, 확인과 잠들기 사이에 신호를 놓치지 않아요. 생산자가 mutex를 잡고 항목을 넣은 뒤 cond_signal로 깨우면, 소비자는 mutex를 다시 잡은 상태로 돌아와 조건을 다시 확인하고 항목을 꺼내요. 조건은 if가 아니라 while로 확인해야 해요. 가짜 깨어남(spurious wakeup)이 있을 수 있고, 다른 소비자가 먼저 가져갔을 수도 있기 때문이에요. 기다리는 스레드를 모두 깨우려면 broadcast를 써요.', 'A condition variable lets threads sleep efficiently until a condition becomes true, then wakes them; it is always used together with a mutex.', 'If a consumer spins in a loop while the queue is empty, it only wastes CPU. cond_wait(&cv, &m) atomically releases the mutex and goes to sleep, so no signal can slip in between the check and the sleep. The producer locks the mutex, pushes an item and calls cond_signal; the consumer returns holding the mutex again, re-checks the condition and pops the item. Always check the condition in a while loop rather than an if, because spurious wakeups happen and another consumer may have taken the item first. Use broadcast to wake every waiting thread.', sCondvar())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('sy-c', 'C와 메모리', 'C & memory', 'C와 메모리', 'C and memory',
     '주소와 바이트 단위로 메모리를 직접 다루는 법이에요.', 'Working with memory directly, address by address and byte by byte.', [
@@ -630,7 +881,7 @@ window.UX = page([
     item('sy-stack', '스택 프레임과 버퍼 오버플로', 'Stack frames and buffer overflows', '함수 호출마다 스택에 돌려줄 주소와 지역 변수가 쌓여요. 길이 검사 없이 배열에 쓰면 옆의 데이터와 돌려줄 주소까지 덮어써요.', 'strcpy·gets처럼 길이를 받지 않는 함수가 주원인. 방어: 스택 카나리(덮어쓰기 감지), NX(스택 실행 금지), ASLR(주소 무작위화), 길이를 받는 snprintf·strlcpy, 범위를 검사하는 언어. 1988년 모리스 웜 이후 가장 유명한 취약점 유형이에요.', 'Every call pushes a return address and locals onto the stack. Writing into an array without a length check can overwrite its neighbors, including the return address.', 'Functions that take no length, such as strcpy and gets, are the usual cause. Defenses: stack canaries (detect the overwrite), NX (non-executable stack), ASLR (randomized addresses), length-aware snprintf and strlcpy, and bounds-checked languages. It has been the most famous vulnerability class since the 1988 Morris worm.', sStack()),
     item('sy-bitops', '비트 연산', 'Bitwise operations', 'AND·OR·XOR·시프트로 정수 안의 비트를 하나씩 켜고 끄고 검사해요. 참/거짓 여러 개를 정수 하나에 담아 한 번에 처리해요.', '켜기 x |= 1 << k, 끄기 x &= ~(1 << k), 뒤집기 x ^= 1 << k, 검사 (x >> k) & 1. x & (x − 1)은 가장 낮은 1을 지우고, 결과가 0이면 2의 거듭제곱. 파일 권한(chmod 755), 기능 플래그, 체스 비트보드, 블룸 필터, 서브넷 마스크, 해시 함수에 써요.', 'AND, OR, XOR and shifts set, clear and test individual bits, packing many booleans into one integer and updating them together.', 'Set x |= 1 << k, clear x &= ~(1 << k), flip x ^= 1 << k, test (x >> k) & 1. x & (x − 1) clears the lowest set bit and is zero exactly for powers of two. Used for file permissions (chmod 755), feature flags, chess bitboards, Bloom filters, subnet masks and hash functions.', sBitops()),
     item('sy-intovf', '정수 오버플로', 'Integer overflow', '고정 크기 정수는 범위를 넘으면 한 바퀴 돌아요. 부호 없는 정수는 mod 2ⁿ으로, C의 부호 있는 정수는 정의되지 않은 동작이에요.', 'uint8 255 + 1 = 0, int8 127 + 1 → −128(대부분의 CPU). 크기 계산 malloc(n * size)가 넘치면 작은 버퍼가 잡혀 오버플로로 이어져요. size_t 0 − 1 = 2⁶⁴ − 1. 2014년 강남스타일 조회수가 2³¹ − 1을 넘어 유튜브가 64비트 카운터로 바꿨어요. __builtin_mul_overflow, 러스트 checked_*, 자바 Math.*Exact로 검사해요.', 'Fixed-width integers wrap around past their range: unsigned ones modulo 2ⁿ, while signed overflow in C is undefined behavior.', 'uint8 255 + 1 = 0; int8 127 + 1 gives −128 on most CPUs. An overflowing size calculation malloc(n * size) allocates a tiny buffer and invites an overflow. size_t 0 − 1 is 2⁶⁴ − 1. In 2014 Gangnam Style’s view count passed 2³¹ − 1 and YouTube moved to a 64-bit counter. Check with __builtin_mul_overflow, Rust’s checked_* or Java’s Math.*Exact.', sIntovf())
-  ]),
+  ].concat(XT.add['sy-c'] || [])),
   sec('sy-build', '빌드와 링킹', 'Build & linking', '빌드와 링킹', 'Building and linking',
     '소스 코드가 실행 파일이 되기까지의 과정이에요.', 'How source code becomes a running executable.', [
     item('sy-object', '오브젝트 파일과 섹션', 'Object files and sections', '컴파일러는 소스를 오브젝트 파일로 만들어요. 코드는 .text, 초깃값 있는 전역은 .data, 0인 전역은 .bss, 상수는 .rodata에 담기고 심볼 표가 붙어요.', '과정: 전처리(cpp) → 컴파일(cc1) → 어셈블(as) → 링크(ld). 심볼 표에는 정의한 것(T, D, B)과 외부에서 가져올 것(U)이 있어요. .bss는 파일에 크기만 기록해 실행 파일이 작아요. 리눅스 ELF, 윈도우 PE, macOS Mach-O. nm, objdump -d, readelf -S로 살펴봐요.', 'The compiler turns source into an object file: code in .text, initialized globals in .data, zeroed globals in .bss, constants in .rodata, plus a symbol table.', 'Pipeline: preprocess (cpp) → compile (cc1) → assemble (as) → link (ld). The symbol table lists what is defined (T, D, B) and what must come from elsewhere (U). .bss records only a size, keeping files small. Formats: ELF on Linux, PE on Windows, Mach-O on macOS. Inspect with nm, objdump -d and readelf -S.', sObject()),
@@ -638,7 +889,7 @@ window.UX = page([
     item('sy-dynlink', '동적 링킹과 공유 라이브러리', 'Dynamic linking and shared libraries', '공유 라이브러리는 실행할 때 연결돼요. 첫 호출에 동적 링커가 함수 주소를 찾아 GOT에 적어 두고, 이후 호출은 그 주소로 바로 가요.', 'PLT(점프용 작은 코드)와 GOT(주소 표)로 지연 바인딩해요. libc 한 벌을 모든 프로세스가 메모리에서 공유하고, 보안 패치를 다시 링크 없이 적용할 수 있어요. 대신 버전이 안 맞으면 실행이 안 돼요(DLL 지옥). ldd로 의존성 확인, LD_LIBRARY_PATH·rpath로 찾는 위치 지정. 리눅스 .so, 윈도우 .dll, macOS .dylib.', 'Shared libraries are wired in at run time. On the first call the dynamic linker looks the function up and writes its address into the GOT; later calls jump straight there.', 'Lazy binding uses the PLT (small jump stubs) and the GOT (an address table). Every process shares one in-memory copy of libc, and security fixes apply without relinking, at the cost of breakage when versions don’t match (“DLL hell”). ldd lists dependencies; LD_LIBRARY_PATH and rpath control where they are searched. Linux .so, Windows .dll, macOS .dylib.', sDynlink()),
     item('sy-make', '빌드 시스템 (Make)', 'Build systems (Make)', '빌드는 파일 사이의 의존성 그래프예요. 대상이 의존 파일보다 오래됐을 때만 다시 만들어서, 바뀐 부분만 빠르게 빌드해요.', 'Makefile 규칙 = “대상: 의존 파일” + 명령. 소스 하나를 고치면 그 위 경로만, 널리 쓰는 헤더를 고치면 많이 다시 빌드돼요. make -j로 병렬 빌드, -MMD로 헤더 의존성 자동 생성. CMake는 Makefile·Ninja 파일을 생성하고, Bazel은 내용 해시와 원격 캐시로 거대한 저장소를 빌드해요.', 'A build is a dependency graph of files. Rebuilding a target only when it is older than its inputs keeps incremental builds fast.', 'A Makefile rule is “target: prerequisites” plus a command. Editing one source rebuilds only the path above it; editing a widely included header rebuilds a lot. make -j runs jobs in parallel and -MMD generates header dependencies. CMake generates Makefiles or Ninja files, and Bazel uses content hashes and remote caches for huge repositories.', sMake()),
     item('sy-abi', '호출 규약 (ABI)', 'Calling conventions (ABI)', '함수 인자를 어느 레지스터·스택에 넣고 결과를 어디로 돌려줄지 정한 기계어 수준의 약속이에요. 이 약속 덕분에 다른 컴파일러로 만든 코드도 서로 부를 수 있어요.', 'x86-64 System V(리눅스·macOS): 정수 인자 rdi, rsi, rdx, rcx, r8, r9, 나머지는 스택, 반환 rax. 윈도우 x64는 rcx, rdx, r8, r9, ARM64는 x0–x7. call이 돌려줄 주소를 넣고, 함수 머리(prologue)가 rbp 저장·지역 변수 공간 확보, leave; ret로 정리. 스택은 16바이트 정렬, rbx·rbp·r12–r15는 호출된 쪽이 보존해요.', 'A machine-level contract for which registers and stack slots carry arguments and where the result returns. It lets code from different compilers call each other.', 'x86-64 System V (Linux, macOS): integer args in rdi, rsi, rdx, rcx, r8, r9, the rest on the stack, result in rax. Windows x64 uses rcx, rdx, r8, r9; ARM64 uses x0–x7. call pushes the return address, the prologue saves rbp and reserves locals, and leave; ret unwinds. The stack stays 16-byte aligned, and rbx, rbp and r12–r15 are callee-saved.', sAbi())
-  ]),
+  ].concat(XT.add['sy-build'] || [])),
   sec('sy-proc', '프로세스와 파일', 'Processes & files', '프로세스와 파일', 'Processes and files',
     '유닉스가 프로그램을 실행하고 자원을 넘겨주는 방식이에요.', 'How Unix launches programs and hands them resources.', [
     item('sy-fork', 'fork와 exec', 'fork and exec', 'fork()는 프로세스를 복제해 두 번 반환하고(부모는 자식 PID, 자식은 0), exec()는 현재 프로그램을 새 프로그램으로 바꿔요. 셸이 명령을 실행하는 방식이에요.', '메모리는 바로 복사하지 않고 공유하다가 쓰는 페이지만 복사해요(copy-on-write). fork와 exec 사이에 셸이 리다이렉션·파이프를 설정해요. 부모는 wait()/waitpid()로 종료 코드를 받아요. posix_spawn은 둘을 한 번에, 윈도우는 CreateProcess. 파이썬 multiprocessing도 리눅스에선 fork를 써요.', 'fork() clones the process and returns twice (the child’s PID to the parent, 0 to the child); exec() replaces the running program with a new one. That is how a shell runs commands.', 'Memory isn’t copied up front: pages are shared until written (copy-on-write). Between fork and exec the shell sets up redirection and pipes. The parent collects the exit status with wait()/waitpid(). posix_spawn does both steps at once; Windows uses CreateProcess. Python’s multiprocessing forks on Linux too.', sFork()),
@@ -647,7 +898,7 @@ window.UX = page([
     item('sy-fd', '파일 디스크립터', 'File descriptors', '프로세스가 연 파일·소켓·파이프를 가리키는 작은 정수예요. 0, 1, 2는 표준 입력·출력·에러이고, open()은 가장 작은 빈 번호를 돌려줘요.', 'fd 표(프로세스별) → 열린 파일 표(커널, 위치·모드) → inode. dup2(fd, 1)로 stdout을 파일에 연결하는 게 셸의 > 리다이렉션. fork하면 fd 표가 복사돼 같은 열린 파일을 공유해요. 닫지 않으면 “Too many open files”(ulimit -n). 유닉스에선 소켓·장치까지 모두 파일처럼 다뤄요.', 'Small integers naming the files, sockets and pipes a process has open. 0, 1 and 2 are standard input, output and error, and open() returns the lowest free number.', 'Per-process fd table → kernel open file table (offset, mode) → inode. dup2(fd, 1) points stdout at a file, which is how the shell’s > works. fork copies the fd table, so both processes share the same open files. Leaking fds ends in “Too many open files” (ulimit -n). Unix treats sockets and devices as files too.', sFd()),
     item('sy-pipe', '파이프', 'Pipes', '커널 버퍼를 사이에 둔 단방향 바이트 통로예요. 한 프로세스의 출력을 다른 프로세스의 입력으로 바로 이어요.', 'ls | wc -l: 셸이 pipe()로 양 끝 fd를 만들고 두 번 fork해 각자 dup2로 stdout·stdin에 연결해요. 버퍼(리눅스 기본 64 KiB)가 차면 쓰는 쪽이, 비면 읽는 쪽이 멈춰 흐름이 조절돼요. 모든 쓰기 끝이 닫혀야 EOF가 와요. 이름 있는 파이프(mkfifo), 양방향은 socketpair.', 'A one-way byte channel with a kernel buffer in the middle, connecting one process’s output directly to another’s input.', 'For ls | wc -l the shell calls pipe() for two fds, forks twice and uses dup2 to wire stdout and stdin. When the buffer (64 KiB by default on Linux) is full the writer blocks; when empty the reader waits, so the flow paces itself. EOF arrives only once every write end is closed. Named pipes come from mkfifo; for two-way traffic use socketpair.', sPipe()),
     item('sy-mmap', '메모리 매핑 파일 (mmap)', 'Memory-mapped files (mmap)', '파일을 프로세스의 주소 공간에 붙여 포인터로 읽고 써요. 실제 읽기는 처음 건드린 페이지만 페이지 폴트로 일어나요.', '쓰기는 페이지 캐시에 반영되고 나중에 디스크로 써져요(msync로 강제). MAP_SHARED로 여러 프로세스가 같은 페이지를 공유하면 공유 메모리, MAP_PRIVATE는 copy-on-write. 실행 파일·공유 라이브러리 로딩, LMDB·SQLite, 큰 파일 임의 접근에 써요. 다만 I/O 오류가 SIGBUS로 오고 쓰기 시점을 통제하기 어려워 많은 DB는 직접 버퍼를 관리해요.', 'Attach a file to the address space and work on it through pointers. Data is read only when a page is first touched, via a page fault.', 'Writes land in the page cache and reach disk later (force it with msync). With MAP_SHARED several processes share the same pages, giving shared memory; MAP_PRIVATE is copy-on-write. Used to load executables and shared libraries, by LMDB and SQLite, and for random access to big files. I/O errors arrive as SIGBUS and write timing is hard to control, so many databases manage their own buffers instead.', sMmap())
-  ]),
+  ].concat(XT.add['sy-proc'] || [])),
   sec('sy-io', 'I/O와 동시성', 'I/O & concurrency', 'I/O와 동시성', 'I/O and concurrency',
     '시스템 콜을 아끼고 여러 코어를 안전하게 쓰는 법이에요.', 'Spending fewer syscalls and using many cores safely.', [
     item('sy-buffer', '버퍼링된 I/O', 'Buffered I/O', '작은 쓰기를 사용자 공간 버퍼에 모았다가 한 번의 시스템 콜로 보내요. 시스템 콜 횟수가 크게 줄어 빨라져요.', 'stdio는 터미널이면 줄 단위, 파일·파이프면 버퍼가 찰 때(보통 4~8 KiB) 비워요. 그래서 ./app | cat은 출력이 늦게 보이고, 비정상 종료하면 버퍼 내용이 사라져요. stderr는 버퍼 없음. fflush·setvbuf로 조절하고, 자바 BufferedWriter, 파이썬 print(flush=True)도 같은 개념이에요.', 'Collect small writes in a user-space buffer and hand them to the kernel in one syscall, cutting the number of syscalls dramatically.', 'stdio flushes per line on a terminal but only when the buffer fills (typically 4–8 KiB) on files and pipes. That is why ./app | cat shows output late and why a crash loses buffered data. stderr is unbuffered. Control it with fflush and setvbuf; Java’s BufferedWriter and Python’s print(flush=True) are the same idea.', sBuffer()),
@@ -656,8 +907,9 @@ window.UX = page([
     item('sy-atomic', '원자적 연산과 CAS', 'Atomic operations and CAS', 'CAS(compare-and-swap)는 “값이 아직 예상과 같으면 새 값으로 바꾼다”를 끊김 없이 한 번에 해요. 실패하면 다시 읽고 재시도해요.', '락 없이도 안전한 카운터·스택·큐(lock-free)의 기본 부품. 값만 비교하므로 A → B → A 변화를 놓치는 ABA 문제는 버전 태그로 막아요. 하드웨어: x86 lock cmpxchg, ARM LDXR/STXR. 언어: C++ std::atomic, 자바 AtomicInteger·LongAdder, Go sync/atomic. 경쟁이 심하면 재시도가 많아져 락보다 느려질 수 있어요.', 'CAS (compare-and-swap) does “if the value is still what I expect, replace it” as one indivisible step; on failure you reread and retry.', 'It is the building block of lock-free counters, stacks and queues. Because only values are compared, an A → B → A change slips past (the ABA problem), fixed with version tags. Hardware: x86 lock cmpxchg, ARM LDXR/STXR. Languages: C++ std::atomic, Java AtomicInteger and LongAdder, Go sync/atomic. Under heavy contention the retries can make it slower than a lock.', sAtomic()),
     item('sy-memorder', '메모리 순서', 'Memory ordering', '컴파일러와 CPU는 성능을 위해 메모리 접근 순서를 바꿀 수 있어서, 다른 코어에는 쓰기가 다른 순서로 보일 수 있어요. release/acquire로 순서를 약속해요.', '예: data = 42; ready = 1을 다른 스레드가 ready부터 보고 data는 아직 0으로 볼 수 있어요. release 저장 이전의 쓰기는 짝이 되는 acquire 읽기 이후에 반드시 보여요(happens-before). x86은 비교적 강한 TSO, ARM·POWER는 약해요. C/C++ volatile은 동기화가 아니고, 자바 volatile은 동기화예요. 보통은 뮤텍스나 atomic으로 해결해요.', 'Compilers and CPUs may reorder memory accesses for speed, so another core can see writes in a different order. Release/acquire pairs pin the order down.', 'After data = 42; ready = 1 another thread may see ready set while data still reads 0. Writes before a release store are visible after the matching acquire load (happens-before). x86 is fairly strong (TSO); ARM and POWER are weaker. volatile in C/C++ is not synchronization, while Java’s volatile is. In practice, reach for mutexes or atomics.', sMemorder()),
     item('sy-spin', '스핀락과 뮤텍스', 'Spinlocks and mutexes', '스핀락은 CPU를 쓰며 계속 확인하고, 뮤텍스는 잠들었다가 깨어나요. 락을 아주 잠깐 쥘 때는 스핀이, 오래 쥘 때는 잠드는 쪽이 나아요.', '문맥 교환은 수 µs가 들어 그보다 짧은 대기는 스핀이 유리해요. 리눅스 futex는 경쟁이 없으면 사용자 공간 원자 연산 하나로 끝나고 경쟁할 때만 커널로 가요. 적응형 뮤텍스는 잠깐 돌다 잠들어요. 커널은 인터럽트 문맥에서 스핀락을 쓰고, 코어가 하나뿐이면 스핀은 의미가 없어요.', 'A spinlock burns CPU re-checking; a mutex puts the waiter to sleep and wakes it later. Spinning wins for very short holds, sleeping for long ones.', 'A context switch costs microseconds, so shorter waits favor spinning. Linux futexes finish with a single user-space atomic when uncontended and enter the kernel only under contention, and adaptive mutexes spin briefly before sleeping. Kernels spin in interrupt context; on a single core, spinning is pointless.', sSpin())
-  ])
-]);
+  ].concat(XT.add['sy-io'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .sy-b .in{font-weight:800;color:var(--ink)}
 .sy-l .in{font-size:.86em;color:var(--ink);font-weight:700}
