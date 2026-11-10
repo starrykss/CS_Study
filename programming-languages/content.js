@@ -374,7 +374,7 @@ function sDispatch() {
   ar(S, 'i1', [7, 4.3], [12, 2.9], 'ink-3', 1, { h: .1 }); ar(S, 'i2', [21, 4.3], [16, 2.9], 'ink-3', 1, { h: .1 });
   box2(S, 'o1', 1, 8.4, 6, 2.6, ['Dog 객체', 'a Dog'], 'accent', 2, { pct: 18 }); T(S, 'o1v', 1.3, 10.3, 'vptr', 'cz-mono plx-xs plx-a', 2);
   box2(S, 'o2', 1, 12, 6, 2.6, ['Cat 객체', 'a Cat'], 'warn', 2, { pct: 18 }); T(S, 'o2v', 1.3, 13.9, 'vptr', 'cz-mono plx-xs plx-w', 2);
-  box2(S, 'vt1', 11, 8.4, 8, 2.2, ['Dog vtable: [0] → Dog::speak', 'Dog vtable: [0] → Dog::speak'], 'accent', 2, { pct: 30 }); box2(S, 'vt2', 11, 12, 8, 2.2, ['Cat vtable: [0] → Cat::speak', 'Cat vtable: [0] → Cat::speak'], 'warn', 2, { pct: 30 });
+  box2(S, 'vt1', 11, 8.4, 8, 2.2, 'vtable[0] → Dog::speak', 'accent', 2, { pct: 30 }); box2(S, 'vt2', 11, 12, 8, 2.2, 'vtable[0] → Cat::speak', 'warn', 2, { pct: 30 });
   ar(S, 'p1', [7.1, 9.7], [10.9, 9.5], 'accent', 2, { h: .12 }); ar(S, 'p2', [7.1, 13.3], [10.9, 13.1], 'warn', 2, { h: .12 });
   code(S, 'cl', 20.6, 8.2, 10.4, ['Animal a = pick();', 'a.speak();'], [[1, 3]], { st: 3 });
   T(S, 's1', 20.6, 11.4, ['① a의 vptr을 읽고', '① load a’s vptr'], 'plx-xs', 3); T(S, 's2', 20.6, 12.5, ['② vtable[0]을 읽고', '② load vtable[0]'], 'plx-xs', 3); T(S, 's3', 20.6, 13.6, ['③ 그 주소를 호출', '③ call that address'], 'plx-xs plx-g', 3);
