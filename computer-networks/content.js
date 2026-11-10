@@ -564,8 +564,8 @@ function sProxy() {
   frame(S, 'rn', 8.6, 6.2, 22.4, 5.6, 'ok', 2, { dash: 1, w: .1 }); T(S, 'rnl', 8.9, 6.3, ['데이터센터', 'data center'], 'ntx-tiny ntx-g', 2);
   box2(S, 'ic', 1, 8.1, 5, 1.9, ['사용자들', 'users'], 'line', 2, { pct: 40 }); ar(S, 'ra', [6.1, 9.05], [9.4, 9.05], 'ink-3', 2, { h: .08 });
   box2(S, 'rp', 9.5, 8.1, 6.4, 1.9, ['리버스 프록시', 'reverse proxy'], 'ok', 2, { pct: 35 });
-  ['app 1', 'app 2', 'app 3'].forEach((l, i) => { box2(S, 'sv' + i, 21, 7 + i * 1.5, 6, 1.2, l, 'line', 2, { pct: 40 }); seg(S, 'sl' + i, [16, 9.05], [20.95, 7.6 + i * 1.5], 2, 'ink-3', .07); });
-  T(S, 'rt', 21, 11.1, ['서버를 숨기고 앞에서 받아 줘요', 'hides and fronts the servers'], 'ntx-tiny', 2);
+  ['app 1', 'app 2', 'app 3'].forEach((l, i) => { box2(S, 'sv' + i, 21, 6.8 + i * 1.4, 6, 1.15, l, 'line', 2, { pct: 40 }); seg(S, 'sl' + i, [16, 9.05], [20.95, 7.38 + i * 1.4], 2, 'ink-3', .07); });
+  T(S, 'rt', 19.4, 11.05, ['서버를 숨기고 앞에서 받아 줘요', 'hides and fronts the servers'], 'ntx-tiny', 2);
   [['TLS 종료', 'TLS termination'], ['로드 밸런싱', 'load balancing'], ['캐시', 'caching'], ['압축', 'compression'], ['/api → 서비스', '/api → service'], ['WAF·속도 제한', 'WAF · rate limits']].forEach((t, i) => box2(S, 'f' + i, 1 + i * 5.05, 12.4, 4.85, 1.3, t, 'ok', 3, { pct: 30 }));
   T(S, 'h1', 1, 14.1, ['원래 IP는 X-Forwarded-For, 원래 호스트는 Host 헤더로 넘겨요 · API 게이트웨이도 리버스 프록시', 'the client IP travels in X-Forwarded-For and the host in Host · an API gateway is a reverse proxy too'], 'ntx-xs ntx-a', 4);
   fin(S, 'z', 15.4, [['포워드 프록시는 클라이언트 편, 리버스 프록시는 서버 편에서 대신 요청을 받아 전달해요', 'a forward proxy acts for clients; a reverse proxy acts for servers', 'ntx-xs ntx-a'], ['Nginx, HAProxy, Envoy, Cloudflare가 대표적인 리버스 프록시예요', 'Nginx, HAProxy, Envoy and Cloudflare are common reverse proxies']]);

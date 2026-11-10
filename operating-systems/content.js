@@ -643,7 +643,7 @@ function sJournal() {
   frame(S, 'mn', 16.4, 1.6, 14.6, 4, 'ink-3', 0, { w: .1, r: .2 }); T(S, 'mnl', 16.7, 1.7, ['실제 위치', 'final locations'], 'osx-tiny', 0);
   [['bitmap', 17], ['inode', 21.6], ['data', 26.2]].forEach(([l, x], i) => box2(S, 'm' + i, x, 2.8, 4.2, 1.6, l, 'line', 0, { pct: 45 }));
   tsets(S, 'm0', [[1, 'ok', 40], [2, 'line', 45], [3, 'ok', 40]]); tsets(S, 'm1', [[1, 'line', 45], [3, 'ok', 40]]); tsets(S, 'm2', [[1, 'line', 45], [3, 'ok', 40]]);
-  xm(S, 'cr', 23.7, 3.9, 1, { off: 2 }); T(S, 'crl', 16.4, 6.4, ['bitmap만 쓰고 전원이 나감 → 블록은 사용 중인데 아무도 안 씀', 'power fails after the bitmap write → a block marked used by no one'], 'osx-tiny osx-r', 1, { off: 2 });
+  xm(S, 'cr', 25.5, 2.9, 1, { off: 2 }); T(S, 'crl', 16.4, 6.4, ['bitmap만 쓰고 전원이 나감 → 블록은 사용 중인데 아무도 안 씀', 'power fails after the bitmap write → a block marked used by no one'], 'osx-tiny osx-r', 1, { off: 2 });
   [['TxB', 'accent'], ['bitmap', 'line'], ['inode', 'line'], ['data', 'line'], ['TxE', 'accent']].forEach(([l, c], i) => box2(S, 'j' + i, 1.4 + i * 2.7, 2.8, 2.5, 1.6, l, c, 2, { pct: 35 }));
   T(S, 'jn', 1, 6.4, ['먼저 저널에 “할 일”을 통째로 쓰고 TxE(커밋)로 마무리', 'first write the whole change to the journal, sealed with TxE (commit)'], 'osx-tiny osx-a', 2, { off: 3 });
   ar(S, 'ck', [14.9, 4.9], [17.1, 4.9], 'ok', 3, { h: .12 }); T(S, 'ckl', 14.3, 5.75, ['체크포인트', 'checkpoint'], 'osx-tiny osx-g', 3);

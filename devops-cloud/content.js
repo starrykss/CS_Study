@@ -284,7 +284,7 @@ function sHPA() {
 function sSvc() {
   const S = scene({ id: 'op-svc', steps: 5, per: 1.35 });
   chip(S, 'caller', 1, 1.4, 8.4, ['다른 서비스', 'another service'], {}, { h: 2.4, cls: 'op-p' });
-  arrow(S, 'ca', 9.6, 2.6, 16.6, 8.2, {}); text(S, 'cat', 9.8, 3.6, 'http://api-svc', { cls: 'cz-t cz-mono' });
+  arrow(S, 'ca', 9.6, 2.6, 16.6, 8.2, {}); text(S, 'cat', 12.8, 3.1, 'http://api-svc', { cls: 'cz-t cz-mono' });
   chip(S, 'u', 1, 9, 4.6, ['사용자', 'user'], hid(), { h: 2.4, cls: 'op-p' });
   box(S, 'ing', 7, 7.6, 6.6, 5.2, ['인그레스<br>shop.com', 'Ingress<br>shop.com'], { s: hid(C.soft) });
   arrow(S, 'ua', 5.8, 10.2, 6.8, 10.2, { s: hid() }); arrow(S, 'ia', 13.8, 9.4, 16.6, 9.6, { s: hid() }); text(S, 'iat', 13.6, 7.6, '/api', { cls: 'cz-t cz-mono', s: hid() });
@@ -403,7 +403,7 @@ function sPillars() {
   text(S, 'ld', 1.5, 16.2, ['무슨 일이 있었나', 'what happened'], { cls: 'cz-t', s: hid() }); S.set('ld', 1, { opacity: '1' });
   [3, 3.4, 2.8, 3.6, 3.2, 9, 3.4, 3].forEach((h, i) => vbar(S, 'm' + i, 12.2 + i * 1.05, 14.8, .8, h, h > 5 ? { background: 'var(--danger)', 'border-color': 'var(--danger)' } : { background: 'var(--accent)', 'border-color': 'var(--accent)' }, 2));
   text(S, 'md', 12, 16.2, ['얼마나·언제 (숫자 추세)', 'how much, when (trends)'], { cls: 'cz-t', s: hid() }); S.set('md', 2, { opacity: '1' });
-  [['GET /checkout', 0, 8.4, C.soft], ['auth', 0, 1.2, C.soft], ['db', 1.4, 3, C.soft], ['payment', 3.2, 8.2, C.bad]].forEach(([l, a, b, st], i) => hbar(S, 't' + i, 22.3 + a, 3.6 + i * 2.6, b - a, 2, st, 3, l));
+  [['GET /checkout', 0, 8.4, C.soft], ['auth', 0, 2.2, C.soft], ['db', 2.4, 4.0, C.soft], ['payment', 4.2, 8.2, C.bad]].forEach(([l, a, b, st], i) => hbar(S, 't' + i, 22.3 + a, 3.6 + i * 2.6, b - a, 2, st, 3, l));
   text(S, 'td', 22.3, 16.2, ['어디서 느렸나 (요청 경로)', 'where it was slow'], { cls: 'cz-t', s: hid() }); S.set('td', 3, { opacity: '1' });
   S.cap(1, '로그: 개별 사건의 자세한 기록', 'Logs: detailed records of individual events')
     .cap(2, '메트릭: 숫자로 모은 추세 · 알림의 출발점', 'Metrics: aggregated numbers · where alerts start')
@@ -694,7 +694,7 @@ function sMesh() {
 function sChaos() {
   const S = scene({ id: 'op-chaos', steps: 5, per: 1.6 });
   for (let i = 0; i < 4; i++) box2(S, 'n' + i, 1 + i * 4.8, 1, 4.4, 1.4, ['인스턴스 ' + (i + 1), 'instance ' + (i + 1)], 'accent', 0, { pct: 30 });
-  tsets(S, 'n1', [[2, 'danger', 35], [4, 'accent', 30]]); xm(S, 'kx', 7.6, 1.9, 2, { off: 4 }); T(S, 'kt', 1, 2.7, ['장애 주입: 인스턴스 2 강제 종료 (폭발 반경은 작게)', 'inject: kill instance 2 (keep the blast radius small)'], 'opx-xs opx-r', 2, { off: 4 });
+  tsets(S, 'n1', [[2, 'danger', 35], [4, 'accent', 30]]); xm(S, 'kx', 10.0, 1.15, 2, { off: 4 }); T(S, 'kt', 1, 2.7, ['장애 주입: 인스턴스 2 강제 종료 (폭발 반경은 작게)', 'inject: kill instance 2 (keep the blast radius small)'], 'opx-xs opx-r', 2, { off: 4 });
   const X = t => 1.5 + t * 1.8, Y = v => 9.2 - v * .05;
   hl(S, 'ax', 1.5, 19.6, 9.4, 'ink-3', 0, { w: .06 }); seg(S, 'ay', [1.5, 3.8], [1.5, 9.4], 0, 'ink-3', .06); T(S, 'yl', 1.8, 3.6, ['p99 지연 (ms)', 'p99 latency (ms)'], 'opx-tiny', 0);
   seg(S, 'th', [1.5, Y(60)], [19.6, Y(60)], 1, 'danger', .07, { dash: 1 }); T(S, 'thl', 15.4, Y(60) - .8, ['SLO 300ms', 'SLO 300 ms'], 'cz-mono opx-tiny opx-r', 1);

@@ -310,7 +310,7 @@ function sTorque() {
     KB(12 + r2 * 3 - 1.1, -2.2, 2.2, 2.2, `background:${tint('warn', 50)};border:.12em solid var(--warn)`) + KT(12 + r2 * 3 - .65, -1.5, '2kg') +
     KV(6.1, .8, 2.6, -90, 'danger', .18) + KV(12 + r2 * 3, .8, 1.8, -90, 'danger', .18);
   wrap(S, 'b1', 4, 11.8, 24, .8, beam(3), { off: 3 }); wrap(S, 'b2', 4, 11.8, 24, .8, beam(4), { st: 3 }); rot(S, 'b2', 4, -10);
-  T(S, 'd1', 8, 13, '2 m', 'cz-tc cz-mono ph-s', 0, { w: 4 }); T(S, 'd2', 23, 13, '3 m', 'cz-tc cz-mono ph-s', 0, { w: 4, off: 3 }); T(S, 'd3', 26, 13, '4 m', 'cz-tc cz-mono ph-s', 3, { w: 4 });
+  T(S, 'd1', 6.6, 13, '2 m', 'cz-tc cz-mono ph-s', 0, { w: 3 }); T(S, 'd2', 21.6, 13, '3 m', 'cz-tc cz-mono ph-s', 0, { w: 3, off: 3 }); T(S, 'd3', 24.6, 13, '4 m', 'cz-tc cz-mono ph-s', 3, { w: 3 });
   T(S, 'e1', 1, 2, 'τ₁ = 3·g·2 = 6g', 'cz-mono ph-l', 1);
   T(S, 'e2', 17, 2, 'τ₂ = 2·g·3 = 6g', 'cz-mono ph-l', 1, { off: 3 }); T(S, 'e2b', 17, 2, 'τ₂ = 2·g·4 = 8g', 'cz-mono ph-l', 3);
   L(S, 'e3', 1, 4, 30, 'cz-tc ph-b', [[2, ['같으면 Στ = 0 → 평형', 'equal: Στ = 0 → balanced']], [4, ['8g > 6g → 시계 방향으로 기울어요', '8g > 6g → it tips clockwise']]]);

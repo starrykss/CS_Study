@@ -205,7 +205,7 @@ function sEarly() {
   let best = 0; for (let e = 0; e <= 20; e += 1) if (va(e) < va(best)) best = e;
   vline(S, 'es', X(best), 3.4, 13.6, 'ok', { dash: true, s: hid() }); S.set('es', 4, { opacity: '1' });
   text(S, 'est', X(best) + .4, 3.2, [`여기서 멈춤 (에폭 ${best})`, `stop here (epoch ${best})`], { cls: 'cz-t ai-g', s: hid() }); S.set('est', 4, { opacity: '1' });
-  text(S, 'ov', X(15), Y(va(15)) - 2, ['과적합 시작 ↑', 'overfitting ↑'], { cls: 'cz-t ai-r', s: hid() }); S.set('ov', 3, { opacity: '1' });
+  text(S, 'ov', X(15.8), Y(va(15.8)) + .8, ['과적합 시작 ↑', 'overfitting ↑'], { cls: 'cz-t ai-r', s: hid() }); S.set('ov', 3, { opacity: '1' });
   S.cap(1, '처음엔 학습·검증 손실이 함께 줄어요', 'At first both train and validation loss fall')
     .cap(2, '어느 순간 검증 손실이 멈추고', 'Then validation loss levels off')
     .cap(3, '학습 손실만 계속 줄면 과적합', 'Train loss still falling alone means overfitting')
@@ -268,7 +268,7 @@ function sNeuron() {
     link(S, 'e' + i, [x, y], SUM, 1.5, 2.3, {}); S.set('e' + i, 2, { background: 'var(--accent)', 'border-color': 'var(--accent)' });
     node(S, 'x' + i, x, y, v, { r: 1.4, s: hid(C.soft) }); S.set('x' + i, 1, { opacity: '1' });
     text(S, 'n' + i, .6, y - .5, n, { cls: 'cz-t cz-mono ai-b' });
-    text(S, 'w' + i, 8.4, (y + SUM[1]) / 2 - 1.3, `w${i + 1} = ${w}`, { cls: 'cz-t cz-mono ai-a', s: hid() }); S.set('w' + i, 2, { opacity: '1' });
+    text(S, 'w' + i, [7, 7, 7.6][i], [4.5, 9.1, 15.5][i], `w${i + 1} = ${w}`, { cls: 'cz-t cz-mono ai-a', s: hid() }); S.set('w' + i, 2, { opacity: '1' });
   });
   node(S, 'sum', ...SUM, 'Σ', { r: 2.2, cls: 'cz-n ai-big2', s: {} }); S.set('sum', 3, C.soft);
   text(S, 'b', 14.2, 13.4, 'b = 0.1', { cls: 'cz-t cz-mono', s: hid() }); S.set('b', 3, { opacity: '1' });
@@ -471,7 +471,7 @@ function sVector() {
   const S = scene({ id: 'ai-vector', steps: 5, per: 1.4 });
   col(S, 'map', 1, 1.2, 18.4, 17.4);
   const D = [['d0', 9, 5.6, ['반품 정책', 'return policy']], ['d1', 12.4, 3.6, ['환불 처리 기간', 'refund timeline']], ['d2', 6.4, 8.6, ['교환 방법', 'how to exchange']], ['d3', 15, 13.4, ['배송 조회', 'track a parcel']], ['d4', 4, 15, ['회원 탈퇴', 'delete account']], ['d5', 11, 16.4, ['포인트 적립', 'reward points']], ['d6', 16.4, 10, ['배송비 안내', 'shipping fees']]];
-  D.forEach(([k, x, y, l]) => { dot(S, k, x, y, '', { r: .55, s: { background: 'var(--ink-3)', 'border-color': 'transparent' } }); text(S, k + 't', x + .8, y - .5, l, { cls: 'cz-t' }); });
+  D.forEach(([k, x, y, l]) => { dot(S, k, x, y, '', { r: .55, s: { background: 'var(--ink-3)', 'border-color': 'transparent' } }); if (k === 'd0' || k === 'd6' || k === 'd3') text(S, k + 't', x - 8.8, y - .5, l, { cls: 'cz-t', w: 8, css: 'text-align:right' }); else if (k === 'd2') text(S, k + 't', x - 4, y + .8, l, { cls: 'cz-t cz-tc', w: 8 }); else text(S, k + 't', x + .8, y - .5, l, { cls: 'cz-t' }); });
   dot(S, 'q', 10.6, 7.6, 'Q', { r: .85, s: hid(C.badf) }); S.set('q', 2, { opacity: '1' });
   chip(S, 'qt', 20.4, 1.2, 10.6, ['"돈 언제 돌려받아요?"', '"When do I get my money back?"'], hid(C.bad), { h: 2.6, cls: 'ai-p' }); S.set('qt', 2, { opacity: '1' });
   const NN = [['d1', 12.4, 3.6, '0.91'], ['d0', 9, 5.6, '0.88'], ['d2', 6.4, 8.6, '0.79']];

@@ -288,7 +288,7 @@ function sPart() {
 }
 function sLake() {
   const S = scene({ id: 'de-lake', steps: 5, per: 1.5 });
-  frame(S, 'stg', 1, 11.4, 30, 4.4, 'ink-3', 0, { w: .12 }); T(S, 'stl', 1.4, 11.6, ['오브젝트 스토리지 (S3)', 'object storage (S3)'], 'de-xs');
+  frame(S, 'stg', 1, 11.4, 30, 4.4, 'ink-3', 0, { w: .12 }); T(S, 'stl', 1.4, 15.0, ['오브젝트 스토리지 (S3)', 'object storage (S3)'], 'de-xs');
   box2(S, 'f1', 4, 12.6, 5, 2.2, 'f1.parquet', 'accent', 0, { pct: 25 }); box2(S, 'f2', 10.5, 12.6, 5, 2.2, 'f2.parquet', 'accent', 0, { pct: 25 }); S.set('f2', 3, { opacity: '.35' });
   box2(S, 'f3', 21, 12.6, 5, 2.2, 'f3.parquet', 'ok', 3, { pct: 30 });
   box2(S, 's1', 4, 6.6, 6, 2, ['스냅숏 1', 'snapshot 1'], 'accent', 2, { pct: 25 }); box2(S, 's2', 21, 6.6, 6, 2, ['스냅숏 2', 'snapshot 2'], 'ok', 3, { pct: 30 });
@@ -413,7 +413,7 @@ function sJoin() {
   const EX = e => 1 + e * 7.6, KC = ['accent', 'warn', 'ok', 'danger'];
   box2(S, 'ct', 12, 1.2, 8, 1.8, ['countries (1MB)', 'countries (1 MB)'], 'ok', 1, { pct: 30 }); S.set('ct', 3, { opacity: '.25' });
   for (let e = 0; e < 4; e++) { const x = EX(e);
-    frame(S, 'ex' + e, x, 4.8, 7, 7.6, 'ink-3', 0, { r: .4, w: .12 }); T(S, 'exl' + e, x + .4, 5.05, 'executor ' + (e + 1), 'cz-mono de-xs');
+    frame(S, 'ex' + e, x, 4.8, 7, 7.6, 'ink-3', 0, { r: .4, w: .12 }); T(S, 'exl' + e, x + .4, 11.6, 'executor ' + (e + 1), 'cz-mono de-xs');
     box2(S, 'od' + e, x + .4, 8.2, 6.2, 1.6, ['orders ¼', 'orders ¼'], 'accent', 0, { pct: 25 });
     ar(S, 'bc' + e, [16, 3.1], [x + 3.5, 6.3], 'ok', 2, { h: .1, off: 3 }); box2(S, 'cc' + e, x + .4, 6.4, 6.2, 1.4, 'countries', 'ok', 2, { pct: 35, off: 3 });
     box2(S, 'pm' + e, x + .4, 6.4, 6.2, 1.6, ['payments ¼', 'payments ¼'], 'warn', 3, { pct: 25 }); }
@@ -441,7 +441,7 @@ function sSkew() {
   T(S, 'hk', X0 + 4, Y(3) + .1, ['key = null · 4천만 행', 'key = null · 40M rows'], 'de-xs', 2, { off: 3 });
   [1, 4, 6].forEach(i => { rect(S, 'sa' + i, X0 + D[i] + .1, Y(i), 5.4, 1, 'ok', 40, 3, { r: .12 }); T(S, 'sal' + i, X0 + D[i] + .4, Y(i) + .1, 'null_' + ([1, 4, 6].indexOf(i) + 1), 'cz-mono de-tiny', 3); });
   T(S, 'sl3', X0 + .3, Y(3) + .1, 'null_0', 'cz-mono de-tiny', 3);
-  vl(S, 'f1', X0 + 22, .8, Y(8) - .1, 'danger', 1, { dash: 1, w: .1, off: 3 }); T(S, 'f1l', X0 + 18.4, .6, ['단계 끝 = 가장 느린 태스크', 'stage ends with the slowest task'], 'de-xs de-r', 1, { off: 3 });
+  vl(S, 'f1', X0 + 22, .8, Y(8) - .1, 'danger', 1, { dash: 1, w: .1, off: 3 }); T(S, 'f1l', X0 + 9.6, .6, ['단계 끝 = 가장 느린 태스크', 'stage ends with the slowest task'], 'de-xs de-r', 1, { off: 3, w: 12, css: 'text-align:right' });
   vl(S, 'f2', X0 + 8.6, .8, Y(8) - .1, 'ok', 3, { dash: 1, w: .1 }); T(S, 'f2l', X0 + 9, .6, ['훨씬 일찍 끝나요', 'finishes far sooner'], 'de-xs de-g', 3);
   rect(S, 'mg', X0 + 9, Y(0), 1.6, Y(2) - Y(0) + 1, 'warn', 35, 4, { r: .12 }); T(S, 'mgl', X0 + 10.9, Y(0) + .1, ['소금 뗀 키로 다시 합치기', 'merge again without the salt'], 'de-xs de-w', 4);
   [['groupBy(user) 뒤 태스크 8개 중 하나만 유난히 오래 걸려요', 'after groupBy(user), one of 8 tasks takes far longer'], ['원인: 한 키(null, 대형 고객 등)에 데이터가 몰렸어요 (스큐)', 'cause: one key (null, a giant customer) holds most of the data (skew)'], ['소금 치기: 키에 0~3 난수를 붙여 4개 태스크로 나눠요', 'salting: append a random 0–3 to the key to spread it over 4 tasks'], ['부분 결과를 원래 키로 한 번 더 합쳐 마무리해요', 'then combine the partial results by the original key']]
@@ -538,7 +538,7 @@ function sWatermark() {
   const S = scene({ id: 'de-watermark', steps: 5, per: 1.5 });
   const F = fr(0, 40, 0, 36, 3, 20, 2, 15.4);
   ax2(S, 'ax', F, ['처리 시각 →', 'arrival →'], ['이벤트 시각', 'event time'], 0);
-  mline(S, 'id', F, [0, 0], [36, 36], { color: 'line', h: .08, dash: 1 }); T(S, 'idl', F.X(26), F.Y(31), ['이상: 즉시 도착', 'ideal: no delay'], 'de-xs', 0);
+  mline(S, 'id', F, [0, 0], [36, 36], { color: 'line', h: .08, dash: 1 }); T(S, 'idl', F.X(5), F.Y(27), ['이상: 즉시 도착 →', 'ideal: no delay →'], 'de-xs', 0);
   const P = [[2, 1], [4, 3], [5, 4.5], [8, 2], [9, 7], [12, 11], [13, 9], [15, 14], [18, 16], [20, 13], [22, 19], [26, 22], [28, 25], [31, 27], [33, 30], [36, 28]];
   P.forEach(([p, e], i) => mpt(S, 'p' + i, F, [p, e], 1, e < 10 ? C.cur : C.soft, .26));
   mline(S, 'wm', F, [6, 0], [40, 34], { st: 2, color: 'ok', h: .14 }); T(S, 'wml', F.X(33) + .2, F.Y(27) + .3, ['워터마크', 'watermark'], 'de-xs de-g', 2);
@@ -711,6 +711,240 @@ function sHll() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'dex-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono dex-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono dex-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c dex-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono dex-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c dex-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'dex-s dex-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono dex-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono dex-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono dex-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono dex-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono dex-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'dex-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'dex-xs', 5));
+
+
+const CSSX = `
+.dex-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.dex-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.dex-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.dex-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.dex-r .in{color:var(--danger);font-weight:800}
+.dex-g .in{color:var(--ok);font-weight:800}
+.dex-a .in{color:var(--accent);font-weight:800}
+.dex-w .in{color:var(--warn);font-weight:800}
+.dex-c .in{font-size:.6em;font-weight:700}
+.dex-c2 .in{font-size:.5em;font-weight:700}
+.dex-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.dex-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'dex-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+
+/* ================= pipelines ================= */
+function sBackfill() {
+  const S = scene({ id: 'de-backfill', steps: 5, per: 1.6 });
+  const DX = d => 6 + d * 2.5, ROWS = [['raw', 2.2], ['clean', 4.0], ['report', 5.8]];
+  for (let d = 0; d < 10; d++) T(S, 'h' + d, DX(d), 1.2, '11-' + String(d + 1).padStart(2, '0'), 'cz-tc cz-mono dex-tiny', 0, { w: 2.3 });
+  ROWS.forEach(([n, y], r) => { T(S, 'rl' + r, 1, y + .3, n, 'cz-mono dex-xs', 0); for (let d = 0; d < 10; d++) { const k = `c${r}_${d}`, bad = r > 0 && d >= 3 && d <= 6; box2(S, k, DX(d), y, 2.3, 1.3, '', 'ok', 0, { pct: 30 }); if (bad) tsets(S, k, r === 1 ? [[2, 'danger', 40], [3, 'warn', 45], [4, 'ok', 30]] : [[2, 'danger', 40], [4, 'ok', 30]]); } });
+  T(S, 'bug', DX(3), 7.3, ['버그 있는 코드로 만든 기간', 'built with buggy code'], 'cz-tc dex-xs dex-r', 2, { w: 4 * 2.5 - .2, off: 3 });
+  T(S, 'run', DX(3), 7.3, ['다시 실행 중 (동시 2개)', 'rerunning (2 at a time)'], 'cz-tc dex-xs dex-w', 3, { w: 4 * 2.5 - .2, off: 4 });
+  T(S, 'cmd', 1, 8.6, 'airflow dags backfill -s 2026-11-04 -e 2026-11-07 daily_sales', 'cz-mono dex-xs dex-a', 3);
+  T(S, 'ow', 1, 9.7, 'INSERT OVERWRITE TABLE clean PARTITION (dt = …) SELECT …', 'cz-mono dex-xs dex-g', 4);
+  stepT(S, 'k', 1, 11.0, [['날짜 파티션마다 원본 → 정제 → 리포트 순서로 매일 돌아요', 'every day one date partition flows raw → clean → report'], ['정제 단계 버그 발견 → 11-04~11-07이 틀렸고, 그 위의 리포트까지 오염됐어요', 'a bug in the clean step → 11-04 to 11-07 are wrong, and so are the reports built on them'], ['코드를 고치고 그 기간만 다시 실행(백필) · 의존 순서대로, 동시 실행 수는 제한', 'fix the code and rerun just that range (backfill) · in dependency order, with limited concurrency'], ['파티션을 통째로 덮어써야 몇 번 다시 돌려도 결과가 같아요 (멱등성)', 'overwrite whole partitions so reruns always give the same result (idempotent)']]);
+  fin(S, 'z', 12.4, [['백필: 지난 기간의 파이프라인을 다시 돌려 데이터를 고치거나 새 열을 채우는 일', 'backfill: rerunning a pipeline over past periods to fix data or fill new columns', 'dex-xs dex-a'], ['날짜 파티션 + 덮어쓰기 + 의존 순서가 갖춰지면 필요한 기간만 안전하게 다시 만들어요', 'date partitions, overwrites and dependency order let you rebuild exactly the range you need']]);
+  S.cap(1, '날마다 쌓이는 파티션', 'A partition a day').cap(2, '버그로 오염된 기간', 'A range corrupted by a bug').cap(3, '그 기간만 다시 실행', 'Rerun just that range').cap(4, '덮어쓰기로 멱등하게', 'Idempotent by overwriting').cap(5, '백필과 재처리', 'Backfills and reprocessing');
+  return S;
+}
+
+/* ================= storage ================= */
+function sSmallFiles() {
+  const S = scene({ id: 'de-smallfiles', steps: 5, per: 1.6 });
+  frame(S, 'pf', 1, 1.2, 14.4, 9.4, 'ink-3', 0, { w: .1 }); T(S, 'pfl', 1.3, 1.3, 'dt=2026-11-10/', 'cz-mono dex-tiny', 0);
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 12; c++) rect(S, `f${r}_${c}`, 1.6 + c * 1.12, 2.1 + r * 1.12, .95, .95, 'accent', 40, 1, { r: .1, off: 3 });
+  [0, 1, 2].forEach(i => rect(S, 'big' + i, 1.6, 2.2 + i * 2.75, 13.2, 2.4, 'ok', 40, 3, { r: .25, html: ['1 GB 파일', '1 GB file'], cls: 'cz-c dex-c2' }));
+  T(S, 's1', 16.6, 1.3, ['1분마다 파일 1개 → 하루 1,440개 · 각 2 MB', 'a file a minute → 1,440 files a day · 2 MB each'], 'dex-xs', 1);
+  T(S, 'b0', 16.6, 3.2, ['컴팩션 전', 'before compaction'], 'dex-xs', 2);
+  rect(S, 'b0a', 16.6, 4.0, 11.9, 1.1, 'danger', 45, 2, { r: .15 }); rect(S, 'b0b', 28.5, 4.0, 2.1, 1.1, 'accent', 45, 2, { r: .15 }); T(S, 'b0v', 16.9, 4.15, '38 s', 'cz-mono dex-xs', 2);
+  T(S, 'b1', 16.6, 5.6, ['컴팩션 후', 'after compaction'], 'dex-xs dex-g', 3);
+  rect(S, 'b1a', 16.6, 6.4, .4, 1.1, 'danger', 45, 3, { r: .15 }); rect(S, 'b1b', 17.0, 6.4, 1.8, 1.1, 'accent', 45, 3, { r: .15 }); T(S, 'b1v', 19.1, 6.55, '6 s', 'cz-mono dex-xs dex-g', 3);
+  rect(S, 'lg0', 16.6, 8.15, .7, .7, 'danger', 45, 2, { r: .1 }); T(S, 'lg0t', 17.6, 8.05, ['파일 열기·목록·메타데이터', 'open, list, metadata'], 'dex-xs', 2);
+  rect(S, 'lg1', 16.6, 9.15, .7, .7, 'accent', 45, 2, { r: .1 }); T(S, 'lg1t', 17.6, 9.05, ['실제 데이터 읽기 (시간은 예시)', 'reading data (times illustrative)'], 'dex-xs', 2);
+  T(S, 'cmd', 1, 11.2, ['OPTIMIZE orders (Delta) · CALL system.rewrite_data_files(...) (Iceberg)', 'OPTIMIZE orders (Delta) · CALL system.rewrite_data_files(...) (Iceberg)'], 'cz-mono dex-xs dex-a', 4);
+  stepT(S, 'k', 1, 12.5, [['스트리밍 잡이 1분마다 파일을 써서 작은 파일이 끝없이 쌓여요', 'a streaming job writes a file every minute, so tiny files pile up'], ['파일마다 열기·목록·메타데이터 비용이 붙어, 정작 읽는 시간보다 길어져요', 'each file adds open, list and metadata costs that outweigh the actual reading'], ['컴팩션: 작은 파일을 512 MB~1 GB짜리로 합쳐 다시 쓰고 스냅숏을 원자적으로 교체', 'compaction rewrites small files into 512 MB–1 GB ones and swaps the snapshot atomically'], ['예방: 쓰기 간격 늘리기, 쓰기 전 repartition, 너무 잘게 나눈 파티션 피하기', 'prevention: longer write intervals, repartition before writing, no over-partitioning']]);
+  fin(S, 'z', 13.9, [['작은 파일 문제: 데이터 양이 아니라 파일 개수가 쿼리와 저장소를 느리게 만드는 현상', 'the small-files problem: the number of files, not the data size, slows queries and storage', 'dex-xs dex-a'], ['테이블 포맷의 OPTIMIZE·rewrite 작업을 정기적으로 돌려 파일 크기를 관리해요', 'run your table format’s OPTIMIZE or rewrite job regularly to keep file sizes healthy']]);
+  S.cap(1, '작은 파일이 쌓여요', 'Tiny files pile up').cap(2, '파일 수가 비용', 'File count is the cost').cap(3, '컴팩션으로 합치기', 'Merge with compaction').cap(4, '예방하기', 'Preventing it').cap(5, '작은 파일 문제', 'The small-files problem');
+  return S;
+}
+
+/* ================= streams ================= */
+function sCheckpoint() {
+  const S = scene({ id: 'de-checkpoint', steps: 5, per: 1.6 });
+  const OP = [['src', 1, 6.2, ['소스 (Kafka)', 'source (Kafka)'], 'warn'], ['map', 9.4, 5.2, 'map', 'line'], ['cnt', 16.8, 6.6, ['키별 개수', 'count by key'], 'accent'], ['snk', 25.6, 5.4, ['싱크', 'sink'], 'line']];
+  OP.forEach(([k, x, w, l, c], i) => { box2(S, k, x, 2.2, w, 1.8, l, c, 0, { pct: 28 }); if (i) ar(S, 'a' + i, [OP[i - 1][1] + OP[i - 1][2] + .05, 3.1], [x - .05, 3.1], 'ink-3', 0, { h: .1 }); });
+  ver(S, 'off', 1, 4.3, [[0, 'offset 1042'], [3, 'offset 1060'], [4, ['↺ 1042부터 다시 읽기', '↺ replay from 1042']]], 'cz-tc cz-mono dex-xs', 6.2);
+  ver(S, 'st', 16.8, 4.3, [[0, '{a: 5, b: 3}'], [3, '{a: 7, b: 4}'], [4, '{a: 5, b: 3}']], 'cz-tc cz-mono dex-xs dex-a', 6.6);
+  tsets(S, 'cnt', [[3, 'danger', 35], [4, 'accent', 28]]); xm(S, 'crash', 23.0, 2.3, 3, { off: 4 });
+  rect(S, 'bar', 7.75, 1.6, .3, 3.0, 'ok', 90, 2, { r: .1, off: 3 }); T(S, 'barl', 6.2, .6, ['배리어 chk-17', 'barrier chk-17'], 'cz-tc dex-tiny dex-g', 2, { w: 3.6, off: 3 });
+  rect(S, 'store', 6, 6.6, 20, 2.6, 'ok', 10, 2, { r: .4 }); T(S, 'storel', 6.3, 6.7, ['체크포인트 저장소 (S3)', 'checkpoint store (S3)'], 'dex-tiny dex-g', 2);
+  T(S, 'chk', 6.6, 7.6, 'chk-17:  source offset 1042 · count {a: 5, b: 3}', 'cz-mono dex-xs', 2);
+  ar(S, 'sv1', [4.1, 4.95], [7.0, 6.55], 'ok', 2, { h: .08, dash: 1, off: 3 }); ar(S, 'sv2', [20.1, 4.95], [18.0, 6.55], 'ok', 2, { h: .08, dash: 1, off: 3 });
+  ar(S, 'rs1', [7.0, 6.55], [4.6, 5.2], 'accent', 4, { h: .1 }); ar(S, 'rs2', [18.0, 6.55], [19.6, 5.2], 'accent', 4, { h: .1 });
+  stepT(S, 'k', 1, 10.2, [['상태가 있는 연산: 키별 개수를 메모리에 들고 있어요 · 죽으면 잃어버려요', 'a stateful operator keeps per-key counts in memory · a crash would lose them'], ['체크포인트 배리어가 데이터 사이로 흐르며, 지나가는 순간 각 연산자가 상태를 저장해요', 'barriers flow with the data; each operator snapshots its state as one passes'], ['그 뒤 더 처리하다 장애 → 메모리의 상태 {a: 7, b: 4}는 사라져요', 'a failure after more processing → the in-memory state {a: 7, b: 4} is gone'], ['마지막 체크포인트로 되돌리고 소스를 오프셋 1042부터 다시 읽으면 결과가 같아요', 'restore the last checkpoint and replay the source from offset 1042 → the same result']]);
+  fin(S, 'z', 11.6, [['체크포인트: 상태와 입력 위치를 함께 저장해, 장애 후에도 정확히 한 번 처리한 것처럼 이어 가요', 'checkpoints save state together with input positions, so work resumes as if processed exactly once', 'dex-xs dex-a'], ['Flink, Spark Structured Streaming, Kafka Streams의 핵심 기능이에요', 'a core feature of Flink, Spark Structured Streaming and Kafka Streams'], ['출력까지 정확히 한 번이려면 싱크도 트랜잭션이나 멱등 쓰기가 필요해요', 'end-to-end exactly-once also needs a transactional or idempotent sink']]);
+  S.cap(1, '상태가 있는 스트림', 'A stateful stream').cap(2, '배리어와 스냅숏', 'Barriers and snapshots').cap(3, '장애', 'A failure').cap(4, '되돌리고 다시 재생', 'Restore and replay').cap(5, '스트림 체크포인트', 'Stream checkpoints');
+  return S;
+}
+
+/* ================= ops ================= */
+function sReservoir() {
+  const S = scene({ id: 'de-reservoir', steps: 5, per: 1.6 });
+  const IX = i => 1 + (i - 1) * 2.6;
+  T(S, 'sl', 1, .5, ['스트림 (길이를 몰라요)', 'stream (length unknown)'], 'dex-xs dex-a', 0);
+  for (let i = 1; i <= 10; i++) { box2(S, 'i' + i, IX(i), 1.5, 2.2, 1.4, String(i), 'line', 0, { pct: 22 }); }
+  T(S, 'more', IX(11), 1.7, '…', 'dex-s', 0);
+  [1, 2, 3].forEach(i => tsets(S, 'i' + i, [[1, 'accent', 35]])); tsets(S, 'i4', [[2, 'ok', 40]]); [6, 8].forEach(i => tsets(S, 'i' + i, [[3, 'ok', 40]])); [5, 7].forEach(i => tsets(S, 'i' + i, [[3, 'line', 10]]));
+  const PR = [[4, '3/4 → 2', 2, 'dex-g'], [5, '3/5 ✗', 3, 'dex-r'], [6, '3/6 → 1', 3, 'dex-g'], [7, '3/7 ✗', 3, 'dex-r'], [8, '3/8 → 3', 3, 'dex-g']];
+  PR.forEach(([i, t, st, c]) => T(S, 'p' + i, IX(i) - .2, 3.1, t, 'cz-tc cz-mono dex-tiny ' + c, st, { w: 2.6 }));
+  T(S, 'rl', 8.2, 5.9, ['저장소 (k = 3)', 'reservoir (k = 3)'], 'dex-xs dex-a', 1);
+  const SX = [8.2, 12.2, 16.2];
+  SX.forEach((x, j) => { box2(S, 's' + j, x, 6.8, 3.2, 1.7, '', 'accent', 1, { pct: 25 }); T(S, 'sn' + j, x, 8.65, [`${j + 1}번 칸`, `slot ${j + 1}`], 'cz-tc dex-tiny', 1, { w: 3.2 }); });
+  ver(S, 'v0', SX[0], 7.2, [[1, '1'], [3, '6']], 'cz-tc cz-mono dex-s', 3.2); ver(S, 'v1', SX[1], 7.2, [[1, '2'], [2, '4']], 'cz-tc cz-mono dex-s', 3.2); ver(S, 'v2', SX[2], 7.2, [[1, '3'], [3, '8']], 'cz-tc cz-mono dex-s', 3.2);
+  ar(S, 'm4', [IX(4) + 1.1, 3.75], [SX[1] + 1.6, 6.75], 'ok', 2, { h: .08, off: 3 });
+  ar(S, 'm6', [IX(6) + 1.1, 3.75], [SX[0] + 2.4, 6.75], 'ok', 3, { h: .08, off: 4 }); ar(S, 'm8', [IX(8) + 1.1, 3.75], [SX[2] + 2.4, 6.75], 'ok', 3, { h: .08, off: 4 });
+  T(S, 'pf', 21, 6.9, ['n = 8까지 본 뒤', 'after n = 8'], 'dex-xs', 4); T(S, 'pf2', 21, 7.9, ['모든 항목이 3/8 확률', 'every item: probability 3/8'], 'dex-xs dex-g', 4);
+  stepT(S, 'k', 1, 10.0, [['끝을 모르는 스트림에서 3개를 공평하게 뽑고 싶어요 · 처음 3개는 그냥 담아요', 'we want 3 fair samples from a stream of unknown length · the first 3 go straight in'], ['i번째 항목은 3/i 확률로 들어가고, 들어가면 무작위로 고른 한 칸을 밀어내요', 'item i gets in with probability 3/i and, if it does, evicts a random slot'], ['뒤로 갈수록 들어갈 확률은 줄지만, 먼저 든 것도 밀려날 수 있어 공평해져요', 'later items get in less often, but earlier ones can be evicted, which evens things out'], ['결과: n개를 다 본 뒤 모든 항목이 정확히 3/n 확률로 남아 있어요', 'result: after n items, every item remains with probability exactly 3/n']]);
+  fin(S, 'z', 11.4, [['레저버 샘플링: 한 번 훑으면서 k칸 메모리만으로 균등한 무작위 표본을 만들어요', 'reservoir sampling builds a uniform random sample in one pass using only k slots', 'dex-xs dex-a'], ['로그·이벤트 표본 추출, 큰 데이터 미리보기에 써요 · 가중치가 있으면 A-Res 같은 변형을 써요', 'used for sampling logs and events and previewing huge data · weighted variants such as A-Res exist']]);
+  S.cap(1, '처음 k개는 그대로', 'The first k go in').cap(2, '확률 k/i로 교체', 'Replace with probability k/i').cap(3, '계속 흘려보내기', 'Keep streaming').cap(4, '모두 같은 확률', 'Equal odds for all').cap(5, '레저버 샘플링', 'Reservoir sampling');
+  return S;
+}
+function sPii() {
+  const S = scene({ id: 'de-pii', steps: 5, per: 1.6 });
+  const CX = c => 1 + c * 6.1, H = [['이름', 'name'], 'email', ['전화', 'phone'], ['카드', 'card'], ['나이', 'age']];
+  const RAW = [['김민지', 'Minji Kim'], 'minji@ex.com', '010-1234-5678', '4111-…-1111', '34'], PRO = [['김*지', 'M***i Kim'], 'sha256 → 9c1e…', '010-****-5678', 'tok_8f3a', ['30대', '30s']];
+  const HOW = [['마스킹', 'masking'], ['해시 (조인용)', 'hash (for joins)'], ['마스킹', 'masking'], ['토큰화', 'tokenization'], ['범주화', 'generalization']];
+  H.forEach((h, c) => { T(S, 'h' + c, CX(c), .5, h, 'cz-tc dex-xs dex-a', 0, { w: 5.8 }); box2(S, 'r' + c, CX(c), 1.4, 5.8, 1.4, RAW[c], c === 4 ? 'line' : 'danger', 0, { pct: c === 4 ? 25 : 22 }); box2(S, 'p' + c, CX(c), 4.0, 5.8, 1.4, PRO[c], 'ok', 2, { pct: 28 }); T(S, 'w' + c, CX(c), 5.55, HOW[c], 'cz-tc dex-tiny', 2, { w: 5.8 }); ar(S, 'pa' + c, [CX(c) + 2.9, 2.9], [CX(c) + 2.9, 3.95], 'ink-3', 2, { h: .08 }); });
+  T(S, 'pl', 1, 3.05, ['원본: 개인 식별 정보(PII)', 'raw: personally identifiable info (PII)'], 'dex-tiny dex-r', 1, { off: 2 });
+  box2(S, 'an', 1, 7.0, 9.4, 1.4, ['분석가 → 보호된 뷰만', 'analysts → protected view'], 'accent', 3, { pct: 22 });
+  box2(S, 'vs', 11, 7.0, 10.4, 1.4, ['결제 서비스 → 금고에서 원래 값', 'payments → detokenize via vault'], 'warn', 3, { pct: 25 });
+  box2(S, 'au', 22, 7.0, 9, 1.4, ['모든 조회는 감사 로그로', 'every lookup is audited'], 'line', 3, { pct: 25 });
+  T(S, 'cs', 1, 9.0, ['사용자 42의 데이터 = enc(key₄₂, …)  →  삭제 요청 시 key₄₂만 파기', 'user 42’s data = enc(key₄₂, …)  →  on deletion, destroy key₄₂ only'], 'cz-mono dex-xs dex-a', 4);
+  T(S, 'cs2', 1, 10.1, ['백업·로그에 남은 사본까지 읽을 수 없게 돼요 (암호 파쇄)', 'even copies in backups and logs become unreadable (crypto-shredding)'], 'dex-xs dex-g', 4);
+  stepT(S, 'k', 1, 11.5, [['원본 테이블엔 이름·이메일·전화·카드처럼 사람을 알아볼 수 있는 정보가 있어요', 'raw tables hold names, emails, phones and cards that identify people'], ['열마다 맞는 방법으로 보호: 마스킹, 해시(조인 키 유지), 토큰화, 범주화', 'protect each column fittingly: masking, hashing (keeps join keys), tokenization, generalization'], ['접근을 나눠요: 분석은 보호된 뷰로, 원래 값은 승인된 서비스만 금고를 통해', 'split access: analysis uses protected views; only approved services detokenize via the vault'], ['삭제 요청은 사용자별 키를 파기해 모든 사본을 한 번에 무효로 만들어요', 'deletion requests destroy the per-user key, voiding every copy at once']]);
+  fin(S, 'z', 12.9, [['개인정보 보호는 “최소한만 모으고, 보호해서 쓰고, 지울 수 있게” 파이프라인에 설계해 둬요', 'design privacy into pipelines: collect the minimum, use it protected, and keep it deletable', 'dex-xs dex-a'], ['개인정보보호법·GDPR의 삭제권, 목적 외 이용 금지를 기술로 뒷받침해요', 'it backs legal duties such as the right to erasure under privacy laws and GDPR']]);
+  S.cap(1, '식별 정보가 담긴 원본', 'Raw data with identifiers').cap(2, '열마다 보호하기', 'Protect each column').cap(3, '접근 나누기', 'Separate access').cap(4, '지울 수 있게', 'Keep it deletable').cap(5, '개인정보 보호 파이프라인', 'Privacy in data pipelines');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'de-pipe': [
+    item('de-backfill', '백필과 재처리', 'Backfills and reprocessing', '지난 기간의 파이프라인을 다시 돌려 잘못 만든 데이터를 고치거나 새로 추가한 열을 채우는 일이에요. 날짜 파티션과 덮어쓰기가 있어야 안전해요.', '정제 단계에 버그가 있었다면 11-04~11-07 파티션이 틀렸고, 그 위에서 만든 리포트까지 오염돼요. 코드를 고친 뒤 그 기간만 지정해 다시 실행하는데(airflow dags backfill -s … -e …), 의존 순서(정제 → 리포트)를 지키고 동시 실행 수를 제한해 원본 시스템에 부담을 주지 않아요. 각 작업은 INSERT OVERWRITE … PARTITION처럼 파티션을 통째로 덮어써야 여러 번 다시 돌려도 중복 없이 같은 결과가 나와요(멱등성). 새 열을 추가했을 때 과거 데이터를 채우는 것도 백필이에요.', 'Rerunning a pipeline over past periods to fix data built wrongly or to fill in newly added columns; date partitions and overwrites make it safe.', 'If the clean step had a bug, partitions 11-04 to 11-07 are wrong, and so are the reports built on them. After fixing the code you rerun just that range (airflow dags backfill -s … -e …), respecting dependency order (clean → report) and limiting concurrency so sources aren’t overloaded. Each task should overwrite whole partitions, as INSERT OVERWRITE … PARTITION does, so reruns give the same result without duplicates (idempotency). Populating history for a newly added column is a backfill too.', sBackfill())
+  ],
+  'de-store': [
+    item('de-smallfiles', '작은 파일 문제와 컴팩션', 'Small files and compaction', '데이터 양이 아니라 파일 개수가 쿼리와 저장소를 느리게 만드는 문제예요. 작은 파일을 큰 파일로 합치는 컴팩션으로 해결해요.', '스트리밍 잡이 1분마다 파일을 쓰면 하루에 2 MB짜리 파일이 1,440개 생겨요. 쿼리 엔진은 파일마다 열고, 목록을 조회하고, 메타데이터와 푸터를 읽어야 해서 실제 데이터를 읽는 시간보다 이 비용이 더 커지고, 오브젝트 스토리지 요청 비용도 늘어요. 컴팩션은 작은 파일들을 512 MB~1 GB 정도로 합쳐 다시 쓰고, 테이블 포맷이 스냅숏을 원자적으로 바꿔 읽는 쪽은 영향을 받지 않아요(Delta OPTIMIZE, Iceberg rewrite_data_files). 쓰기 간격을 늘리고, 쓰기 전에 repartition하고, 사용자 ID처럼 너무 잘게 파티션을 나누지 않는 것이 예방책이에요.', 'A problem where the number of files, not the amount of data, slows queries and storage; compaction merges small files into large ones.', 'A streaming job writing a file every minute leaves 1,440 files of 2 MB per day. The query engine must open, list and read metadata and footers for each, so that overhead outweighs reading the data itself, and object-storage request costs climb too. Compaction rewrites the small files into files of roughly 512 MB to 1 GB, and the table format swaps the snapshot atomically so readers are unaffected (Delta OPTIMIZE, Iceberg rewrite_data_files). Longer write intervals, repartitioning before writes and avoiding overly fine partitions such as by user ID prevent it.', sSmallFiles())
+  ],
+  'de-stream': [
+    item('de-checkpoint', '스트림 상태와 체크포인트', 'Stream state and checkpoints', '스트림 처리기는 집계 상태를 메모리에 들고 있어요. 체크포인트로 상태와 입력 위치를 함께 저장해 두면 장애 후에도 정확히 한 번 처리한 것처럼 이어 갈 수 있어요.', '키별 개수를 세는 연산자의 상태 {a: 5, b: 3}은 메모리에만 있어서 죽으면 사라져요. Flink는 소스에서 체크포인트 배리어를 데이터 사이에 흘려보내고, 배리어가 지나가는 순간 각 연산자가 자기 상태를 내구성 있는 저장소(S3 등)에 저장해요. 소스는 그때의 Kafka 오프셋을 함께 기록해요. 장애가 나면 마지막 체크포인트의 상태로 되돌리고 소스를 그 오프셋부터 다시 읽어, 그 사이 처리분을 정확히 한 번 반영해요. 결과를 외부로 쓰는 싱크까지 정확히 한 번이려면 트랜잭션 커밋이나 멱등 쓰기가 필요해요.', 'Stream processors keep aggregate state in memory; checkpoints save that state together with input positions so processing can resume after a failure as if each event were handled exactly once.', 'A per-key count such as {a: 5, b: 3} lives only in memory and vanishes on a crash. Flink injects checkpoint barriers at the source that flow between records; as a barrier passes, each operator saves its state to durable storage such as S3, and the source records its Kafka offset. After a failure the job restores the last checkpoint’s state and rereads the source from that offset, so the work in between is reflected exactly once. For the output to be exactly-once end to end, the sink also needs transactional commits or idempotent writes.', sCheckpoint())
+  ],
+  'de-ops': [
+    item('de-reservoir', '레저버 샘플링', 'Reservoir sampling', '끝을 모르는 스트림에서 메모리 k칸만으로, 모든 항목이 같은 확률로 뽑히는 무작위 표본을 만드는 알고리즘이에요.', '처음 k개(예: 3개)는 그대로 담아요. i번째 항목부터는 k/i 확률로 표본에 넣고, 넣을 때는 기존 칸 하나를 무작위로 골라 밀어내요. 뒤에 온 항목일수록 들어갈 확률은 낮지만, 먼저 들어간 항목도 나중에 밀려날 수 있어서, n개를 모두 본 뒤에는 모든 항목이 정확히 k/n 확률로 남아 있어요. 한 번만 훑으면 되고 메모리는 k칸뿐이라 로그·이벤트 표본 추출이나 큰 데이터 미리보기에 쓰여요. 항목마다 가중치가 다르면 A-Res 같은 가중 버전을 써요.', 'An algorithm that keeps a uniform random sample of a stream of unknown length using only k slots of memory.', 'The first k items (say 3) go straight in. From item i on, each is added with probability k/i, evicting a randomly chosen existing slot when it is. Later items are less likely to get in, but earlier ones can be evicted later, so after n items every item remains with probability exactly k/n. It needs one pass and k slots of memory, which suits sampling logs and events or previewing huge data. When items carry weights, weighted variants such as A-Res are used.', sReservoir()),
+    item('de-pii', '개인정보 보호 파이프라인', 'Privacy in data pipelines', '이름·이메일·카드 같은 개인 식별 정보(PII)를 열마다 알맞게 보호하고, 접근을 나누고, 요청이 오면 지울 수 있게 파이프라인을 설계해요.', '원본의 PII 열은 용도에 맞게 바꿔요: 이름·전화는 마스킹(김*지), 다른 테이블과 조인해야 하는 이메일은 솔트를 넣은 해시, 카드는 토큰화(실제 값은 별도 금고에), 나이는 30대처럼 범주화해요. 분석가는 보호된 뷰만 보고, 원래 값은 승인된 서비스만 금고를 통해 되돌리며 모든 조회를 감사 로그에 남겨요. 삭제 요청에 대비해 사용자별 키로 암호화해 두면, 키만 파기해도 백업과 로그에 남은 사본까지 읽을 수 없게 돼요(암호 파쇄). 개인정보보호법과 GDPR의 삭제권·목적 외 이용 금지를 기술로 뒷받침하는 방법이에요.', 'Design pipelines to protect personally identifiable information (PII) column by column, separate access, and keep data deletable on request.', 'Transform raw PII columns to suit their use: mask names and phones, hash emails with a salt when they are needed as join keys, tokenize cards with the real values kept in a separate vault, and generalize ages into ranges like 30s. Analysts query protected views, only approved services detokenize through the vault, and every lookup is audited. Encrypting with a per-user key prepares for deletion requests: destroying just that key makes even copies in backups and logs unreadable (crypto-shredding). These techniques back legal duties such as the right to erasure and purpose limitation under privacy laws and the GDPR.', sPii())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('de-pipe', '파이프라인', 'Pipelines', '데이터 파이프라인 기초', 'Pipeline foundations',
     '데이터를 옮기고, 바꾸고, 정해진 때에 안전하게 다시 돌리는 법이에요.', 'Moving and transforming data, and rerunning it safely on schedule.', [
@@ -719,7 +953,7 @@ window.UX = page([
     item('de-dag', '워크플로 오케스트레이션', 'Workflow orchestration', '작업들과 그 의존 관계를 DAG(방향 비순환 그래프)로 정의하고, 정해진 시간에 순서대로 실행·재시도·알림을 맡겨요.', 'Airflow 같은 오케스트레이터는 앞 작업이 끝난 작업부터 실행하고 서로 무관한 작업은 병렬로 돌려요. 실패하면 간격을 두고 재시도하고, 품질 검사에 걸리면 하류 작업을 멈춰 틀린 숫자가 대시보드에 나가지 않게 해요. 버그를 고친 뒤 과거 날짜를 다시 돌리는 백필도 오케스트레이터의 일이에요. 실제 무거운 계산은 Spark나 웨어하우스의 SQL이 하고, 오케스트레이터는 순서와 상태를 관리해요.', 'Define tasks and their dependencies as a DAG (directed acyclic graph) and let the orchestrator run, retry and alert on schedule.', 'An orchestrator such as Airflow starts a task once its upstreams succeed and runs independent tasks in parallel. Failures are retried after a delay, and a failed quality check halts downstream tasks so bad numbers never reach a dashboard. Backfills, rerunning past dates after a fix, are its job too. The heavy computation happens in Spark or warehouse SQL; the orchestrator manages order and state. Dagster, Prefect and Argo Workflows are alternatives.', sDag()),
     item('de-idem', '멱등한 파이프라인', 'Idempotent pipelines', '같은 작업을 몇 번 다시 돌려도 결과가 똑같도록 만들어요. 재시도와 백필이 흔한 데이터 파이프라인의 기본기예요.', '단순히 INSERT로 덧붙이면 실패 후 재시도할 때마다 중복이 쌓여요. 대신 날짜 파티션을 통째로 덮어쓰거나(INSERT OVERWRITE), 키로 맞춰 합치는 MERGE(업서트)를 써요. 작업은 now() 대신 실행 날짜를 인자로 받아야 언제 다시 돌려도 같은 결과가 나와요. 수학적으로는 f(f(x)) = f(x)인 성질이에요.', 'Make every job produce the same result no matter how many times it reruns: the foundation of pipelines where retries and backfills are routine.', 'A plain INSERT appends duplicates each time a failed job is retried. Instead, overwrite the whole date partition (INSERT OVERWRITE) or MERGE (upsert) on a key. Jobs should take the run date as a parameter instead of calling now(), so a rerun at any time yields the same output. Mathematically it is the property f(f(x)) = f(x).', sIdem()),
     item('de-cdc', '변경 데이터 캡처 (CDC)', 'Change data capture (CDC)', '데이터베이스의 트랜잭션 로그를 읽어 삽입·수정·삭제를 이벤트로 흘려보내요. 원본 DB에 부담 없이 거의 실시간으로 복제해요.', 'DB는 모든 변경을 먼저 WAL(PostgreSQL)이나 binlog(MySQL)에 적어요. Debezium 같은 CDC 커넥터가 복제본처럼 이 로그를 읽어 카프카 토픽으로 보내고, 웨어하우스·검색 색인·캐시가 각자 반영해요. updated_at으로 주기적으로 조회하는 방식은 삭제를 못 보고 두 조회 사이의 중간 변경을 놓치며 큰 테이블을 반복해서 훑어요. 서비스 이벤트를 안전하게 내보내는 아웃박스 패턴과도 함께 쓰여요.', 'Read a database’s transaction log and stream every insert, update and delete as events: near-real-time replication with little load on the source.', 'Databases write every change to a log first, the WAL in PostgreSQL or the binlog in MySQL. A CDC connector such as Debezium reads that log like a replica and publishes to Kafka topics, where warehouses, search indexes and caches apply the changes. Polling with updated_at misses deletes, loses intermediate changes between polls and rescans large tables. CDC is often paired with the outbox pattern for publishing service events safely.', sCdc())
-  ]),
+  ].concat(XT.add['de-pipe'] || [])),
   sec('de-store', '저장과 포맷', 'Storage & formats', '저장과 포맷', 'Storage and formats',
     '분석에 맞게 데이터를 저장하고 모델링하는 법이에요.', 'Storing and modeling data for analytics.', [
     item('de-oltp', 'OLTP와 OLAP', 'OLTP and OLAP', '서비스용 DB(OLTP)는 행 하나를 빠르게 읽고 쓰고, 분석용 DB(OLAP)는 수백만 행의 몇 개 열을 훑어 집계해요.', 'OLTP(MySQL, PostgreSQL)는 행 단위로 저장해 주문 하나를 넣고 고치는 짧은 트랜잭션을 초당 수천 번 처리해요. OLAP(BigQuery, Snowflake, ClickHouse, Redshift)는 열 단위로 저장해 필요한 열만 연속으로 읽고, 비슷한 값이 모여 압축도 잘 돼요. 분석 쿼리가 서비스를 느리게 만들지 않도록 둘을 나누고, CDC나 배치로 데이터를 옮겨요.', 'Service databases (OLTP) read and write single rows fast; analytics databases (OLAP) scan a few columns across millions of rows.', 'OLTP systems (MySQL, PostgreSQL) store data by row and handle thousands of short transactions per second, each touching one order. OLAP systems (BigQuery, Snowflake, ClickHouse, Redshift) store data by column, read only the needed columns contiguously and compress well because similar values sit together. The two are kept apart so analytics never slows the product, with CDC or batch jobs moving data between them.', sOltp()),
@@ -728,7 +962,7 @@ window.UX = page([
     item('de-lake', '레이크·웨어하우스·레이크하우스', 'Lake, warehouse and lakehouse', '데이터 레이크는 오브젝트 스토리지에 쌓인 파일이고, 테이블 포맷이 그 위에 트랜잭션과 스냅숏을 얹으면 레이크하우스가 돼요.', '레이크(S3, GCS)는 싸고 어떤 형식이든 담지만, 그대로는 반쯤 쓴 파일이 보이고 스키마도 없어요. Apache Iceberg, Delta Lake, Hudi는 “지금 테이블 = 이 파일들”이라는 스냅숏을 기록하고, 쓰기는 새 파일과 새 스냅숏을 만든 뒤 포인터를 원자적으로 바꿔요. 그래서 읽는 쪽은 항상 일관된 모습을 보고, 옛 스냅숏으로 과거를 조회하는 타임 트래블도 돼요. 웨어하우스(Snowflake, BigQuery)의 기능을 레이크에서 Spark·Trino·Flink가 함께 쓰는 구조예요.', 'A data lake is files in object storage; add a table format with transactions and snapshots on top and it becomes a lakehouse.', 'Lakes (S3, GCS) are cheap and hold any format, but on their own expose half-written files and enforce no schema. Apache Iceberg, Delta Lake and Hudi record snapshots, “the table is these files”, and each write adds new files and a new snapshot before atomically swapping a pointer. Readers therefore always see a consistent table, and time travel queries old snapshots. The result brings warehouse features (Snowflake, BigQuery) to the lake, shared by Spark, Trino and Flink.', sLake()),
     item('de-star', '스타 스키마와 차원 모델링', 'Star schemas and dimensional modeling', '가운데에 측정값을 담은 사실 테이블을, 둘레에 맥락을 설명하는 차원 테이블을 두는 분석용 모델이에요.', '사실 테이블(fact_sales)은 판매 한 건마다 한 행으로 수량·금액 같은 숫자와 차원 키만 담고, 차원 테이블은 날짜·상품·매장·고객을 설명해요. “카테고리별 월 매출”은 사실 테이블을 두 차원과 조인해 묶으면 돼요. 차원을 더 정규화하면 눈송이(snowflake) 스키마가 되어 저장은 줄지만 조인이 늘어요. 킴볼의 차원 모델링에서 나왔고, 조인이 단순해 BI 도구와 사람이 쓰기 쉬워요.', 'An analytics model with a fact table of measurements in the middle and dimension tables of context around it.', 'The fact table (fact_sales) holds one row per sale with numbers such as quantity and amount plus dimension keys; dimension tables describe the date, product, store and customer. “Monthly revenue by category” is a join of the fact table with two dimensions and a group-by. Normalizing dimensions further gives a snowflake schema: less storage, more joins. It comes from Kimball’s dimensional modeling, and its simple joins suit BI tools and people alike.', sStar()),
     item('de-scd', '천천히 변하는 차원 (SCD)', 'Slowly changing dimensions', '고객 주소처럼 가끔 바뀌는 차원 값을 이력과 함께 관리하는 방법이에요. 덮어쓰면 과거 리포트까지 바뀌어요.', 'Type 1은 그냥 덮어써서 이력이 사라져요. Type 2는 옛 행에 유효 기간 끝(valid_to)과 current = N을 적고 새 대리 키로 새 행을 추가해, 매출이 그 시점의 행을 가리키게 해요. 그래서 2025년 매출은 서울, 2026년 매출은 부산으로 정확히 집계돼요. Type 3은 “이전 값” 열 하나만 두는 방식이고, dbt snapshot이 Type 2를 자동으로 관리해 줘요.', 'Ways to track dimension values that change now and then, such as a customer’s address; overwriting rewrites past reports.', 'Type 1 simply overwrites and loses history. Type 2 closes the old row (valid_to, current = N) and adds a new row with a new surrogate key, so each sale points at the row valid at the time: 2025 sales stay in Seoul and 2026 sales count toward Busan. Type 3 keeps a single “previous value” column. dbt snapshots maintain Type 2 automatically.', sScd())
-  ]),
+  ].concat(XT.add['de-store'] || [])),
   sec('de-dist', '분산 처리', 'Distributed processing', '분산 처리', 'Distributed processing',
     '수천 대의 서버가 한 작업을 나눠 처리하는 원리예요.', 'How thousands of servers share one job.', [
     item('de-mr', '맵리듀스', 'MapReduce', '큰 작업을 map(조각마다 동시에 변환)과 reduce(키별로 합치기)로 나눠 수천 대의 서버에서 처리하는 모델이에요.', '단어 세기라면 map이 조각마다 (단어, 1)을 내보내고, 셔플이 같은 단어를 같은 리듀서로 모으고, reduce가 개수를 더해요. 셔플은 네트워크로 데이터를 크게 옮겨 가장 비싸서, map 쪽에서 미리 합치는 컴바이너로 양을 줄여요. 2004년 구글 논문에서 나와 Hadoop으로 퍼졌고, 중간 결과를 디스크에 써서 느리지만 장애에 튼튼했어요. 지금은 Spark가 같은 모델을 메모리 위에서 더 빠르게 돌려요.', 'A model that splits huge jobs into map (transform every chunk in parallel) and reduce (combine per key) across thousands of servers.', 'For word count, map emits (word, 1) for each chunk, the shuffle routes equal words to the same reducer, and reduce adds them up. The shuffle moves lots of data over the network and is the costliest step, so combiners pre-aggregate on the map side. The model came from Google’s 2004 paper and spread through Hadoop, which wrote intermediate results to disk: slow, but resilient to failures. Spark now runs the same model faster in memory.', sMr()),
@@ -736,7 +970,7 @@ window.UX = page([
     item('de-join', '분산 조인 전략', 'Distributed join strategies', '여러 서버에 나뉜 테이블을 조인할 땐, 작은 쪽을 모두에게 복사하거나 같은 키끼리 모이도록 셔플해요.', '한쪽이 작으면(Spark 기본 10MB 이하) 통째로 모든 실행기에 보내는 브로드캐스트 조인을 써서 큰 테이블은 움직이지 않아요. 둘 다 크면 키의 해시로 다시 나눠 같은 키를 한 실행기에 모은 뒤 정렬해 병합하는 정렬 병합 조인을 써요. 셔플이 네트워크와 디스크를 많이 써서 조인 비용의 대부분을 차지해요. 옵티마이저는 테이블 통계로 전략을 고르므로 통계가 낡으면 엉뚱한 선택을 해요.', 'To join tables spread over many servers, either copy the small side to everyone or shuffle both so equal keys meet.', 'If one side is small (under 10 MB by default in Spark), a broadcast join ships it whole to every executor and the big table never moves. When both sides are big, a sort-merge join repartitions both by key hash so matching keys land on the same executor, then sorts and merges them. The shuffle’s network and disk traffic is most of a join’s cost. Optimizers choose using table statistics, so stale statistics lead to poor choices.', sJoin()),
     item('de-skew', '데이터 스큐', 'Data skew', '특정 키에 데이터가 몰리면 그 키를 맡은 태스크 하나가 끝나지 않아 전체 작업이 그 하나를 기다려요.', 'null 키나 거대한 고객 하나가 데이터의 대부분을 차지하면 groupBy·join 뒤 한 태스크만 수십 배 오래 걸려요(낙오자). 소금 치기(salting)는 키에 0~N 난수를 붙여 여러 태스크로 나눈 뒤, 부분 결과를 원래 키로 한 번 더 합쳐요. Spark 3의 적응형 쿼리 실행(AQE)은 치우친 조인 파티션을 자동으로 쪼개요. null 키를 미리 걸러 따로 처리하는 것도 흔한 해법이에요.', 'When one key holds most of the data, the single task handling it lags and the whole job waits for it.', 'If a null key or one giant customer dominates, one task after a groupBy or join runs dozens of times longer than the rest (a straggler). Salting appends a random 0–N to the key to spread it over several tasks, then combines the partial results by the original key. Spark 3’s adaptive query execution (AQE) splits skewed join partitions automatically. Filtering null keys out and handling them separately is another common fix.', sSkew()),
     item('de-mpp', '분산 SQL 엔진', 'Distributed SQL engines', '코디네이터가 SQL을 조각으로 나눠 많은 워커에게 맡기고, 워커들이 스토리지의 파일을 동시에 읽어 부분 결과를 합쳐요.', 'Trino·Presto, BigQuery, Snowflake, Athena가 이 구조(MPP, 대규모 병렬 처리)예요. 워커는 파일 조각을 나눠 스캔하고 각자 부분 집계를 낸 뒤 교환해 최종 결과를 만들어요. 데이터는 오브젝트 스토리지에, 계산은 필요할 때만 띄우는 저장·계산 분리 구조라 워커 수를 따로 늘리고 줄일 수 있어요. 비용과 시간이 스캔한 바이트에 비례하니 파티셔닝과 열 지향 포맷이 곧 돈을 아껴요.', 'A coordinator splits SQL into fragments for many workers, which scan files from storage in parallel and merge their partial results.', 'Trino/Presto, BigQuery, Snowflake and Athena follow this massively parallel processing (MPP) design. Workers scan their share of file splits, compute partial aggregates, then exchange and combine them into the final answer. Data lives in object storage while compute spins up on demand, so the separation of storage and compute lets workers scale independently. Cost and time track bytes scanned, so partitioning and columnar formats save real money.', sMpp())
-  ]),
+  ].concat(XT.add['de-dist'] || [])),
   sec('de-stream', '스트림 처리', 'Stream processing', '스트림 처리', 'Stream processing',
     '끝없이 흐르는 이벤트를 실시간으로 다루는 법이에요.', 'Handling endless event streams in real time.', [
     item('de-kafka', '로그 기반 메시지 브로커', 'Log-based message brokers', 'Kafka 토픽은 파티션마다 추가만 하는 로그예요. 메시지는 읽어도 지워지지 않고, 소비자는 어디까지 읽었는지(오프셋)만 기록해요.', '같은 키는 해시로 늘 같은 파티션에 들어가서 키별 순서가 보장돼요. 소비자 그룹은 파티션을 나눠 맡아 병렬로 읽고, 한 소비자가 죽으면 리밸런스로 다른 소비자가 커밋된 오프셋부터 이어 읽어요. 보관 기간 동안 메시지가 남아 있어 다른 그룹이 처음부터 다시 읽거나(재처리) 새 시스템을 붙일 수 있어요. 파티션 수가 그룹 안 최대 병렬도를 정해요.', 'A Kafka topic is an append-only log per partition: reading doesn’t delete messages, and consumers just record how far they have read (offsets).', 'A key always hashes to the same partition, so per-key order is preserved. A consumer group splits partitions among its members to read in parallel, and when one dies a rebalance hands its partitions to another, resuming from the committed offset. Messages stay for the retention period, so another group can replay from the start or a new system can be attached. The partition count caps parallelism within a group. Redpanda, Pulsar and Kinesis are similar.', sKafka()),
@@ -744,15 +978,16 @@ window.UX = page([
     item('de-watermark', '이벤트 시각과 워터마크', 'Event time and watermarks', '이벤트는 발생한 시각보다 늦게 도착해요. 워터마크는 “이 시각 이전 이벤트는 거의 다 왔다”는 추정으로 윈도를 닫을 때를 정해요.', '네트워크 지연이나 오프라인이던 기기 때문에 이벤트는 순서가 뒤섞여 늦게 와요. 처리 시각이 아니라 이벤트 시각으로 집계해야 재처리해도 같은 결과가 나와요. 워터마크가 윈도 끝을 지나면 결과를 확정해 내보내고, 그 뒤에 온 이벤트는 허용 지연 안이면 결과를 갱신하고 넘으면 버리거나 따로 보관해요. 오래 기다리면 정확하지만 늦고, 빨리 닫으면 빠르지만 놓치는 맞바꿈이에요.', 'Events arrive later than they happen; a watermark estimates that “events before this time are in” and decides when to close a window.', 'Network delays and devices that were offline make events arrive late and out of order. Aggregating by event time, not processing time, keeps reprocessing consistent. When the watermark passes a window’s end the result is emitted; later events update it if they fall within the allowed lateness, and are dropped or sent to a side output otherwise. Waiting longer is more complete but slower: a trade-off between latency and completeness.', sWatermark()),
     item('de-exactly', '전달 보장과 정확히 한 번', 'Delivery guarantees and exactly-once', '장애가 나도 각 이벤트가 결과에 정확히 한 번만 반영되게 하려면, 입력 위치·상태·출력을 함께 커밋해야 해요.', '먼저 커밋하고 처리하면 장애 시 유실(최대 한 번), 처리하고 나중에 커밋하면 장애 시 중복(최소 한 번)이 생겨요. 정확히 한 번은 입력 오프셋, 처리기 상태, 출력 쓰기를 하나의 트랜잭션으로 묶어 얻어요. Flink 체크포인트와 2단계 커밋 싱크, Kafka 트랜잭션이 이 방식이에요. 실무에선 최소 한 번 전달에 이벤트 ID 기반 멱등 쓰기를 더해 같은 효과를 내는 경우가 많아요.', 'For each event to affect the result exactly once despite failures, input position, state and output must be committed together.', 'Committing before processing loses data on a crash (at-most-once); committing after processing duplicates it (at-least-once). Exactly-once comes from committing the input offset, operator state and sink writes in one transaction, as Flink checkpoints with two-phase-commit sinks and Kafka transactions do. In practice, at-least-once delivery plus idempotent writes keyed by event ID often achieves the same effect.', sExactly()),
     item('de-back', '배압과 소비 지연', 'Backpressure and consumer lag', '생산이 소비보다 빠르면 버퍼가 차고 지연이 쌓여요. 배압은 하류가 상류에게 “천천히”라고 알려 시스템을 지켜요.', '버퍼를 무한정 늘리면 결국 메모리가 터지므로, 크기를 제한하고 가득 차면 상류의 속도를 늦춰요. Flink는 크레딧 기반 배압을, Reactive Streams는 소비자가 request(n)으로 필요한 만큼만 당겨 받는 방식을 써요. 카프카에서는 소비 지연(consumer lag)을 지표로 보고 알림을 걸며, 파티션과 소비자를 늘려 처리량을 키워요. 실시간성이 덜 중요하면 샘플링으로 일부를 버리기도 해요.', 'When producers outpace consumers, buffers fill and lag builds; backpressure lets downstream tell upstream to slow down.', 'An unbounded buffer eventually exhausts memory, so buffers are capped and, when full, upstream is throttled. Flink uses credit-based backpressure, and Reactive Streams has consumers pull only what they can handle with request(n). With Kafka, teams monitor and alert on consumer lag and add partitions and consumers to raise throughput. When freshness matters less, sampling drops part of the load.', sBack())
-  ]),
+  ].concat(XT.add['de-stream'] || [])),
   sec('de-ops', '품질과 운영', 'Quality & operations', '품질과 운영', 'Quality and operations',
     '믿을 수 있는 데이터를 지키고, 큰 데이터를 싸게 세는 법이에요.', 'Keeping data trustworthy, and counting big data cheaply.', [
     item('de-quality', '데이터 품질 검사', 'Data quality checks', '빈 값, 중복, 허용되지 않은 값, 범위, 볼륨, 신선도를 자동으로 검사해 깨진 데이터가 대시보드에 닿기 전에 막아요.', 'not_null, unique, accepted_values, 범위 같은 행 단위 규칙과, 오늘 적재된 행 수가 평소보다 급감했는지(볼륨), 마지막 갱신이 언제인지(신선도), 스키마가 맞는지 같은 전체 단위 검사를 함께 해요. 실패한 행은 격리 테이블로 보내고 담당자에게 알리며, 심각하면 파이프라인을 멈춰요. dbt tests, Great Expectations, Soda가 대표 도구이고, 생산자와 스키마·품질을 약속하는 데이터 계약도 쓰여요.', 'Automatically check for nulls, duplicates, invalid values, ranges, volume and freshness so broken data is stopped before it reaches a dashboard.', 'Row-level rules (not_null, unique, accepted_values, ranges) are combined with dataset-level checks: did today’s row count drop sharply (volume), when was it last updated (freshness), does the schema still match? Failing rows go to a quarantine table and the owner is alerted; severe failures halt the pipeline. dbt tests, Great Expectations and Soda are common tools, and data contracts formalize schema and quality promises with producers.', sQuality()),
     item('de-schema', '스키마 진화', 'Schema evolution', '데이터 형식은 시간이 지나며 바뀌어요. 옛 데이터와 새 코드가 서로 읽을 수 있도록 호환 규칙을 지키며 바꿔요.', 'Avro·Protobuf 메시지는 스키마 레지스트리에 등록된 스키마 ID를 달고 다녀요. 기본값이 있는 선택 필드를 추가하면 옛 소비자는 무시하고 새 소비자는 옛 데이터에 기본값을 채워 둘 다 문제없어요. 필드를 지우거나 이름·타입을 바꾸면 레지스트리가 등록을 거부해 배포를 막아요. BACKWARD(새 리더가 옛 데이터), FORWARD(옛 리더가 새 데이터), FULL(둘 다) 같은 호환 모드로 허용 범위를 정해요.', 'Data formats change over time; evolve them under compatibility rules so old data and new code can still read each other.', 'Avro and Protobuf messages carry the ID of a schema registered in a schema registry. Adding an optional field with a default works both ways: old consumers ignore it and new consumers fill the default into old data. Removing a field or changing its name or type is rejected by the registry, blocking the deploy. Compatibility modes such as BACKWARD (new readers, old data), FORWARD (old readers, new data) and FULL (both) set what is allowed.', sSchema()),
     item('de-lineage', '데이터 계보와 카탈로그', 'Lineage and catalogs', '어떤 데이터가 어디서 와서 어디로 가는지 그래프로 기록해, 바꾸기 전 영향과 숫자가 틀렸을 때 원인을 찾아요.', '카탈로그는 테이블·열 단위로 누가 무엇을 읽고 쓰는지 수집해요(OpenLineage, DataHub, Amundsen, dbt docs, Unity Catalog). 원본 열의 이름을 바꾸기 전에 하류 대시보드·리포트·모델 중 무엇이 영향받는지 확인하고(영향 분석), 숫자가 이상하면 위로 거슬러 실패한 적재를 찾아요(근본 원인 분석). 설명, 소유자, 개인정보 같은 민감도 태그를 달아 검색과 접근 권한 관리에도 써요.', 'Record as a graph where each dataset comes from and where it goes, to see the impact of a change and trace a wrong number to its cause.', 'Catalogs collect who reads and writes what, down to tables and columns (OpenLineage, DataHub, Amundsen, dbt docs, Unity Catalog). Before renaming a source column, check which dashboards, reports and models depend on it (impact analysis); when a number looks off, walk upstream to the failed load (root-cause analysis). Descriptions, owners and sensitivity tags such as PII also drive search and access control.', sLineage()),
     item('de-hll', '근사 집계: HyperLogLog', 'Approximate counting: HyperLogLog', '고유한 값의 개수를 12KB 정도의 메모리로 약 1% 오차 안에서 추정하는 확률적 자료구조예요.', '해시는 무작위 비트처럼 보여서, 앞쪽 0이 k개 연속인 값은 대략 2ᵏ개를 봐야 나와요. 앞 비트로 버킷을 고르고 버킷마다 본 0 길이의 최댓값만 저장한 뒤, 레지스터들의 조화평균으로 전체 개수를 추정해요. 레지스터 최댓값끼리 합칠 수 있어 일별 스케치로 주간·월간 고유 사용자를 바로 구해요. Redis PFCOUNT, BigQuery APPROX_COUNT_DISTINCT, Druid가 쓰고, Count-Min Sketch(빈도)와 t-digest(분위수)가 같은 계열이에요.', 'A probabilistic structure that estimates the number of distinct values in about 12 KB of memory, within roughly 1% error.', 'Hashes look like random bits, so a value with k leading zeros typically appears only after about 2ᵏ distinct items. HyperLogLog uses the leading bits to pick a bucket, stores only the longest zero run seen per bucket, and estimates the total from the registers’ harmonic mean. Sketches merge by taking register maxima, so daily sketches roll up into weekly or monthly unique users. Redis PFCOUNT, BigQuery APPROX_COUNT_DISTINCT and Druid use it; Count-Min Sketch (frequencies) and t-digest (quantiles) are relatives.', sHll())
-  ])
-]);
+  ].concat(XT.add['de-ops'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .de-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .de-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}

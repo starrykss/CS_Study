@@ -13,7 +13,7 @@
 
 컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 31개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1294" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1294-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1314" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1314-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 30개와 UI/UX 도감, 개념 1294개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 30개와 UI/UX 도감, 개념 1314개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -67,7 +67,7 @@
 | **컴퓨터 구조**<br><sub>Computer architecture</sub> | 명령어 사이클, 메모리 계층, 캐시, 파이프라인, 분기 예측, 멀티코어 | 31 | [열기](https://starrykss.github.io/CS_Study/computer-architecture/) | [`computer-architecture/`](./computer-architecture) |
 | **운영체제**<br><sub>Operating systems</sub> | 프로세스, 스레드, 스케줄링, 동기화, 교착 상태, 가상 메모리 | 30 | [열기](https://starrykss.github.io/CS_Study/operating-systems/) | [`operating-systems/`](./operating-systems) |
 | **시스템 프로그래밍**<br><sub>Systems programming</sub> | 포인터·메모리 관리, 링킹과 빌드, 프로세스·시그널·파일 디스크립터, epoll·원자적 연산 | 30 | [열기](https://starrykss.github.io/CS_Study/systems-programming/) | [`systems-programming/`](./systems-programming) |
-| **리눅스·셸**<br><sub>Linux & shell</sub> | 파일·권한, 텍스트 처리 파이프라인, 셸 스크립트, 서비스·디스크·크론 관리, SSH와 네트워크 진단 | 25 | [열기](https://starrykss.github.io/CS_Study/linux-shell/) | [`linux-shell/`](./linux-shell) |
+| **리눅스·셸**<br><sub>Linux & shell</sub> | 파일·권한, 텍스트 처리 파이프라인, 셸 스크립트, 서비스·디스크·크론 관리, SSH와 네트워크 진단 | 30 | [열기](https://starrykss.github.io/CS_Study/linux-shell/) | [`linux-shell/`](./linux-shell) |
 | **컴퓨터 네트워크**<br><sub>Computer networks</sub> | OSI, IP, DNS, TCP·UDP, HTTP, TLS, NAT, 로드 밸런서, CDN | 30 | [열기](https://starrykss.github.io/CS_Study/computer-networks/) | [`computer-networks/`](./computer-networks) |
 
 ### 소프트웨어 · Software
@@ -77,7 +77,7 @@
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
 | **프로그래밍 언어**<br><sub>Programming languages</sub> | 컴파일러, 타입, 스코프, 클로저, GC, 이벤트 루프, 비동기 | 30 | [열기](https://starrykss.github.io/CS_Study/programming-languages/) | [`programming-languages/`](./programming-languages) |
-| **컴파일러**<br><sub>Compilers</sub> | 렉싱·파싱·AST, 타입 검사와 추론, SSA와 최적화, 명령어 선택·레지스터 할당, LLVM과 JIT | 25 | [열기](https://starrykss.github.io/CS_Study/compilers/) | [`compilers/`](./compilers) |
+| **컴파일러**<br><sub>Compilers</sub> | 렉싱·파싱·AST, 타입 검사와 추론, SSA와 최적화, 명령어 선택·레지스터 할당, LLVM과 JIT | 30 | [열기](https://starrykss.github.io/CS_Study/compilers/) | [`compilers/`](./compilers) |
 | **프로그래밍 패러다임·방법론**<br><sub>Paradigms & practices</sub> | 객체지향, 함수형, 선언형, 반응형, 클린 코드, 리팩터링 | 31 | [열기](https://starrykss.github.io/CS_Study/programming-paradigms/) | [`programming-paradigms/`](./programming-paradigms) |
 | **디자인 패턴**<br><sub>Design patterns</sub> | SOLID, GoF 23개 패턴, MVC·MVVM, 의존성 주입 | 33 | [열기](https://starrykss.github.io/CS_Study/design-patterns/) | [`design-patterns/`](./design-patterns) |
 | **소프트웨어 공학**<br><sub>Software engineering</sub> | 애자일, 스크럼, 칸반, TDD, BDD, DDD, 테스트, UML, 코드 리뷰 | 30 | [열기](https://starrykss.github.io/CS_Study/software-engineering/) | [`software-engineering/`](./software-engineering) |
@@ -89,7 +89,7 @@
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
 | **데이터베이스**<br><sub>Databases</sub> | SQL, JOIN, 인덱스, 정규화, 트랜잭션, 격리 수준, 샤딩 | 31 | [열기](https://starrykss.github.io/CS_Study/databases/) | [`databases/`](./databases) |
-| **데이터 엔지니어링**<br><sub>Data engineering</sub> | ETL·오케스트레이션·CDC, 열 지향 포맷과 레이크하우스, Spark와 분산 조인, 카프카와 스트림 처리, 데이터 품질 | 25 | [열기](https://starrykss.github.io/CS_Study/data-engineering/) | [`data-engineering/`](./data-engineering) |
+| **데이터 엔지니어링**<br><sub>Data engineering</sub> | ETL·오케스트레이션·CDC, 열 지향 포맷과 레이크하우스, Spark와 분산 조인, 카프카와 스트림 처리, 데이터 품질 | 30 | [열기](https://starrykss.github.io/CS_Study/data-engineering/) | [`data-engineering/`](./data-engineering) |
 | **정보 보안**<br><sub>Security</sub> | 암호화, 해시, 서명, 인증서, 웹 취약점, 인증·인가 | 30 | [열기](https://starrykss.github.io/CS_Study/security/) | [`security/`](./security) |
 | **분산 시스템·시스템 설계**<br><sub>Distributed systems & design</sub> | 확장, 캐시, 메시지 큐, 레이트 리밋, 합의, 서킷 브레이커, API | 30 | [열기](https://starrykss.github.io/CS_Study/distributed-systems/) | [`distributed-systems/`](./distributed-systems) |
 | **DevOps·클라우드**<br><sub>DevOps & cloud</sub> | Git, CI/CD, 컨테이너, 쿠버네티스, 배포 전략, 관측성 | 30 | [열기](https://starrykss.github.io/CS_Study/devops-cloud/) | [`devops-cloud/`](./devops-cloud) |
@@ -101,7 +101,7 @@
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
-| **컴퓨터 그래픽스**<br><sub>Computer graphics</sub> | 변환 행렬과 투영, 래스터화·Z-버퍼·텍스처, 조명과 셰이딩·PBR, GPU 파이프라인, 레이 트레이싱 | 25 | [열기](https://starrykss.github.io/CS_Study/computer-graphics/) | [`computer-graphics/`](./computer-graphics) |
+| **컴퓨터 그래픽스**<br><sub>Computer graphics</sub> | 변환 행렬과 투영, 래스터화·Z-버퍼·텍스처, 조명과 셰이딩·PBR, GPU 파이프라인, 레이 트레이싱 | 30 | [열기](https://starrykss.github.io/CS_Study/computer-graphics/) | [`computer-graphics/`](./computer-graphics) |
 | **모바일 앱 개발**<br><sub>Mobile development</sub> | 생명주기와 메인 스레드, 선언형 UI와 리스트 재활용, MVVM·코루틴, 오프라인 동기화·푸시, 배터리·메모리·출시 | 25 | [열기](https://starrykss.github.io/CS_Study/mobile-development/) | [`mobile-development/`](./mobile-development) |
 
 ### AI · AI

@@ -125,7 +125,7 @@ function sRipple() {
     const ini = A[k] ^ B[k], fin = [0, 0, 0, 1][i]; val(S, 's' + i, x + 1.8, 12.8, Array.from({ length: 7 }, (_, st) => st < i + 1 ? ini : fin));
     text(S, 'sl' + i, x, 15.4, 'S' + i, { w: 6, cls: 'cz-t cz-tc cz-mono' });
   }
-  for (let i = 0; i < 3; i++) { const x = 1.6 + (3 - i) * 7.4; arrow(S, 'c' + i, x - .2, 8.2, x - 1.2, 8.2, { s: Object.assign({ opacity: '.35' }, AR.ink) }); S.set('c' + i, i + 2, Object.assign({ opacity: '1' }, AR.acc)); text(S, 'cl' + i, x - 1.6, 6.4, '1', { cls: 'cz-t cz-mono lg-b', s: hid() }); S.set('cl' + i, i + 2, { opacity: '1' }); }
+  for (let i = 0; i < 3; i++) { const x = 1.6 + (3 - i) * 7.4; arrow(S, 'c' + i, x - .2, 8.2, x - 1.2, 8.2, { s: Object.assign({ opacity: '.35' }, AR.ink) }); S.set('c' + i, i + 2, Object.assign({ opacity: '1' }, AR.acc)); text(S, 'cl' + i, x - 1.0, 6.9, '1', { cls: 'cz-t cz-mono lg-b', s: hid() }); S.set('cl' + i, i + 2, { opacity: '1' }); }
   [0, 1, 2, 3].forEach(i => S.set('fa' + i, i + 1, C.soft).set('fa' + i, i + 2, C.idle));
   text(S, 'n', 1, 17, ['올림이 한 칸씩 전달되느라 비트 수만큼 기다려요', 'the carry ripples one stage at a time'], { cls: 'cz-t lg-b', s: hid() }); S.set('n', 5, { opacity: '1' });
   S.cap(1, '맨 오른쪽 자리부터 더하고', 'Add the rightmost bit first').cap(2, '올림이 다음 자리로', 'its carry moves left').cap(4, '도미노처럼 끝까지 전달돼요', 'all the way like dominoes')
@@ -383,7 +383,7 @@ function sSop() {
   ['g0', 'g1', 'g2', 'g3', 'go'].forEach(k => { S.set(k, 0, hid()); vis(S, k, 4); });
   lbl(S, 'pos', 12, 16, ["POS: 0인 줄로 OR 항 → F = (A+B+C)(A+B+C')(A+B'+C)(A'+B+C)", "POS: OR terms from 0-rows → F = (A+B+C)(A+B+C')(A+B'+C)(A'+B+C)"], 'cz-mono lgx-tiny', 5);
   lbl(S, 'simp', 12, 17.2, ["카르노 맵으로 줄이면 F = AB + BC + AC", 'a Karnaugh map shrinks it to F = AB + BC + AC'], 'lgx-xs lgx-g', 5);
-  notes(S, 'n', 14.2, [['진리표가 주어졌어요', 'start from a truth table'], ['출력이 1인 줄(최소항)을 찾아요', 'find the rows where the output is 1 (minterms)'], ['그 줄을 그대로 AND 항으로 적고 OR로 묶어요', 'write each as an AND term and OR them together'], ['AND 층 + OR 층 = 2단 회로 · 어떤 함수든 이렇게 만들 수 있어요', 'an AND layer plus an OR layer: any function can be built this way']], 'lgx-xs');
+  notes(S, 'n', 15.3, [['진리표가 주어졌어요', 'start from a truth table'], ['출력이 1인 줄(최소항)을 찾아요', 'find the rows where the output is 1 (minterms)'], ['그 줄을 그대로 AND 항으로 적고 OR로 묶어요', 'write each as an AND term and OR them together'], ['AND 층 + OR 층 = 2단 회로 · 어떤 함수든 이렇게 만들 수 있어요', 'an AND layer plus an OR layer: any function can be built this way']], 'lgx-xs');
   S.cap(1, '진리표', 'A truth table').cap(2, '1이 나오는 줄', 'The rows that output 1').cap(3, '줄마다 AND 항', 'One AND term per row').cap(4, 'AND–OR 2단 회로', 'A two-level AND–OR circuit').cap(5, '진리표에서 논리식으로 (SOP·POS)', 'From truth table to formula (SOP, POS)');
   return S;
 }

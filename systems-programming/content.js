@@ -236,7 +236,7 @@ function sIntovf() {
   const cx = 8.6, cy = 9.6, R = 6.2, P = v => [cx + R * Math.sin(v / 256 * 2 * Math.PI), cy - R * Math.cos(v / 256 * 2 * Math.PI)];
   ring(S, 'rg', cx, cy, R, 'ink-3', 0, { w: .14 });
   [[0, '0', '0'], [64, '64', '64'], [127, '127', '127'], [128, '128', '−128'], [192, '192', '−64'], [255, '255', '−1']].forEach(([v, u, s], i) => {
-    const [x, y] = P(v), [lx, ly] = [cx + (R + 1.6) * Math.sin(v / 256 * 2 * Math.PI), cy - (R + 1.3) * Math.cos(v / 256 * 2 * Math.PI)];
+    const DX = { 0: 1.1, 255: -1.3, 127: 1.2, 128: -1.3 }, [x, y] = P(v), [lx, ly] = [cx + (R + 1.6) * Math.sin(v / 256 * 2 * Math.PI) + (DX[v] || 0), cy - (R + 1.3) * Math.cos(v / 256 * 2 * Math.PI)];
     pt(S, 'tk' + i, x, y, 0, C.idle, .2); T(S, 'u' + i, lx - 1.5, ly - .5, u, 'cz-tc cz-mono sy-xs sy-a', 0, { w: 3, off: 3 }); T(S, 's' + i, lx - 1.5, ly - .5, s, 'cz-tc cz-mono sy-xs sy-w', 3, { w: 3 }); });
   const d1 = P(255), d0 = P(0), d127 = P(127), d128 = P(128);
   pt(S, 'p', d1[0], d1[1], 1, C.cur, .45); S.move('p', 2, d0[0] - .45, d0[1] - .45); S.move('p', 3, d127[0] - .45, d127[1] - .45); S.move('p', 4, d128[0] - .45, d128[1] - .45);
@@ -281,7 +281,7 @@ function sLink() {
   code(S, 'mc', 1.6, 3.6, 11.4, ['main:', '  call ???', 'U add'], [[2, 2]]);
   rect(S, 'ab', 1, 10, 12.6, 5.4, 'warn', 8, 1, { r: .5 }); T(S, 'at', 1.6, 10.4, 'math.o', 'cz-mono sy-s sy-w', 1);
   code(S, 'ac', 1.6, 11.8, 11.4, ['add:  ...', 'T add'], [[1, 2]], { st: 1 });
-  elb(S, 'rs', [[13, 7.4], [15, 7.4], [15, 13.2], [13.1, 13.2]], 'ok', 2, { h: .12 }); T(S, 'rsl', 15.4, 9.8, ['심볼 해석', 'symbol resolution'], 'sy-xs sy-g', 2);
+  elb(S, 'rs', [[13, 7.4], [15, 7.4], [15, 13.2], [13.1, 13.2]], 'ok', 2, { h: .12 }); T(S, 'rsl', 6.4, 8.75, ['심볼 해석', 'symbol resolution'], 'sy-xs sy-g', 2, { w: 8.2, css: 'text-align:right' });
   rect(S, 'ob', 18.4, 1.8, 12.6, 13.6, 'ink', 6, 3, { r: .5 }); T(S, 'ot', 19, 2.2, 'a.out', 'cz-mono sy-s', 3);
   code(S, 'oc', 19, 3.6, 11.4, ['0x401000  main:', '0x401004    call ???', '0x401020  add:', '            ...'], [[1, 4]], { st: 3 });
   T(S, 'oc4', 19.5, 4.9 + .3, '0x401004    call 0x401020', 'cz-mono sy-code sy-g', 4, { css: 'z-index:7;background:var(--ui)' });
@@ -779,7 +779,7 @@ function sAsan() {
   T(S, 'lr0', X(0), 4.35, ['레드존', 'redzone'], 'syx-tiny syx-r', 2); T(S, 'lp', X(18), 4.35, 'pad', 'cz-mono syx-tiny syx-w', 2); T(S, 'lr1', X(24), 4.35, ['레드존', 'redzone'], 'syx-tiny syx-r', 2);
   T(S, 'mk', X(18) - .6, 6.15, '▲ buf[10]', 'cz-mono syx-tiny syx-r', 1);
   T(S, 'm1', X(21), 6.15, ['조용히 덮어씀 → 나중에 엉뚱한 곳에서 터져요', 'silently overwritten → it crashes later, somewhere else'], 'syx-xs syx-r', 1, { off: 2 });
-  [['fa', 'danger'], ['00', 'ok'], ['02', 'warn'], ['fa', 'danger'], ['fa', 'danger']].forEach(([t, c], j) => { box2(S, 'sh' + j, X(j * 8) + .05, 7.9, 8 * CW - .18, 1, t, c, 3, { pct: 35 }); seg(S, 'sv' + j, [X(j * 8) + 2.8, 6.05], [X(j * 8) + 2.8, 7.85], 3, 'ink-3', .05, { dash: 1 }); });
+  [['fa', 'danger'], ['00', 'ok'], ['02', 'warn'], ['fa', 'danger'], ['fa', 'danger']].forEach(([t, c], j) => { box2(S, 'sh' + j, X(j * 8) + .05, 7.9, 8 * CW - .18, 1, t, c, 3, { pct: 35 }); seg(S, 'sv' + j, [X(j * 8) + 2.8, 6.85], [X(j * 8) + 2.8, 7.85], 3, 'ink-3', .05, { dash: 1 }); });
   T(S, 'leg', 1, 9.1, ['섀도 메모리(8바이트당 1바이트) · 00 = 8바이트 모두 사용 가능 · 02 = 앞 2바이트만 · fa = 레드존', 'shadow memory (1 byte per 8) · 00 = all 8 bytes usable · 02 = first 2 only · fa = redzone'], 'syx-tiny syx-a', 3);
   tsets(S, 'sh2', [[4, 'danger', 50], [5, 'warn', 35]]);
   T(S, 'chk', 1, 10.0, 'shadow = *((addr >> 3) + OFFSET);   if (shadow && (addr & 7) >= shadow) report();', 'cz-mono syx-tiny syx-a', 4);
@@ -804,7 +804,7 @@ function sGdb() {
   box2(S, 'gdb', 19.5, 1.2, 11.5, 1.3, 'gdb', 'accent', 0, { pct: 25 });
   box2(S, 'krn', 19.5, 5.0, 11.5, 1.3, ['커널 (ptrace)', 'kernel (ptrace)'], 'ink-3', 0, { pct: 15 });
   box2(S, 'prg', 19.5, 8.8, 11.5, 1.3, ['프로그램 (tracee)', 'program (tracee)'], 'ok', 0, { pct: 22 });
-  ver(S, 'al', 23.2, 3.3, [[1, 'POKEDATA 0x40112a ← CC'], [2, ['int3 → SIGTRAP · 멈춤', 'int3 → SIGTRAP · stopped']], [3, 'GETREGS / PEEKDATA'], [4, 'POKE 89 · STEP · POKE CC · CONT']], 'cz-mono syx-tiny');
+  ver(S, 'al', 23.2, 3.3, [[1, 'POKEDATA 0x40112a ← CC'], [2, ['int3 → SIGTRAP · 멈춤', 'int3 → SIGTRAP · stopped']], [3, 'GETREGS / PEEKDATA'], [4, 'POKE 89 → STEP → POKE CC']], 'cz-mono syx-tiny');
   T(S, 'out1', 1, 10.1, 'Breakpoint 1, square (x=7) at sq.c:5', 'cz-mono syx-xs syx-a', 2);
   T(S, 'out2', 1, 11.0, '(gdb) p x   →   $1 = 7', 'cz-mono syx-xs syx-g', 3);
   stepT(S, 'k', 1, 12.2, [['break square: 그 주소의 첫 바이트를 0xCC(int3)로 바꾸고 원래 값은 기억해요', 'break square: overwrite the first byte there with 0xCC (int3), remembering the original'], ['CPU가 int3를 만나면 트랩 → 커널이 프로세스를 멈추고 gdb에 SIGTRAP을 알려요', 'when the CPU hits int3 it traps → the kernel stops the process and tells gdb (SIGTRAP)'], ['ptrace로 레지스터·메모리를 읽고, 디버그 정보(-g, DWARF)로 변수·소스 줄을 찾아요', 'ptrace reads registers and memory; debug info (-g, DWARF) maps them to variables and lines'], ['계속하려면 원래 바이트를 되돌리고 한 명령만 실행한 뒤 0xCC를 다시 써요', 'to continue: restore the byte, single-step one instruction, then write 0xCC back']]);

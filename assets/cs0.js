@@ -36,7 +36,7 @@ function scene(o) {
   const n = o.steps;
   const S = {
     n, id: o.id,
-    el(key, p) { const e = Object.assign({ key, x: 0, y: 0, cls: '', html: '', s: {}, st: {} }, p); e.html = bi(e.html); els.push(e); by[key] = e; return S; },
+    el(key, p) { const e = Object.assign({ key, x: 0, y: 0, cls: '', html: '', s: {}, st: {} }, p); e.html = bi(e.html); if (!/\bcz-/.test(e.cls) && /border:/.test(e.css || '')) e.cls = (e.cls + ' cz-bd').trim(); els.push(e); by[key] = e; return S; },
     set(key, step, st) { const e = by[key]; if (!e) throw new Error('no el ' + key + ' in ' + o.id); e.st[step] = Object.assign(e.st[step] || {}, st); return S; },
     move(key, step, x, y, extra) { const e = by[key]; return S.set(key, step, Object.assign({ transform: `translate(${R(x - e.x)}em,${R(y - e.y)}em)` }, extra || {})); },
     has: key => !!by[key],
@@ -237,6 +237,11 @@ window.CZ_CSS = `
 .cz-pill .in{font-size:.68em;font-weight:700;white-space:nowrap}
 .cz-ar{height:.14em;background:var(--ink-2);border-color:var(--ink-2)}
 .cz .cz-ar.r,.cz .cz-ar.l{border-radius:0;border-width:0;box-shadow:none}
+.cz .e[class*="-tiny"]>.in{font-size:.5em!important}
+.cz .cz-c,.cz .cz-bd,.cz .cz-pill,.cz .cz-bx{z-index:2}
+.cz .cz-ar{z-index:1}
+.cz .cz-t>.in{text-shadow:0 0 .1em var(--stage),0 0 .1em var(--stage),0 0 .18em var(--stage),0 0 .18em var(--stage)}
+.cz .e[class*="-c2"]>.in{font-size:.55em!important}
 .cz-ar::after{content:"";position:absolute;top:50%;width:.55em;height:.55em;border-style:solid;border-color:inherit;border-width:.14em .14em 0 0;margin-top:-.29em}
 .cz-ar.r::after{right:0;transform:rotate(45deg)}
 .cz-ar.l::after{left:0;transform:rotate(-135deg)}
@@ -254,4 +259,38 @@ window.CZ_CSS = `
 .cz-lg .in{font-size:.9em}
 html[lang=en] .cz .zk,html:not([lang=en]) .cz .ze{display:none}
 `;
+})();
+
+/* runtime auto-fit: shrink box labels that don't fit their box and texts that run past the stage edge (layout sizes, ignoring transforms) */
+(function () {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+  const BOX = '.cz-c,.cz-n,.cz-pill,.cz-bx,.cz-act,.cz-dot';
+  const lang = () => document.documentElement.lang === 'en' ? 'en' : 'ko';
+  const target = n => { const zk = n.querySelector(':scope > .zk'); if (!zk) return n; return lang() === 'en' ? n.querySelector(':scope > .ze') : zk; };
+  const scale = (t, f) => { const cur = parseFloat(getComputedStyle(t).fontSize), base = parseFloat(getComputedStyle(t.parentElement).fontSize); t.style.setProperty('font-size', (cur / base * f).toFixed(3) + 'em', 'important'); };
+  const left = (t, el) => t === el ? 0 : (t.offsetParent === el ? t.offsetLeft : t.offsetLeft + (t.offsetParent && t.offsetParent !== el ? left(t.offsetParent, el) : 0));
+  function fit(root) {
+    const L = lang(), todo = [];
+    root.querySelectorAll('.cz').forEach(cz => {
+      const CW = cz.clientWidth; if (!CW) return;
+      const em = parseFloat(getComputedStyle(cz).fontSize);
+      cz.querySelectorAll(':scope > .e').forEach(el => {
+        if (el.dataset['fit' + L]) return;
+        const n = el.querySelector(':scope > .in'); if (!n || !n.textContent.trim()) return;
+        const t = target(n); if (!t) return;
+        const W = el.clientWidth, H = el.clientHeight, tw = t.offsetWidth, th = t.offsetHeight;
+        if (!tw) return;
+        el.dataset['fit' + L] = 1;
+        if (el.matches(BOX)) { if (!W) return; const lh = parseFloat(getComputedStyle(t).fontSize) * 1.6; if (tw > W * .96 || th > Math.max(H * .98, lh)) todo.push(['box', t, W, H]); }
+        else if (el.classList.contains('cz-t')) { const right = el.offsetLeft + left(t, el) + tw; if (right > CW - .1 * em) todo.push(['out', t, CW - .2 * em - el.offsetLeft - left(t, el), tw]); }
+      });
+    });
+    todo.forEach(([k, t, a, b]) => {
+      if (k === 'box') { const ws = t.style.whiteSpace; t.style.whiteSpace = 'nowrap'; const w = t.offsetWidth, h = t.offsetHeight; t.style.whiteSpace = ws; const f = Math.max(.7, Math.min(1, a * .9 / w, b * .9 / h)); if (f < .995) scale(t, f); }
+      else { const f = Math.max(.72, a / b); if (f < .995) scale(t, f); }
+    });
+  }
+  let q = 0; const run = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; fit(document); }); };
+  const start = () => { new MutationObserver(run).observe(document.body, { childList: true, subtree: true }); new MutationObserver(run).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] }); run(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { document.querySelectorAll('.cz .e[data-fitko],.cz .e[data-fiten]').forEach(e => { delete e.dataset.fitko; delete e.dataset.fiten; }); run(); }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

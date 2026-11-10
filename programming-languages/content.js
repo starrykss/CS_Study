@@ -30,7 +30,7 @@ function sInterp() {
   [[['컴파일러', 'Compiler'], 'C · Go · Rust', 2.6], [['인터프리터', 'Interpreter'], 'Python · Ruby', 9.2], ['JIT', 'Java · JS(V8)', 15.8]].forEach(([l, ex, y], i) => { text(S, 'l' + i, .8, y + .2, l, { cls: 'cz-t pl-b' }); text(S, 'e' + i, .8, y + 1.7, ex, { cls: 'cz-t' }); });
   gantt(S, 'a', [[['전체 번역', 'compile'], 0, 4, C.cmp, 1], [['빠른 실행', 'fast run'], 4, 10, C.ok, 1]], x0, 2.6, u, 2.6);
   gantt(S, 'b', [[['한 줄씩 해석하며 실행 (느림)', 'interpret line by line (slower)'], 0, 11.5, C.soft, 2]], x0, 9.2, u, 2.6);
-  gantt(S, 'c', [[['해석', 'interp'], 0, 3, C.soft, 3], [['자주 쓰는 코드 번역', 'compile hot code'], 3, 5, C.cmp, 3], [['빠른 실행', 'fast'], 5, 9, C.ok, 3]], x0, 15.8, u, 2.6);
+  gantt(S, 'c', [[['해석', 'interp'], 0, 2.4, C.soft, 3], [['자주 쓰는 코드 번역', 'compile hot code'], 2.4, 7, C.cmp, 3], [['빠른 실행', 'fast'], 7, 11.5, C.ok, 3]], x0, 15.8, u, 2.6);
   S.cap(1, '컴파일러: 미리 전부 번역 · 실행이 빠르고 배포 파일이 생겨요', 'Compiler: translate everything first · fast to run, ships a binary').cap(2, '인터프리터: 바로 실행 · 시작은 빠르지만 실행은 느려요', 'Interpreter: run right away · quick to start, slower to run')
     .cap(3, 'JIT: 실행하면서 자주 쓰는 부분만 기계어로 · 둘의 장점', 'JIT: compile hot paths while running · the best of both').cap(4, '그래서 JS·Java는 "워밍업" 후에 빨라져요', 'Which is why JS and Java speed up after warm-up');
   return S;
@@ -481,7 +481,7 @@ function sTrait() {
 function sOwnership() {
   const S = scene({ id: 'pl-ownership', steps: 5, per: 1.5 });
   code(S, 'c', 1, 1.2, 15, ['let a = String::from("hi");', ['let b = a;          // 이동', 'let b = a;          // move'], 'println!("{}", a);  // ✗', 'let r1 = &b; let r2 = &b;', 'let w = &mut b;     // ✗', ['}  // b 해제(drop)', '}  // b is dropped']], [[0, 1], [2, 2], [3, 3], [4, 4], [5, 5]]);
-  rect(S, 'heap', 21, 2, 7, 2, 'ok', 30, 1, { r: .3, cls: 'cz-c plx-c2', html: '"hi"' }); T(S, 'hpl', 21, 4.2, ['힙의 문자열', 'heap string'], 'cz-tc plx-xs', 1, { w: 7 });
+  rect(S, 'heap', 21, 2, 7, 2, 'ok', 30, 1, { r: .3, cls: 'cz-c plx-c2', html: '"hi"' }); T(S, 'hpl', 21, 1.15, ['힙의 문자열', 'heap string'], 'cz-tc plx-xs', 1, { w: 7 });
   box2(S, 'va', 17, 6.4, 3.4, 1.6, 'a', 'accent', 1, { pct: 30 }); ar(S, 'pa', [20.5, 6.8], [22, 4.1], 'accent', 1, { h: .1, off: 2 }); S.set('va', 2, { opacity: '.25' });
   box2(S, 'vb', 24, 6.4, 3.4, 1.6, 'b', 'ok', 2, { pct: 35 }); ar(S, 'pb', [25.7, 6.3], [25.4, 4.1], 'ok', 2, { h: .1 });
   T(S, 'mv', 17, 8.6, ['소유권 이동: a는 더 이상 못 써요', 'ownership moved: a is no longer usable'], 'plx-xs plx-r', 2);

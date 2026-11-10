@@ -578,7 +578,7 @@ function sJoinAlgo() {
   Sx.forEach((v, i) => seg(S, 'nf' + i, [3.95, y0 + .5], [7.45, y0 + i * dy + .5], 1, v === R[0] ? 'ok' : 'warn', .07));
   T(S, 'n1', 1, 8.5, ['행마다 상대 전체를 훑어요: 4 × 5 = 20번', 'every row scans the other side: 4 × 5 = 20'], 'dbx-tiny', 1); T(S, 'n2', 1, 9.4, 'O(N · M)', 'cz-mono dbx-xs dbx-a', 1);
   /* hash join */
-  T(S, 'ht', 11.5, .2, 'Hash Join', 'dbx-s dbx-a', 2); T(S, 'hb', 12, 1.2, ['해시 테이블 (id mod 3)', 'hash table (id mod 3)'], 'cz-mono dbx-tiny', 2); T(S, 'hs', 17.8, 1.2, 'orders', 'cz-mono dbx-tiny', 2);
+  T(S, 'ht', 11.5, .2, 'Hash Join', 'dbx-s dbx-a', 2); T(S, 'hb', 12, 1.2, ['해시 테이블 (id mod 3)', 'hash table (id mod 3)'], 'cz-mono dbx-tiny', 2); T(S, 'hs', 18.8, 1.2, 'orders', 'cz-mono dbx-tiny', 2);
   [['b0: 3', 0], ['b1: 1, 4', 1], ['b2: 2', 2]].forEach(([l, i]) => box2(S, 'hb' + i, 12, y0 + i * dy, 4.6, 1, l, 'accent', 2, { pct: 25 }));
   col('hS', 18, Sx, 'line', 2);
   Sx.forEach((v, i) => seg(S, 'hp' + i, [17.95, y0 + i * dy + .5], [16.65, y0 + (v % 3) * dy + .5], 2, 'ok', .07));

@@ -352,10 +352,10 @@ function sPump() {
 function sClosure() {
   const S = scene({ id: 'toc-closure', steps: 5, per: 1.5 });
   T(S, 'h1', 1, .9, ['M₁: a가 짝수 개', 'M₁: even number of a’s'], 'tx-xs tx-a'); T(S, 'h2', 17.6, .9, ['M₂: b로 끝남', 'M₂: ends with b'], 'tx-xs tx-w');
-  stt(S, 'e', 4, 4, 'E', 'accent', 0, { acc: true, start: true }); stt(S, 'o', 11, 4, 'O', 'accent', 0);
-  trn(S, 'eo', [4, 4], [11, 4], 'a', 0, { bend: .4 }); trn(S, 'oe', [11, 4], [4, 4], 'a', 0, { bend: .4 }); lp(S, 'el', 4, 4, 'b', 0); lp(S, 'ol', 11, 4, 'b', 0);
-  stt(S, 'n', 21, 4, 'N', 'warn', 0, { start: true }); stt(S, 'y', 28, 4, 'Y', 'warn', 0, { acc: true });
-  trn(S, 'ny', [21, 4], [28, 4], 'b', 0, { bend: .4 }); trn(S, 'yn', [28, 4], [21, 4], 'a', 0, { bend: .4 }); lp(S, 'nl', 21, 4, 'a', 0); lp(S, 'yl', 28, 4, 'b', 0);
+  stt(S, 'e', 4, 5, 'E', 'accent', 0, { acc: true, start: true }); stt(S, 'o', 11, 5, 'O', 'accent', 0);
+  trn(S, 'eo', [4, 5], [11, 5], 'a', 0, { bend: .4 }); trn(S, 'oe', [11, 5], [4, 5], 'a', 0, { bend: .4 }); lp(S, 'el', 4, 5, 'b', 0); lp(S, 'ol', 11, 5, 'b', 0);
+  stt(S, 'n', 21, 5, 'N', 'warn', 0, { start: true }); stt(S, 'y', 28, 5, 'Y', 'warn', 0, { acc: true });
+  trn(S, 'ny', [21, 5], [28, 5], 'b', 0, { bend: .4 }); trn(S, 'yn', [28, 5], [21, 5], 'a', 0, { bend: .4 }); lp(S, 'nl', 21, 5, 'a', 0); lp(S, 'yl', 28, 5, 'b', 0);
   const Q = { EN: [6, 9.6], EY: [15, 9.6], ON: [6, 15.2], OY: [15, 15.2] };
   Object.entries(Q).forEach(([k, [x, y]]) => { stt(S, 'p' + k, x, y, k[0] + ',' + k[1], 'ink-3', 2, { r: 1.3, start: k === 'EN' }); });
   tsets(S, 'pEY', [[4, 'ok', 45]]); ['pEN', 'pOY'].forEach(k => tsets(S, k, [[5, 'ok', 30]])); tsets(S, 'pEY', [[4, 'ok', 45]]);
@@ -463,10 +463,10 @@ function sDiag() {
   const B = ['01101100', '11010011', '00111010', '10100110', '01011001', '11100101'], X = j => 6 + j * 2, Y = i => 2.2 + i * 1.6;
   B.forEach((r, i) => { T(S, 'rl' + i, 1, Y(i) + .25, 's' + (i + 1), 'cz-mono tx-xs', 1); T(S, 'dots' + i, X(8) + .2, Y(i) + .25, '…', 'tx-xs', 1);
     r.split('').forEach((b, j) => { const k = `b${i}_${j}`; box2(S, k, X(j), Y(i), 1.8, 1.4, b, i === j ? 'warn' : 'line', 1, { pct: i === j ? 22 : 40 }); if (i === j) tsets(S, k, [[2, 'warn', 55]]); }); });
-  T(S, 'more', 1, Y(6) + .1, '⋮', 'tx-s', 1);
-  T(S, 'dl', 1, 12.4, 'd', 'cz-mono tx-s tx-r', 3);
-  B.forEach((r, j) => { const f = r[j] === '0' ? '1' : '0'; box2(S, 'd' + j, X(j), 12.2, 1.8, 1.4, f, 'danger', 3, { pct: 40 }); });
-  T(S, 'dd', X(6) + .4, 12.45, ['대각선을 뒤집은 수열', 'the flipped diagonal'], 'tx-xs tx-r', 3);
+  T(S, 'more', X(0) + .55, Y(6) - .5, '⋮', 'tx-s', 1);
+  T(S, 'dl', 1, 13.2, 'd', 'cz-mono tx-s tx-r', 3);
+  B.forEach((r, j) => { const f = r[j] === '0' ? '1' : '0'; box2(S, 'd' + j, X(j), 13.0, 1.8, 1.4, f, 'danger', 3, { pct: 40 }); });
+  T(S, 'dd', X(6) + .4, 13.25, ['대각선을 뒤집은 수열', 'the flipped diagonal'], 'tx-xs tx-r', 3);
   T(S, 'cmp', 23.4, 3, ['d ≠ s1 (1번째 자리)', 'd ≠ s1 (digit 1)'], 'tx-xs tx-r', 4); T(S, 'cmp2', 23.4, 4.2, ['d ≠ s2 (2번째 자리)', 'd ≠ s2 (digit 2)'], 'tx-xs tx-r', 4); T(S, 'cmp3', 23.4, 5.4, ['… d는 어느 줄과도 달라요', '… d differs from every row'], 'tx-xs tx-r', 4);
   T(S, 'cmp4', 23.4, 7, ['→ 목록에 없음: 셀 수 없음', '→ not listed: uncountable'], 'tx-xs tx-g', 4);
   notes(S, 'n', 14.6, [['무한 0/1 수열을 빠짐없이 한 줄씩 나열했다고 가정해요', 'suppose every infinite 0/1 sequence is listed, one per row'], ['대각선 자리(i번째 줄의 i번째 숫자)를 봐요', 'look at the diagonal: digit i of row i'], ['대각선을 모두 뒤집은 새 수열 d를 만들어요', 'build d by flipping every diagonal digit'], ['d는 i번째 줄과 i번째 자리에서 달라서 목록 어디에도 없어요', 'd differs from row i at digit i, so it is nowhere in the list']], 'tx-s');

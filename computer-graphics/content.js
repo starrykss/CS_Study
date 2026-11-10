@@ -159,7 +159,7 @@ function sPersp() {
   [[14, 'warn'], [26, 'ok']].forEach(([x, c], i) => { px(S, 'o' + i, x - .3, G - 4, .6, 4, `var(--${c})`, 0, { r: .1 });
     const top = [x, G - 4], bot = [x, G], yt = E[1] + (top[1] - E[1]) * (NX - E[0]) / (x - E[0]), yb = E[1] + (bot[1] - E[1]) * (NX - E[0]) / (x - E[0]);
     seg(S, 'r' + i + 't', E, top, 2, c, .06); seg(S, 'r' + i + 'b', E, bot, 2, c, .06); px(S, 'pj' + i, NX - .3 + (i ? .45 : -.45), yt, .6, yb - yt, `var(--${c})`, 3, { r: .1 });
-    T(S, 'ph' + i, NX + (i ? 1 : -4), (yt + yb) / 2 - .5, (4 * (NX - E[0]) / (x - E[0])).toFixed(2), 'cz-mono gx-xs ' + (i ? 'gx-g' : 'gx-w'), 3); T(S, 'z' + i, x - 1, G + .3, 'z = ' + (x - E[0]), 'cz-tc cz-mono gx-xs', 1, { w: 2.4 }); });
+    T(S, 'ph' + i, NX + (i ? 1 : -4), i ? (yt + yb) / 2 - .5 : yb + .3, (4 * (NX - E[0]) / (x - E[0])).toFixed(2), 'cz-mono gx-xs ' + (i ? 'gx-g' : 'gx-w'), 3); T(S, 'z' + i, x - 1, G + .3, 'z = ' + (x - E[0]), 'cz-tc cz-mono gx-xs', 1, { w: 2.4 }); });
   T(S, 'f', 18, 2, "y' = y · n / z", 'cz-mono gx-l', 3); T(S, 'f2', 18, 3.6, ['두 배 멀면 절반 크기', 'twice as far → half the size'], 'gx-xs', 3);
   seg(S, 'fu', E, [31, E[1] - 9], 4, 'ink-3', .08, { dash: 1 }); seg(S, 'fd', E, [31, E[1] + 7], 4, 'ink-3', .08, { dash: 1 }); vl(S, 'fp', 30.6, E[1] - 8.7, E[1] + 6.8, 'danger', 4, { w: .12 });
   T(S, 'fpl', 24.4, 16.2, ['far 평면', 'far plane'], 'gx-xs gx-r', 4); T(S, 'fpl2', 20.4, 17.4, ['사이가 시야 절두체', 'in between: the view frustum'], 'gx-xs gx-r', 4);
@@ -595,6 +595,266 @@ function sBezier() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'gxx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono gxx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono gxx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c gxx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono gxx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c gxx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'gxx-s gxx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono gxx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono gxx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono gxx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono gxx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono gxx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'gxx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'gxx-xs', 5));
+
+
+const CSSX = `
+.gxx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.gxx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.gxx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.gxx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.gxx-r .in{color:var(--danger);font-weight:800}
+.gxx-g .in{color:var(--ok);font-weight:800}
+.gxx-a .in{color:var(--accent);font-weight:800}
+.gxx-w .in{color:var(--warn);font-weight:800}
+.gxx-c .in{font-size:.6em;font-weight:700}
+.gxx-c2 .in{font-size:.5em;font-weight:700}
+.gxx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.gxx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const vis0 = (S, k, st, off) => { if (st) S.set(k, 0, hid()); vis(S, k, st, off); };
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'gxx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+const outline = (S, k, pts, st, color, h, o = {}) => pts.forEach((p, i) => seg(S, k + i, p, pts[(i + 1) % pts.length], st, color, h, o));
+
+/* ================= rasterization ================= */
+function sClip() {
+  const S = scene({ id: 'gx-clip', steps: 5, per: 1.6 });
+  const XL = 8, XR = 22, YT = 3, YB = 13;
+  rect(S, 'scr', XL, YT, XR - XL, YB - YT, 'accent', 8, 0, { r: 0, css: 'border:.12em solid var(--accent)' });
+  T(S, 'scl', XL + .3, YB - .9, ['화면 (뷰포트)', 'screen (viewport)'], 'gxx-tiny gxx-a', 0);
+  const P = [[4, 11.5], [16, .6], [25, 12]];
+  const clip = (poly, inside, cut) => { const out = []; poly.forEach((a, i) => { const b = poly[(i + 1) % poly.length], ia = inside(a), ib = inside(b); if (ia) out.push(a); if (ia !== ib) out.push(cut(a, b)); }); return out; };
+  const lerpX = x => (a, b) => [x, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])], lerpY = y => (a, b) => [a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]), y];
+  const p1 = clip(P, p => p[0] >= XL, lerpX(XL)), p2 = clip(p1, p => p[1] >= YT, lerpY(YT)), p3 = clip(p2, p => p[0] <= XR, lerpX(XR)), p4 = clip(p3, p => p[1] <= YB, lerpY(YB));
+  outline(S, 'tri', P, 0, 'ink-3', .07, { dash: 1 });
+  P.forEach((p, i) => pt(S, 'v' + i, p[0], p[1], 0, C.idle, .3));
+  outline(S, 'c1', p1, 2, 'warn', .12, { off: 3 }); seg(S, 'eL', [XL, .3], [XL, 15], 2, 'danger', .08, { dash: 1, off: 3 }); T(S, 'eLl', XL - 2.4, 14.4, 'x ≥ 8', 'cz-mono gxx-xs gxx-r', 2, { off: 3 });
+  outline(S, 'c4', p4, 3, 'ok', .14);
+  seg(S, 'eT', [1, YT], [31, YT], 3, 'danger', .08, { dash: 1, off: 4 }); seg(S, 'eR', [XR, .3], [XR, 15], 3, 'danger', .08, { dash: 1, off: 4 });
+  p4.forEach((p, i) => pt(S, 'n' + i, p[0], p[1], 3, C.okf, .28));
+  for (let i = 1; i < p4.length - 1; i++) seg(S, 'fan' + i, p4[0], p4[i + 1], 4, 'ok', .06, { dash: 1 });
+  T(S, 'cnt', 23.4, 5, ['꼭짓점 3개 → ' + p4.length + '개', '3 vertices → ' + p4.length], 'gxx-xs gxx-g', 3);
+  T(S, 'fanl', 23.4, 6.3, ['→ 삼각형 ' + (p4.length - 2) + '개로 나눠 그려요', '→ drawn as ' + (p4.length - 2) + ' triangles'], 'gxx-xs gxx-g', 4);
+  stepT(S, 'k', 1, 15.6, [['삼각형 일부가 화면 밖이에요 · 밖까지 래스터화하면 낭비고, 카메라 뒤면 계산이 깨져요', 'part of the triangle is off-screen · rasterizing it wastes work, and points behind the camera break the math'], ['서덜랜드-호지먼: 경계 하나씩 잘라요 · 안쪽 점은 남기고, 경계를 넘는 변은 교점을 추가', 'Sutherland–Hodgman clips one edge at a time · keep inside points and add a point where an edge crosses'], ['위·오른쪽·아래 경계까지 차례로 자르면 화면 안의 다각형만 남아요', 'clipping against the top, right and bottom edges in turn leaves only the visible polygon'], ['볼록 다각형은 한 꼭짓점에서 부채꼴로 삼각형을 나눠 래스터라이저에 넘겨요', 'a convex polygon is split into a fan of triangles from one vertex for the rasterizer']]);
+  fin(S, 'z', 17.0, [['클리핑: 보이는 영역 밖의 부분을 잘라내 래스터화할 것만 남기는 단계', 'clipping cuts away whatever lies outside the visible region before rasterization', 'gxx-xs gxx-a'], ['GPU는 투영 뒤 클립 공간(−w ≤ x, y, z ≤ w)에서 하고, 가드 밴드로 자르는 횟수를 줄여요', 'GPUs clip in clip space (−w ≤ x, y, z ≤ w) after projection, using a guard band to clip less often']]);
+  S.cap(1, '화면 밖으로 나간 삼각형', 'A triangle partly off-screen').cap(2, '왼쪽 경계로 자르기', 'Clip against the left edge').cap(3, '나머지 경계도 차례로', 'Then the other edges').cap(4, '삼각형으로 다시 나누기', 'Re-triangulate').cap(5, '클리핑', 'Clipping');
+  return S;
+}
+function sBlend() {
+  const S = scene({ id: 'gx-blend', steps: 5, per: 1.6 });
+  const sw = (k, x, y, css, label, st, o = {}) => { rect(S, k, x, y, 4.2, 2.6, 'line', 0, 0, { r: .3, css: css + ';border:.1em solid var(--line)' + (o.css || '') }); vis0(S, k, st, o.off); T(S, k + 'l', x - .4, y + 2.75, label, 'cz-tc gxx-xs', st, { w: 5, off: o.off }); };
+  sw('dst', 1, 1.2, 'background:rgb(51,102,255)!important', ['배경 Cd', 'dest Cd'], 0);
+  sw('src', 7, 1.2, 'background:rgba(255,51,51,.5)!important', ['빨강 Cs, α = 0.5', 'red Cs, α = 0.5'], 0);
+  T(S, 'eq', 11.8, 1.9, '→', 'gxx-l', 1);
+  sw('out', 13.4, 1.2, 'background:rgb(153,77,153)!important', ['결과', 'result'], 1);
+  T(S, 'f', 18.6, 1.4, 'C = α·Cs + (1 − α)·Cd', 'cz-mono gxx-s gxx-a', 1);
+  T(S, 'f2', 18.6, 2.8, '= 0.5·(1, .2, .2) + 0.5·(.2, .4, 1)', 'cz-mono gxx-xs', 1); T(S, 'f3', 18.6, 3.9, '= (.6, .3, .6)', 'cz-mono gxx-xs gxx-g', 1);
+  rect(S, 'bgp', 1, 7.2, 17.6, 7.4, 'ink-3', 10, 2, { r: .4 });
+  rect(S, 'red', 3, 8.2, 8.4, 4.4, 'line', 0, 0, { r: .2, css: 'background:rgba(255,51,51,.55)!important' }); vis0(S, 'red', 2);
+  rect(S, 'grn', 8, 9.6, 8.4, 4.4, 'line', 0, 0, { r: .2, css: 'background:rgba(34,197,94,.55)!important' }); vis0(S, 'grn', 2);
+  rect(S, 'hole', 8, 9.6, 3.4, 3.0, 'line', 0, 0, { r: 0, css: 'background:color-mix(in srgb,var(--ink-3) 10%,var(--stage))!important' }); vis0(S, 'hole', 3, 4);
+  rect(S, 'hole2', 8, 9.6, 3.4, 3.0, 'line', 0, 0, { r: 0, css: 'background:rgba(34,197,94,.55)!important' }); vis0(S, 'hole2', 3, 4);
+  T(S, 'zr', 3.3, 8.3, ['빨강 z = 5 (뒤)', 'red z = 5 (back)'], 'gxx-xs', 2); T(S, 'zg', 11.0, 12.8, ['초록 z = 3 (앞)', 'green z = 3 (front)'], 'gxx-xs', 2);
+  T(S, 'ok', 20, 8.2, ['① 빨강(뒤) → ② 초록(앞) ✓', '① red (back) → ② green (front) ✓'], 'gxx-xs gxx-g', 2, { off: 3 });
+  T(S, 'bad', 20, 8.2, ['① 초록(앞) → ② 빨강(뒤)', '① green (front) → ② red (back)'], 'gxx-xs gxx-r', 3, { off: 4 });
+  T(S, 'bad2', 20, 9.3, ['빨강이 깊이 테스트에 막혀', 'red fails the depth test,'], 'gxx-xs', 3, { off: 4 }); T(S, 'bad3', 20, 10.4, ['겹친 곳에서 사라짐 ✗', 'vanishing in the overlap ✗'], 'gxx-xs gxx-r', 3, { off: 4 });
+  [['① 불투명한 것 먼저 (깊이 쓰기 켬)', '① opaque first (depth write on)'], ['② 투명한 것은 뒤 → 앞 정렬', '② transparent sorted back to front'], ['   (깊이 테스트만, 쓰기는 끔)', '   (depth test on, write off)'], ['③ 서로 뚫고 지나가면 OIT', '③ interpenetrating: OIT']].forEach((t, i) => T(S, 'r' + i, 20, 8.2 + i * 1.1, t, 'gxx-xs' + (i ? '' : ' gxx-a'), 4));
+  stepT(S, 'k', 1, 15.4, [['오버 연산: 원본 색을 α만큼, 뒤에 있던 색을 (1 − α)만큼 섞어요', 'the over operator mixes α of the source with (1 − α) of what is behind'], ['투명한 판 두 장은 뒤에서 앞으로 그려야 겹친 부분 색이 맞아요', 'two transparent panes must be drawn back to front for the overlap to be right'], ['앞의 것을 먼저 그리면 깊이 버퍼가 뒤의 것을 막아 겹친 부분이 틀려요', 'drawing the front one first lets the depth buffer reject the back one, so the overlap is wrong'], ['그래서 불투명 → 투명(정렬) 순서로, 투명한 것은 깊이를 쓰지 않아요', 'so draw opaque, then transparent sorted, without writing depth for the transparent pass']]);
+  fin(S, 'z', 16.8, [['알파 블렌딩은 순서에 따라 결과가 달라요 · 투명 객체는 정렬해서 그려야 해요', 'alpha blending depends on order · transparent objects must be drawn sorted', 'gxx-xs gxx-a'], ['파티클·UI·유리·연기에 쓰이고, 미리 곱한 알파(premultiplied)로 경계 테두리 문제를 피해요', 'used for particles, UI, glass and smoke; premultiplied alpha avoids fringe artifacts at edges']]);
+  S.cap(1, '오버 연산', 'The over operator').cap(2, '뒤에서 앞으로', 'Back to front').cap(3, '순서가 틀리면', 'When the order is wrong').cap(4, '그리는 순서 규칙', 'The drawing order rule').cap(5, '알파 블렌딩과 투명 객체', 'Alpha blending and transparency');
+  return S;
+}
+
+/* ================= lighting ================= */
+function sTonemap() {
+  const S = scene({ id: 'gx-tonemap', steps: 5, per: 1.6 });
+  const X = L => 2 + (Math.log10(L) + 2) * 3.3, Y = v => 11 - v * 8.6;
+  hl(S, 'ax', 1.6, 15.5, Y(0), 'ink-3', 0, { w: .07 }); seg(S, 'ay', [2, 1.8], [2, 11.1], 0, 'ink-3', .07);
+  [.01, .1, 1, 10, 100].forEach(L => T(S, 'xt' + L, X(L) - 1, 11.25, String(L), 'cz-tc cz-mono gxx-tiny', 0, { w: 2 }));
+  T(S, 'xl', 6.4, 12.1, ['장면 밝기 (로그)', 'scene luminance (log)'], 'gxx-tiny', 0); T(S, 'yl', 2.3, 1.2, ['화면 값', 'display'], 'gxx-tiny', 0);
+  hl(S, 'one', 2, 15.2, Y(1), 'line', 0, { w: .05, dash: 1 }); T(S, 'onel', .6, Y(1) - .3, '1', 'cz-mono gxx-tiny', 0);
+  const pts = f => [...Array(41)].map((_, i) => { const L = Math.pow(10, -2 + i * .1); return [X(L), Y(f(L))]; });
+  const clamp = L => Math.min(L, 1), rein = L => L / (1 + L), aces = L => Math.min(1, (L * (2.51 * L + .03)) / (L * (2.43 * L + .59) + .14));
+  poly(S, 'cc', pts(clamp), { st: 2, color: 'danger', h: .1 }); poly(S, 'cr', pts(rein), { st: 3, color: 'accent', h: .1 }); poly(S, 'ca', pts(aces), { st: 4, color: 'ok', h: .12 });
+  const LV = [.05, .2, 1, 4, 16, 64], PX = i => 18.6 + i * 2.1;
+  const ROWS = [[['장면 값', 'scene'], null, 1, 'ink-3'], [['자르기', 'clamp'], clamp, 2, 'gxx-r'], ['Reinhard', rein, 3, 'gxx-a'], ['ACES', aces, 4, 'gxx-g']];
+  ROWS.forEach(([lab, f, st, c], r) => { const y = 1.6 + r * 2.5; T(S, 'rl' + r, 18.6, y - .75, lab, 'gxx-tiny ' + c, st);
+    LV.forEach((L, i) => { if (!f) box2(S, `p${r}_${i}`, PX(i), y, 1.9, 1.5, String(L), 'line', st, { pct: 20 }); else { const v = Math.round(f(L) * 255); rect(S, `p${r}_${i}`, PX(i), y, 1.9, 1.5, 'line', 0, 0, { r: .15, css: `background:rgb(${v},${v},${v})!important;border:.06em solid var(--line)` }); vis0(S, `p${r}_${i}`, st); } }); });
+  T(S, 'lost', 18.6, 6.3, ['4·16·64가 모두 같은 흰색 → 디테일 손실 ✗', '4, 16 and 64 turn the same white → detail lost ✗'], 'gxx-tiny gxx-r', 2, { off: 3 });
+  stepT(S, 'k', 1, 13.0, [['실제 장면의 밝기는 그림자 0.05부터 해 64까지 넓은데, 화면은 0~1만 표현해요', 'real scenes range from 0.05 in shadow to 64 in sunlight, but screens show only 0–1'], ['1을 넘는 값을 그냥 자르면 밝은 부분이 모두 하얗게 뭉개져요', 'clamping everything above 1 flattens all the highlights to white'], ['Reinhard L / (1 + L): 큰 값일수록 더 눌러 담아 모든 밝기가 구분돼요', 'Reinhard L / (1 + L) compresses big values more, keeping every level distinct'], ['필름 곡선(ACES): S자로 중간 대비는 살리고 밝은 끝은 부드럽게', 'a filmic curve (ACES) keeps midtone contrast and rolls off highlights softly']]);
+  fin(S, 'z', 14.4, [['톤 매핑: 넓은 HDR 밝기 범위를 화면이 보여 줄 수 있는 범위로 접어 넣는 곡선', 'tone mapping folds a wide HDR luminance range into what a display can show', 'gxx-xs gxx-a'], ['노출(곱하기)을 먼저 정하고 선형 공간에서 매핑한 뒤 감마를 적용해요 · HDR 모니터는 더 넓게 써요', 'set exposure first, map in linear space, then apply gamma · HDR displays get a wider range']]);
+  S.cap(1, '장면은 화면보다 밝아요', 'Scenes outshine screens').cap(2, '그냥 자르면', 'Just clamping').cap(3, 'Reinhard', 'Reinhard').cap(4, '필름 곡선 ACES', 'The filmic ACES curve').cap(5, 'HDR과 톤 매핑', 'HDR and tone mapping');
+  return S;
+}
+
+/* ================= GPU ================= */
+function sDeferred() {
+  const S = scene({ id: 'gx-deferred', steps: 5, per: 1.6 });
+  T(S, 'ft', 1, .4, ['포워드: 물체마다 모든 조명 계산', 'forward: every light for every object'], 'gxx-xs gxx-a', 0);
+  for (let o = 0; o < 3; o++) { T(S, 'ol' + o, 1, 2.0 + o * 1.5, ['물체 ' + (o + 1), 'mesh ' + (o + 1)], 'gxx-xs', 0); for (let l = 0; l < 4; l++) box2(S, `fc${o}_${l}`, 5 + l * 2.1, 1.8 + o * 1.5, 1.9, 1.2, 'L' + (l + 1), 'warn', 0, { pct: 25 }); }
+  T(S, 'fn', 1, 6.5, ['3 × 4 = 12번 계산 + 가려질 픽셀까지 계산', '3 × 4 = 12 shading passes + hidden pixels too'], 'gxx-xs gxx-r', 1);
+  box2(S, 'gp', 15.4, 1.2, 6.4, 1.6, ['① 지오메트리 패스', '① geometry pass'], 'accent', 2, { pct: 25 });
+  const G = [[['색 (albedo)', 'albedo'], 'linear-gradient(90deg,#e66,#fc6,#6c6)'], [['법선', 'normals'], 'linear-gradient(135deg,#88f,#c8f,#8cf)'], [['깊이', 'depth'], 'linear-gradient(90deg,#222,#bbb)'], [['재질', 'roughness'], 'linear-gradient(90deg,#c84,#fd9)']];
+  G.forEach(([l, bg], i) => { const x = 23.4 + (i % 2) * 4, y = 1.0 + Math.floor(i / 2) * 3.0; rect(S, 'g' + i, x, y, 3.7, 2.0, 'line', 0, 0, { r: .2, css: `background:${bg}!important;border:.06em solid var(--line)` }); vis0(S, 'g' + i, 2); T(S, 'gl' + i, x, y + 2.05, l, 'cz-tc gxx-tiny', 2, { w: 3.7 }); });
+  ar(S, 'gpa', [21.9, 2.0], [23.3, 2.0], 'ink-3', 2, { h: .08 }); T(S, 'gbl', 14.6, 4.6, ['G-버퍼 (조명 계산 없음) →', 'G-buffer (no lighting yet) →'], 'gxx-xs gxx-a', 2, { w: 8.4, css: 'text-align:right' });
+  box2(S, 'lp', 15.4, 8.4, 8.4, 1.6, ['② 조명 패스', '② lighting pass'], 'ok', 3, { pct: 28 });
+  elb(S, 'gla', [[27.2, 6.8], [27.2, 9.2], [23.9, 9.2]], 'ink-3', 3, { h: .08 });
+  T(S, 'lights', 15.4, 10.4, ['💡 × 100: 조명마다 영향받는 픽셀만', '💡 × 100: each light touches only its pixels'], 'gxx-xs gxx-g', 3);
+  T(S, 'cost', 15.4, 11.5, ['비용 ≈ 화면 픽셀 × 그 픽셀의 조명 수', 'cost ≈ screen pixels × lights on them'], 'gxx-xs', 3);
+  [['✗ 투명한 물체는 따로 포워드로', '✗ transparency needs a forward pass'], ['✗ MSAA가 어렵고 G-버퍼 대역폭이 커요', '✗ hard MSAA, heavy G-buffer bandwidth'], ['→ 대안: Forward+ (타일별 조명 추려내기)', '→ alternative: Forward+ (tiled light culling)']].forEach((t, i) => T(S, 'd' + i, 1, 8.4 + i * 1.1, t, 'gxx-xs' + (i < 2 ? ' gxx-r' : ' gxx-a'), 4));
+  stepT(S, 'k', 1, 13.0, [['포워드 렌더링은 물체를 그릴 때마다 모든 조명을 계산해요 · 조명이 많으면 폭발', 'forward rendering lights every object with every light as it draws · it explodes with many lights'], ['디퍼드 1단계: 조명 없이 색·법선·깊이·재질만 화면 크기 텍스처들(G-버퍼)에 써요', 'deferred step 1: write albedo, normals, depth and material to screen-sized textures (the G-buffer)'], ['2단계: 조명마다 영향받는 화면 픽셀만 G-버퍼를 읽어 계산 → 조명 수백 개도 OK', 'step 2: each light shades only the pixels it touches from the G-buffer → hundreds of lights are fine'], ['대가: 투명 처리, MSAA, 메모리 대역폭 · 그래서 Forward+도 많이 써요', 'the price: transparency, MSAA and bandwidth · hence the popularity of Forward+']]);
+  fin(S, 'z', 14.4, [['디퍼드 셰이딩: 기하 정보를 먼저 모으고, 조명은 보이는 픽셀에만 나중에 계산', 'deferred shading gathers geometry first and lights only the visible pixels afterwards', 'gxx-xs gxx-a'], ['조명이 많은 실내·도시 장면에 강하고, 언리얼·유니티 HDRP 등 엔진이 지원해요', 'it shines in scenes with many lights and is supported by engines such as Unreal and Unity HDRP']]);
+  S.cap(1, '포워드: 물체 × 조명', 'Forward: objects × lights').cap(2, 'G-버퍼에 먼저 기록', 'Write the G-buffer first').cap(3, '조명은 나중에, 픽셀만', 'Light later, per pixel').cap(4, '장단점', 'Trade-offs').cap(5, '디퍼드 셰이딩', 'Deferred shading');
+  return S;
+}
+
+/* ================= advanced ================= */
+function sSdf() {
+  const S = scene({ id: 'gx-sdf', steps: 5, per: 1.6 });
+  const C1 = [21, 6.4], R1 = 3, C3 = [9.6, 12.4], R3 = 1.6, O = [5.5, 8];
+  const d = p => Math.min(Math.hypot(p[0] - C1[0], p[1] - C1[1]) - R1, Math.hypot(p[0] - C3[0], p[1] - C3[1]) - R3);
+  rect(S, 'c1', C1[0] - R1, C1[1] - R1, 2 * R1, 2 * R1, 'accent', 35, 0, { r: R1, css: 'border:.1em solid var(--accent)' });
+  rect(S, 'c3', C3[0] - R3, C3[1] - R3, 2 * R3, 2 * R3, 'warn', 35, 0, { r: R3, css: 'border:.1em solid var(--warn)' });
+  const PP = [27.5, 13.5], dp = d(PP);
+  pt(S, 'pp', PP[0], PP[1], 1, C.cur, .3, { off: 2 }); const u = [C1[0] - PP[0], C1[1] - PP[1]], ul = Math.hypot(...u);
+  ar(S, 'pd', PP, [PP[0] + u[0] / ul * dp, PP[1] + u[1] / ul * dp], 'accent', 1, { h: .08, off: 2 });
+  T(S, 'pdl', 25.6, 14.3, 'd(p) = ' + dp.toFixed(1), 'cz-mono gxx-xs gxx-a', 1, { off: 2 });
+  T(S, 'def', 1, .4, 'd(p) = min( |p − c₁| − r₁ , |p − c₂| − r₂ )', 'cz-mono gxx-xs gxx-a', 1);
+  const dir = (() => { const v = [14, -1.2], l = Math.hypot(...v); return [v[0] / l, v[1] / l]; })();
+  const steps = []; let p = O.slice();
+  for (let i = 0; i < 12; i++) { const r = d(p); steps.push([p.slice(), r]); if (r < .06) break; p = [p[0] + dir[0] * r, p[1] + dir[1] * r]; }
+  pt(S, 'o', O[0], O[1], 0, C.badf, .35); T(S, 'ol', O[0] - 2.4, O[1] + .5, ['카메라', 'camera'], 'cz-tc gxx-tiny', 0, { w: 4.8 });
+  const hit = steps[steps.length - 1][0];
+  seg(S, 'ray', O, hit, 2, 'ink-3', .06, { dash: 1 });
+  steps.forEach(([q, r], i) => { const st = i === 0 ? 2 : 3; if (r > .25) ring(S, 'sr' + i, q[0], q[1], r, 'accent', st, { w: .06, dash: 1 }); if (i) pt(S, 'sp' + i, q[0], q[1], st, C.cur, .2); });
+  pt(S, 'hit', hit[0], hit[1], 3, C.okf, .35); T(S, 'hitl', hit[0] - 3.2, hit[1] - 1.5, ['맞음 ✓ (' + steps.length + '걸음)', 'hit ✓ (' + steps.length + ' steps)'], 'cz-tc gxx-xs gxx-g', 3, { w: 6.4 });
+  T(S, 'sm', 1, 15.0, ['부드러운 합집합 smin(d₁, d₂, k) · 반복 mod(p, s) · 부드러운 그림자', 'smooth union smin(d₁, d₂, k) · repetition mod(p, s) · soft shadows'], 'cz-mono gxx-xs', 4);
+  stepT(S, 'k', 1, 16.4, [['SDF: 점 p에서 가장 가까운 표면까지의 거리를 돌려주는 함수 · 원은 |p − c| − r', 'an SDF returns the distance from p to the nearest surface · a circle is |p − c| − r'], ['광선 위의 현재 점에서 d만큼은 아무것도 없으니, 그만큼 한 번에 전진해요', 'nothing lies within d of the current point, so the ray can jump forward by d'], ['표면에 가까워질수록 걸음이 줄고, d가 ε보다 작아지면 맞은 거예요', 'steps shrink near the surface; once d drops below ε, it’s a hit'], ['식 몇 줄로 부드럽게 녹아 붙은 모양, 무한 반복, 부드러운 그림자를 만들어요', 'a few lines of math give smoothly blended shapes, infinite repetition and soft shadows']]);
+  fin(S, 'z', 17.8, [['레이 마칭(구 추적): SDF 값만큼 성큼성큼 나아가 표면을 찾는 렌더링 방법', 'ray marching (sphere tracing) finds surfaces by stepping forward by the SDF value', 'gxx-xs gxx-a'], ['셰이더토이 데모, SDF 글꼴 렌더링, UI 도형, 볼류메트릭 효과에 쓰여요', 'used in Shadertoy demos, SDF font rendering, UI shapes and volumetric effects']]);
+  S.cap(1, '거리 함수', 'A distance function').cap(2, '안전한 만큼 전진', 'Step as far as is safe').cap(3, '표면에 닿을 때까지', 'Until it reaches a surface').cap(4, '식으로 만드는 모양', 'Shapes from formulas').cap(5, 'SDF와 레이 마칭', 'SDFs and ray marching');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'gx-rast': [
+    item('gx-clip', '클리핑', 'Clipping', '화면(보이는 영역) 밖으로 나간 도형 부분을 잘라내, 래스터화할 부분만 남기는 단계예요.', '삼각형의 일부가 화면 밖에 있으면 그대로 래스터화하는 건 낭비이고, 카메라 뒤에 있는 점은 원근 나눗셈을 깨뜨려요. 서덜랜드-호지먼 알고리즘은 경계 하나씩(왼쪽, 위, 오른쪽, 아래) 차례로 잘라요. 안쪽 점은 남기고, 경계를 가로지르는 변에는 교점을 새로 추가해요. 결과는 화면 안의 볼록 다각형이고, 한 꼭짓점에서 부채꼴로 나눠 삼각형 여러 개로 래스터라이저에 넘겨요. GPU는 투영 뒤 클립 공간(−w ≤ x, y, z ≤ w)에서 자르고, 가드 밴드를 둬서 실제로 잘라야 하는 경우를 줄여요.', 'Clipping cuts away the parts of a primitive outside the visible region so that only what will be rasterized remains.', 'Rasterizing a triangle partly off-screen wastes work, and vertices behind the camera break the perspective divide. The Sutherland–Hodgman algorithm clips against one boundary at a time (left, top, right, bottom), keeping inside points and adding an intersection point wherever an edge crosses. The result is a convex polygon inside the screen, split into a fan of triangles from one vertex for the rasterizer. GPUs clip in clip space (−w ≤ x, y, z ≤ w) after projection, and a guard band reduces how often real clipping is needed.', sClip()),
+    item('gx-blend', '알파 블렌딩과 투명 객체', 'Alpha blending and transparency', '반투명한 색은 뒤에 있던 색과 α 비율로 섞어요. 결과가 그리는 순서에 따라 달라지므로 투명한 물체는 정렬해서 그려야 해요.', '오버 연산은 C = α·Cs + (1 − α)·Cd로, α = 0.5인 빨강을 파랑 위에 그리면 보라가 돼요. 투명한 판 두 장이 겹치면 뒤의 것을 먼저, 앞의 것을 나중에 그려야 겹친 곳의 색이 맞아요. 앞의 것을 먼저 그리면 깊이 버퍼에 그 깊이가 기록되어, 뒤의 판이 깊이 테스트에서 탈락해 겹친 곳에서 사라져요. 그래서 불투명한 물체를 먼저(깊이 쓰기 켬) 그리고, 투명한 물체는 뒤에서 앞으로 정렬해 깊이 테스트만 하고 쓰기는 끈 채 그려요. 서로 뚫고 지나가는 투명 물체는 순서 독립 투명(OIT) 기법을 써요. 미리 곱한 알파를 쓰면 가장자리 테두리 문제도 줄어요.', 'Translucent colors are mixed with what is behind them in proportion α; since the result depends on drawing order, transparent objects must be drawn sorted.', 'The over operator computes C = α·Cs + (1 − α)·Cd, so red at α = 0.5 over blue gives purple. Where two transparent panes overlap, the back one must be drawn first and the front one after for the overlap to be right. Drawing the front pane first records its depth, and the back pane then fails the depth test and disappears in the overlap. So opaque objects go first with depth writes on, then transparent ones sorted back to front with depth testing on and depth writes off. Interpenetrating transparent objects need order-independent transparency (OIT), and premultiplied alpha avoids fringe artifacts at edges.', sBlend())
+  ],
+  'gx-light': [
+    item('gx-tonemap', 'HDR과 톤 매핑', 'HDR and tone mapping', '실제 장면의 밝기 범위는 화면이 보여 줄 수 있는 범위보다 훨씬 넓어요. 톤 매핑은 그 넓은 범위를 0~1로 접어 넣는 곡선이에요.', '렌더러는 그림자 0.05에서 햇빛 64처럼 넓은 HDR 값으로 계산하지만 화면은 0~1만 보여 줘요. 1을 넘는 값을 그냥 자르면 4, 16, 64가 모두 같은 흰색이 되어 밝은 부분의 디테일이 사라져요. Reinhard 곡선 L / (1 + L)은 큰 값일수록 더 많이 눌러 담아 모든 밝기를 구분해요. ACES 같은 필름 곡선은 S자 모양으로 중간 톤의 대비를 살리고 밝은 끝을 부드럽게 말아 올려 영화 같은 느낌을 줘요. 노출(밝기 배율)을 먼저 정하고 선형 공간에서 매핑한 뒤 감마를 적용하며, HDR 모니터는 더 넓은 범위를 그대로 보여 줘요.', 'Real scenes span far more brightness than a display can show; tone mapping is the curve that folds that wide range into 0–1.', 'Renderers compute wide HDR values, from 0.05 in shadow to 64 in sunlight, but screens show only 0–1. Simply clamping everything above 1 turns 4, 16 and 64 into the same white and loses highlight detail. The Reinhard curve L / (1 + L) compresses larger values more, keeping every level distinct. Filmic curves such as ACES are S-shaped, preserving midtone contrast while rolling highlights off softly for a cinematic look. Exposure is set first, mapping happens in linear space and gamma comes last, while HDR displays can show a wider range directly.', sTonemap())
+  ],
+  'gx-gpu': [
+    item('gx-deferred', '디퍼드 셰이딩', 'Deferred shading', '물체를 그릴 때 바로 조명을 계산하는 대신, 먼저 화면 픽셀마다 색·법선·깊이·재질을 모아 두고(G-버퍼) 조명은 나중에 보이는 픽셀에만 계산해요.', '포워드 렌더링은 물체마다 모든 조명을 계산하므로 비용이 물체 수 × 조명 수로 늘고, 나중에 가려질 픽셀까지 계산해요. 디퍼드 셰이딩은 1단계(지오메트리 패스)에서 조명 없이 albedo, 법선, 깊이, 거칠기 같은 값을 화면 크기 텍스처들(G-버퍼)에 써요. 2단계(조명 패스)에서는 각 조명이 영향을 주는 화면 픽셀만 G-버퍼를 읽어 계산해, 조명이 수백 개여도 감당할 수 있어요. 대신 투명 물체는 따로 포워드로 그려야 하고, MSAA가 어렵고, G-버퍼 메모리 대역폭이 커요. 그래서 타일별로 조명을 추려 내는 Forward+도 많이 써요.', 'Instead of lighting objects as they are drawn, deferred shading first stores each pixel’s albedo, normal, depth and material (the G-buffer) and computes lighting later only for visible pixels.', 'Forward rendering lights every object with every light, so cost grows with objects × lights and includes pixels that end up hidden. Deferred shading’s geometry pass writes albedo, normals, depth and roughness to screen-sized textures (the G-buffer) without lighting. The lighting pass then has each light read the G-buffer only for the pixels it affects, which makes hundreds of lights affordable. The trade-offs are that transparent objects need a separate forward pass, MSAA is awkward and G-buffer bandwidth is heavy, which is why tiled Forward+ rendering is also popular.', sDeferred())
+  ],
+  'gx-adv': [
+    item('gx-sdf', 'SDF와 레이 마칭', 'SDFs and ray marching', '부호 거리 함수(SDF)는 공간의 한 점에서 가장 가까운 표면까지의 거리를 알려 줘요. 레이 마칭은 그 거리만큼씩 성큼성큼 전진하며 표면을 찾아 그리는 방법이에요.', '원의 SDF는 |p − c| − r이고, 여러 도형은 min으로 합쳐요. 광선 위 현재 점에서 SDF 값 d 안에는 아무 표면도 없으니 한 번에 d만큼 전진해도 안전해요(구 추적). 표면 근처에서는 걸음이 점점 작아지고, d가 ε보다 작아지면 맞은 것으로 봐요. 식 몇 줄로 부드럽게 녹아 붙은 모양(smooth min), 무한 반복(mod), 값싼 부드러운 그림자를 만들 수 있어 셰이더토이 데모, SDF 글꼴 렌더링, UI 도형, 연기 같은 볼류메트릭 효과에 쓰여요.', 'A signed distance function (SDF) tells you how far a point is from the nearest surface; ray marching finds and draws surfaces by repeatedly stepping forward by that distance.', 'A circle’s SDF is |p − c| − r, and several shapes combine with min. Since no surface lies within the SDF value d of the current point on a ray, it is safe to jump forward by d (sphere tracing). Steps shrink near a surface, and once d falls below ε it counts as a hit. A few lines of math give smoothly blended shapes (smooth min), infinite repetition (mod) and cheap soft shadows, which is why the technique appears in Shadertoy demos, SDF font rendering, UI shapes and volumetric effects such as smoke.', sSdf())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('gx-coord', '좌표와 변환', 'Coordinates & transforms', '좌표와 변환', 'Coordinates and transforms',
     '점을 움직이고 3D를 2D 화면으로 옮기는 수학이에요.', 'The math that moves points and flattens 3D onto a 2D screen.', [
@@ -604,7 +864,7 @@ window.UX = page([
     item('gx-mvp', '좌표 변환 파이프라인 (MVP)', 'The MVP pipeline', '모델 → 월드 → 카메라 → 클립 → 화면 좌표로 차례로 바꿔요. 모델·뷰·투영 행렬 셋을 곱해 정점마다 한 번에 적용해요.', '모델 행렬은 물체를 장면에 배치, 뷰 행렬은 카메라 기준으로, 투영 행렬은 원근을 담아요. w로 나눈 NDC(−1~1) 밖은 잘라내고 뷰포트 변환으로 픽셀 좌표가 돼요. 정점 셰이더: gl_Position = P · V · M · 정점.', 'Points travel model → world → camera → clip → screen space. The model, view and projection matrices multiply into one product applied per vertex.', 'The model matrix places an object in the scene, the view matrix re-expresses it relative to the camera, and the projection matrix adds perspective. After dividing by w, anything outside NDC (−1 to 1) is clipped and the viewport transform yields pixels. Vertex shader: gl_Position = P · V · M · vertex.', sMvp()),
     item('gx-persp', '원근 투영', 'Perspective projection', '먼 물체일수록 작게 보이도록 좌표를 거리(z)로 나눠요. near·far 평면 사이의 절두체만 그려요.', "y' = y · n / z: 두 배 멀면 절반 크기. GPU는 투영 행렬로 w에 z를 담고 x/w, y/w로 나눠요(원근 나눗셈). 시야각(FOV)이 넓을수록 왜곡이 커져요. 평행(직교) 투영은 나누지 않아 크기가 일정해 CAD·2D UI·전략 게임에 써요.", 'Divide coordinates by distance (z) so farther things look smaller; only the frustum between the near and far planes is drawn.', "y' = y · n / z: twice as far means half the size. The GPU stores z in w via the projection matrix and divides x/w and y/w (the perspective divide). A wider field of view distorts more. Orthographic projection skips the divide and keeps sizes constant, suiting CAD, 2D UI and strategy games.", sPersp()),
     item('gx-slerp', '회전 보간과 쿼터니언', 'Rotation interpolation and quaternions', '두 방향 사이를 부드럽게 돌리려면 각도를 고르게 나누는 slerp를 써요. 3D 회전은 쿼터니언으로 저장해 짐벌 락을 피해요.', '끝점을 직선으로 섞는 lerp는 가운데가 빨라지는 등 속도가 고르지 않아요. 오일러 각(x·y·z 회전)은 두 축이 겹치면 한 방향의 자유를 잃어요(짐벌 락). 쿼터니언은 숫자 4개로 회전을 표현하고 합성·보간이 안정적이라 유니티·언리얼 Transform과 애니메이션 블렌딩에 써요.', 'To turn smoothly between two orientations, use slerp, which splits the angle evenly. Store 3D rotations as quaternions to avoid gimbal lock.', 'Lerping the endpoints moves unevenly, rushing through the middle. Euler angles (x, y, z rotations) lose a degree of freedom when two axes line up (gimbal lock). Quaternions encode a rotation in four numbers that compose and interpolate stably, which is why Unity and Unreal transforms and animation blending use them.', sSlerp())
-  ]),
+  ].concat(XT.add['gx-coord'] || [])),
   sec('gx-rast', '래스터화', 'Rasterization', '래스터화', 'Rasterization',
     '도형을 픽셀로 바꾸고 표면에 이미지를 입히는 과정이에요.', 'Turning shapes into pixels and wrapping images onto surfaces.', [
     item('gx-line', '선 그리기 (브레젠험)', 'Line drawing (Bresenham)', '열마다 직선에 가장 가까운 픽셀을 골라 선을 그려요. 오차를 누적해 정수 덧셈만으로 판단해요.', '(0, 0) → (12, 5): x를 한 칸씩 늘리며 오차에 2·dy를 더하고, 0을 넘으면 y도 한 칸 올리고 2·dx를 빼요. 1962년 플로터용으로 만들어져 지금도 임베디드·픽셀 아트에 써요. 부드러운 선은 우(Wu)의 안티앨리어싱 선, GPU는 삼각형처럼 픽셀 단위로 판정해요.', 'Draw a line by choosing, in each column, the pixel nearest the true line, deciding with an accumulated error and integer additions only.', 'For (0, 0) → (12, 5), step x by one and add 2·dy to the error; when it passes zero, step y and subtract 2·dx. Designed in 1962 for plotters, it still serves embedded displays and pixel art. Smooth lines use Wu’s antialiased variant; GPUs test pixels as they do for triangles.', sBresenham()),
@@ -613,7 +873,7 @@ window.UX = page([
     item('gx-aa', '안티앨리어싱', 'Anti-aliasing', '픽셀 하나에 점 하나만 보면 경계가 계단처럼 보여요. 여러 지점을 샘플링해 덮인 비율만큼 색을 섞으면 부드러워요.', 'SSAA는 모든 샘플에서 색을 계산(비쌈), MSAA는 덮임만 여러 번 검사하고 색은 한 번, FXAA·SMAA·TAA는 다 그린 뒤 화면을 보고 경계를 다듬어요. 원인은 신호 처리의 앨리어싱(표본화 부족)과 같아요. DLSS·FSR 같은 업스케일러도 같은 문제를 다뤄요.', 'One sample per pixel gives stair-stepped edges; sampling several points and blending by coverage smooths them.', 'SSAA shades every sample (costly), MSAA tests coverage several times but shades once, and FXAA, SMAA and TAA clean edges after the frame is drawn. The root cause is the same aliasing as in signal processing (undersampling). Upscalers such as DLSS and FSR tackle the same problem.', sAa()),
     item('gx-texture', '텍스처 매핑', 'Texture mapping', '꼭짓점마다 이미지의 좌표(UV)를 붙이고, 래스터화하며 보간한 UV로 픽셀마다 이미지의 색(텍셀)을 읽어 표면에 입혀요.', 'UV는 0~1 범위, 넘으면 반복(repeat)·끝값 유지(clamp)·거울 반복. 원근에서는 1/z로 보정한 보간이 필요해요. 여러 이미지를 한 장에 모은 텍스처 아틀라스로 드로우 콜을 줄여요. 3D 모델링 툴의 UV 펼치기가 이 좌표를 만드는 작업이에요.', 'Attach image coordinates (UVs) to each vertex; rasterization interpolates them and each pixel reads the image color (texel) there, wrapping the image onto the surface.', 'UVs run from 0 to 1; outside that they repeat, clamp or mirror. Perspective requires interpolation corrected by 1/z. Texture atlases pack many images into one to save draw calls, and UV unwrapping in modeling tools is how these coordinates get made.', sTexture()),
     item('gx-mipmap', '밉맵과 텍스처 필터링', 'Mipmaps and texture filtering', '텍스처를 반씩 줄인 사본을 미리 만들어 두고, 멀리 있어 작게 보이는 곳에는 작은 사본을 써서 깨짐과 반짝임을 막아요.', '밉맵 전체는 원본의 약 1/3을 더 써요. 쌍선형(이웃 4텍셀), 삼선형(두 밉 단계 사이도 보간), 비스듬한 면에는 비등방성 필터링(16×). 밉맵이 없으면 먼 바닥에 모아레와 깜빡임이 생기고, 캐시 효율도 나빠져요.', 'Precompute half-size copies of a texture and sample the small ones where a surface is far away, preventing breakup and shimmering.', 'A full mip chain costs about a third more memory. Bilinear filtering uses four neighbors, trilinear also blends between two mip levels, and anisotropic filtering (16×) handles oblique surfaces. Without mipmaps, distant floors show moiré and flicker and the cache suffers.', sMipmap())
-  ]),
+  ].concat(XT.add['gx-rast'] || [])),
   sec('gx-light', '조명과 셰이딩', 'Lighting & shading', '조명과 셰이딩', 'Lighting and shading',
     '빛과 표면의 관계를 계산해 입체감과 재질을 만들어요.', 'Computing how light meets surfaces to create depth and material.', [
     item('gx-lambert', '확산 반사 (램버트)', 'Diffuse reflection (Lambert)', '표면의 밝기는 빛이 들어오는 각도의 코사인, 즉 법선 N과 빛 방향 L의 내적에 비례해요. 보는 방향과 상관없는 무광 표면이에요.', '밝기 = max(0, N · L): 수직이면 1, 60°면 0.5, 90° 이상이면 0. 그림자 쪽이 새카맣지 않도록 주변광(ambient)을 조금 더해요. 종이·분필·흙 같은 무광 재질의 기본이고, 모든 조명 모델의 출발점이에요.', 'A surface’s brightness follows the cosine of the light’s angle, the dot product of the normal N and the light direction L; matte surfaces look the same from any viewpoint.', 'Brightness = max(0, N · L): 1 straight on, 0.5 at 60°, 0 at 90° or beyond. A little ambient light keeps the far side from going black. It models matte materials such as paper, chalk and soil and starts every lighting model.', sLambert()),
@@ -622,21 +882,22 @@ window.UX = page([
     item('gx-normal', '노멀 매핑', 'Normal mapping', '기하는 그대로 두고, 픽셀마다 법선 방향만 이미지(노멀 맵)에서 읽어 조명을 계산해 세밀한 요철을 흉내 내요.', '노멀 맵은 법선 xyz를 RGB로 저장해 파르스름해요. 수백만 폴리곤 조각 모델에서 구워(bake) 저폴리 모델에 입혀요. 빛을 옮기면 음영도 따라 움직여 진짜 요철처럼 보이지만 윤곽은 평평해요 → 높이가 필요하면 시차 매핑이나 테셀레이션.', 'Keep the geometry flat but read a per-pixel normal from an image (a normal map) for lighting, faking fine bumps.', 'Normal maps store normal xyz as RGB, which is why they look bluish. They are baked from million-polygon sculpts onto low-poly models. Shading follows a moving light like real bumps, yet silhouettes stay flat; parallax mapping or tessellation adds real height.', sNormalmap()),
     item('gx-shadow', '그림자 매핑', 'Shadow mapping', '먼저 빛의 위치에서 장면의 깊이를 렌더해 두고, 화면을 그릴 때 각 점의 빛까지 거리가 그 깊이보다 멀면 그림자로 처리해요.', '2패스: 빛 시점 깊이 맵 → 비교. 정밀도 오차로 생기는 줄무늬(shadow acne)는 바이어스로, 각진 경계는 PCF로 부드럽게, 넓은 야외는 거리별로 나눈 캐스케이드 섀도 맵(CSM)을 써요. 레이 트레이싱 그림자는 이런 문제 없이 정확해요.', 'Render depth from the light’s position first; while drawing the camera view, any point farther from the light than that depth is in shadow.', 'Two passes: a depth map from the light, then the comparison. Precision stripes (shadow acne) need a bias, PCF softens jagged edges, and large outdoor scenes split the view into cascaded shadow maps. Ray-traced shadows avoid these problems at a higher cost.', sShadow()),
     item('gx-pbr', '물리 기반 렌더링 (PBR)', 'Physically based rendering', '색·금속성·거칠기 같은 물리적 재질 값으로, 에너지 보존과 프레넬 효과를 지키며 조명을 계산해요. 어떤 조명에서도 그럴듯해 보여요.', '비금속은 확산 색 + 약한 흰 반사(약 4%), 금속은 확산이 없고 반사가 금속의 색을 띠어요. 거칠수록 하이라이트가 넓고 어두워지고(빛의 총량 보존), 비스듬히 볼수록 반사가 강해져요(프레넬). 언리얼·유니티·블렌더·glTF의 표준이에요(GGX 미세면 모델).', 'Describe materials with physical values such as color, metalness and roughness, and light them with energy conservation and Fresnel; they then look right under any lighting.', 'Dielectrics have diffuse color plus a weak white reflection (~4%); metals have no diffuse and tint their reflections. Rougher surfaces spread highlights wider and dimmer (energy conservation), and grazing angles reflect more (Fresnel). It is the standard in Unreal, Unity, Blender and glTF (the GGX microfacet model).', sPbr())
-  ]),
+  ].concat(XT.add['gx-light'] || [])),
   sec('gx-gpu', 'GPU 파이프라인', 'The GPU pipeline', 'GPU 파이프라인', 'The GPU pipeline',
     '그래픽 카드가 한 프레임을 그리는 흐름과 성능의 핵심이에요.', 'How a graphics card draws a frame, and what makes it fast.', [
     item('gx-pipeline', '그래픽스 파이프라인', 'The graphics pipeline', '정점 셰이더 → 조립·클리핑 → 래스터화 → 프래그먼트 셰이더 → 깊이·블렌딩 → 프레임 버퍼 순서로 한 프레임을 그려요. 셰이더 단계만 우리가 프로그래밍해요.', '정점 3개 → 삼각형 1개 → 픽셀 조각 수백~수천 개로 데이터가 불어나요. 셰이더 언어: GLSL, HLSL, WGSL, Metal Shading Language. API: OpenGL, Vulkan, DirectX 12, Metal, WebGPU. 최근엔 메시 셰이더처럼 앞단도 더 프로그래밍 가능해지고 있어요.', 'A frame flows through vertex shader → assembly and clipping → rasterization → fragment shader → depth and blending → framebuffer; only the shader stages are yours to program.', 'Three vertices become one triangle and then hundreds or thousands of fragments. Shading languages: GLSL, HLSL, WGSL, Metal Shading Language. APIs: OpenGL, Vulkan, DirectX 12, Metal, WebGPU. Newer mesh shaders make the front of the pipeline programmable too.', sPipeline()),
     item('gx-shader', '셰이더와 GPU 병렬성', 'Shaders and GPU parallelism', '셰이더는 픽셀(또는 정점) 하나를 처리하는 작은 프로그램이고, GPU는 같은 프로그램을 수천 개 코어에서 동시에 돌려요.', '32개(엔비디아 워프)나 32·64개(AMD 웨이브)씩 묶어 같은 명령을 함께 실행(SIMT). 한 묶음 안에서 if 갈래가 나뉘면 양쪽을 차례로 실행해 느려져요(분기 발산). 1080p 한 프레임에 약 200만 픽셀. 같은 구조로 딥러닝·과학 계산도 해요(CUDA, 컴퓨트 셰이더).', 'A shader is a tiny program for one pixel (or vertex), and the GPU runs it on thousands of cores at once.', 'Threads are grouped into warps of 32 (NVIDIA) or waves of 32 or 64 (AMD) that execute each instruction together (SIMT). If threads in a group take different branches, both paths run in turn (divergence). A 1080p frame has about two million pixels. The same design powers deep learning and science (CUDA, compute shaders).', sShader()),
     item('gx-cull', '컬링과 드로우 콜', 'Culling and draw calls', '보이지 않을 것은 아예 그리지 않아요: 시야 밖(절두체 컬링), 등진 면(후면 컬링), 가려진 물체(가림 컬링).', '후면 컬링은 정점의 감기는 순서(시계·반시계)로 판단해 삼각형을 약 절반 줄여요. CPU가 GPU에 그리기를 요청하는 드로우 콜마다 비용이 있어서, 같은 물체는 인스턴싱으로 한 번에, 재질이 같은 것은 배칭으로 묶어요. 거리별로 단순한 모델로 바꾸는 LOD도 함께 써요.', 'The fastest draw is the one you skip: objects outside the view (frustum culling), faces turned away (backface culling) and hidden objects (occlusion culling).', 'Backface culling uses vertex winding order (clockwise or not) and drops about half the triangles. Every draw call from CPU to GPU has overhead, so identical objects are instanced into one call and same-material objects are batched. Level of detail (LOD) swaps in simpler models at a distance.', sCull()),
     item('gx-vsync', '더블 버퍼링과 수직 동기화', 'Double buffering and V-Sync', '보여 주는 버퍼와 그리는 버퍼를 따로 두고, 모니터가 화면을 다 그린 사이(수직 동기)에만 바꿔 화면 찢어짐을 막아요.', '60 Hz면 16.7 ms마다 갱신. 프레임이 늦으면 다음 주기까지 기다려 끊김(stutter)이 생겨요. 트리플 버퍼링은 대기를 줄이고, G-SYNC·FreeSync(가변 주사율)는 모니터가 GPU 속도에 맞춰요. 120 fps면 프레임당 8.3 ms 안에 모든 계산을 끝내야 해요.', 'Keep a buffer on display and another being drawn, and swap only between refreshes (vertical sync) so the image never tears.', 'At 60 Hz the screen refreshes every 16.7 ms; a late frame waits for the next cycle and stutters. Triple buffering reduces waiting, and G-SYNC and FreeSync (variable refresh) let the monitor follow the GPU. At 120 fps all the work must fit in 8.3 ms per frame.', sVsync())
-  ]),
+  ].concat(XT.add['gx-gpu'] || [])),
   sec('gx-adv', '고급 렌더링', 'Advanced rendering', '고급 렌더링', 'Advanced rendering',
     '빛의 경로를 직접 따라가고 곡선을 다루는 기법이에요.', 'Following light paths directly and working with curves.', [
     item('gx-raytrace', '레이 트레이싱', 'Ray tracing', '픽셀마다 카메라에서 광선을 쏘아 부딪힌 곳에서 그림자·반사·굴절 광선을 다시 쏘며 색을 모아요. 정확한 반사와 그림자를 얻어요.', '래스터화가 “삼각형마다 어느 픽셀?”이라면 레이 트레이싱은 “픽셀마다 어느 물체?”. 경로 추적은 무작위 광선 수백 개로 간접광까지 계산하고 노이즈는 AI 디노이저로 없애요. 영화(픽사), 건축 시각화, RTX 하드웨어 가속을 받는 게임에 써요.', 'Shoot a ray from the camera through each pixel and, at every hit, spawn shadow, reflection and refraction rays to gather color, yielding accurate reflections and shadows.', 'Rasterization asks “which pixels does this triangle cover?”; ray tracing asks “which object does this pixel see?”. Path tracing fires hundreds of random rays to capture indirect light and cleans the noise with AI denoisers. Used for film (Pixar), architectural visualization and games on RTX-accelerated hardware.', sRaytrace()),
     item('gx-bvh', 'BVH 가속 구조', 'BVH acceleration', '물체를 상자로 묶고 상자를 다시 묶은 트리를 만들어, 광선이 지나지 않는 상자 안은 통째로 건너뛰어요.', '모든 물체를 검사하면 O(n), BVH로는 대략 O(log n). 상자와 광선의 교차 검사는 아주 싸요. 표면적 휴리스틱(SAH)으로 좋은 분할을 고르고, 움직이는 장면은 매 프레임 다시 맞춰요(refit). 레이 트레이싱 하드웨어, 물리 엔진 충돌 감지, 게임 AI 시야 판정에 써요.', 'Build a tree of boxes around objects and boxes around boxes; a ray skips any box it misses, along with everything inside.', 'Testing every object is O(n); a BVH brings it near O(log n), and ray–box tests are cheap. The surface area heuristic (SAH) chooses good splits, and animated scenes refit the tree each frame. Ray-tracing hardware, physics collision detection and game AI line-of-sight all rely on it.', sBvh()),
     item('gx-bezier', '베지어 곡선', 'Bézier curves', '조절점 몇 개로 매끈한 곡선을 정의해요. 이웃한 점을 같은 비율로 나누는 걸 반복하면 곡선 위의 점이 나와요(드 카스텔조).', '3차 베지어 B(t) = (1−t)³P₀ + 3(1−t)²tP₁ + 3(1−t)t²P₂ + t³P₃. 곡선은 P₀에서 시작해 P₃에서 끝나고 P₁·P₂ 쪽으로 끌려가요. 글꼴 윤곽(트루타입은 2차, CFF는 3차), SVG path, CSS cubic-bezier() 애니메이션 곡선, 디자인 툴의 펜 도구가 모두 베지어예요.', 'A few control points define a smooth curve; repeatedly splitting neighboring points at the same ratio lands on the curve (de Casteljau).', 'A cubic Bézier is B(t) = (1−t)³P₀ + 3(1−t)²tP₁ + 3(1−t)t²P₂ + t³P₃: it starts at P₀, ends at P₃ and is pulled toward P₁ and P₂. Font outlines (quadratic in TrueType, cubic in CFF), SVG paths, CSS cubic-bezier() easing and the pen tool in design apps are all Bézier curves.', sBezier())
-  ])
-]);
+  ].concat(XT.add['gx-adv'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .gx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .gx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}

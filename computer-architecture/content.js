@@ -231,7 +231,7 @@ function sFalse() {
   box(S, 'k1', 1, 2, 9, 3.2, ['코어 1', 'Core 1']); box(S, 'k2', 22, 2, 9, 3.2, ['코어 2', 'Core 2']);
   const line = (p, x) => { chip(S, p + 'a', x, 6, 4.4, 'a', C.soft, { h: 2.2 }); chip(S, p + 'b', x + 4.6, 6, 4.4, 'b', C.cmp, { h: 2.2 }); };
   line('l1', 1); line('l2', 22);
-  text(S, 'n', 10.6, 6.5, ['같은 캐시 라인', 'same cache line'], { cls: 'cz-t' });
+  text(S, 'n', 10.4, 9.3, ['같은 캐시 라인', 'same cache line'], { cls: 'cz-t cz-tc', w: 11.2 });
   text(S, 'w1', 1, 8.8, ['a++ 만 써요', 'writes only a'], { cls: 'cz-t' }); text(S, 'w2', 22, 8.8, ['b++ 만 써요', 'writes only b'], { cls: 'cz-t' });
   fly(S, 'i1', [10.2, 7.1], [21.8, 7.1], 1, ['무효화', 'invalidate'], C.badf, { r: 1.3 }); S.set('l2a', 1, C.bad).set('l2b', 1, C.bad);
   fly(S, 'i2', [21.8, 7.1], [10.2, 7.1], 2, ['무효화', 'invalidate'], C.badf, { r: 1.3 }); S.set('l1a', 2, C.bad).set('l1b', 2, C.bad).set('l2a', 2, C.soft).set('l2b', 2, C.cmp);

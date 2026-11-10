@@ -333,7 +333,7 @@ function sGesture() {
   box2(S, 'btn', 7.4, IY(1) + .5, 3.4, 1.6, ['구매', 'Buy'], 'accent', 0, { pct: 30 }); mv('btn', 7.4, IY(1) + .5, 1.2, 2.4);
   tsets(S, 'btn', [[2, 'accent', 60], [3, 'danger', 30]]);
   pt(S, 'tp', 9.1, 6.5, 1, C.warn, .55, { off: 4 }); S.move('tp', 2, 9.1 - .55, 6.8 - .55); S.move('tp', 3, 9.1 - .55, 7.7 - .55);
-  ar(S, 'vel', [9.1, 8.6], [9.1, 11.8], 'ok', 4, { h: .16, off: 5 }); T(S, 'vl', 9.5, 10, 'v', 'cz-mono mo-s mo-g', 4, { off: 5 });
+  ar(S, 'vel', [6.4, 8.6], [6.4, 11.8], 'ok', 4, { h: .16, off: 5 }); T(S, 'vl', 6.8, 10, 'v', 'cz-mono mo-s mo-g', 4, { off: 5 });
   const TR = [['Window', 14, 1.6], ['List', 14, 4.2], [['항목 2', 'item 2'], 14, 6.8], [['구매 버튼', 'Buy button'], 14, 9.4]];
   TR.forEach(([l, x, y], i) => { box2(S, 'tn' + i, x, y, 6.2, 1.8, l, 'line', 0, { pct: 40 }); if (i) ar(S, 'ta' + i, [17.1, y - .75], [17.1, y - .05], 'ink-3', 0, { h: .1 }); tsets(S, 'tn' + i, [[1, 'accent', 30]]); });
   tsets(S, 'tn3', [[1, 'accent', 30], [3, 'danger', 35]]); tsets(S, 'tn1', [[1, 'accent', 30], [3, 'ok', 45]]);

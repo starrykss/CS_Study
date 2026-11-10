@@ -560,6 +560,243 @@ function sRsync() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'lxx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono lxx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono lxx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c lxx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono lxx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c lxx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'lxx-s lxx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono lxx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono lxx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono lxx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono lxx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono lxx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'lxx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'lxx-xs', 5));
+
+
+const CSSX = `
+.lxx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.lxx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.lxx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.lxx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.lxx-r .in{color:var(--danger);font-weight:800}
+.lxx-g .in{color:var(--ok);font-weight:800}
+.lxx-a .in{color:var(--accent);font-weight:800}
+.lxx-w .in{color:var(--warn);font-weight:800}
+.lxx-c .in{font-size:.6em;font-weight:700}
+.lxx-c2 .in{font-size:.5em;font-weight:700}
+.lxx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.lxx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'lxx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+
+/* ================= files ================= */
+function sUsers() {
+  const S = scene({ id: 'lx-users', steps: 5, per: 1.6 });
+  T(S, 'pt', 1, .25, '/etc/passwd', 'cz-mono lxx-xs lxx-a', 0);
+  const F = [['kim', 2.6, 'accent', ['이름', 'name']], ['x', 1.4, 'ink-3', ['shadow에', 'in shadow']], ['1001', 2.6, 'warn', 'UID'], ['1001', 2.6, 'warn', 'GID'], ['Kim', 2.6, 'line', ['설명', 'comment']], ['/home/kim', 5.2, 'ok', ['홈', 'home']], ['/bin/bash', 5.0, 'ok', ['로그인 셸', 'login shell']]];
+  let x = 1;
+  F.forEach(([t, w, c, lab], i) => { box2(S, 'f' + i, x, 1.2, w, 1.2, t, c, 0, { pct: 25 }); T(S, 'fl' + i, x - .4, 2.55, lab, 'cz-tc lxx-tiny', 0, { w: w + .8 }); x += w; if (i < F.length - 1) { T(S, 'col' + i, x, 1.35, ':', 'cz-tc cz-mono lxx-s', 0, { w: .6 }); x += .6; } });
+  T(S, 'id', 1, 4.0, '$ id kim  →  uid=1001(kim) gid=1001(kim) groups=1001(kim),27(sudo),999(docker)', 'cz-mono lxx-xs', 2);
+  T(S, 'cmd', 1, 5.4, '$ sudo systemctl restart nginx', 'cz-mono lxx-xs lxx-a', 3);
+  [['kim (UID 1001)', 'accent'], [['sudoers 확인', 'check sudoers'], 'warn'], [['root (UID 0)로 실행', 'runs as root (UID 0)'], 'danger'], [['auth.log에 기록', 'logged to auth.log'], 'ok']].forEach(([t, c], i) => { box2(S, 's' + i, 1 + i * 7.6, 6.5, 6.8, 1.3, t, c, 3, { pct: 28 }); if (i) ar(S, 'sa' + i, [i * 7.6 + .2, 7.15], [i * 7.6 + .9, 7.15], 'ink-3', 3, { h: .08 }); });
+  T(S, 'rule', 1, 8.2, ['%sudo  ALL=(ALL:ALL) ALL   # sudo 그룹은 모든 명령 가능', '%sudo  ALL=(ALL:ALL) ALL   # the sudo group may run anything'], 'cz-mono lxx-xs', 3);
+  T(S, 'bp1', 1, 9.3, ['nginx는 www-data 계정으로 · 셸은 /usr/sbin/nologin', 'nginx runs as www-data · its shell is /usr/sbin/nologin'], 'cz-mono lxx-xs', 4);
+  T(S, 'bp2', 1, 10.3, ['usermod -aG docker kim   ⚠ docker 그룹 ≈ root', 'usermod -aG docker kim   ⚠ the docker group ≈ root'], 'cz-mono lxx-xs lxx-r', 4);
+  stepT(S, 'k', 1, 11.7, [['/etc/passwd 한 줄 = 사용자 한 명 · 비밀번호 해시는 root만 읽는 /etc/shadow에', 'one /etc/passwd line per user · the password hash lives in root-only /etc/shadow'], ['커널은 이름이 아니라 UID·GID 숫자로 권한을 판단해요 · 그룹은 여러 개', 'the kernel checks UID/GID numbers, not names · a user can be in several groups'], ['UID 0(root)은 권한 검사를 건너뛰어요 → sudo는 내 비밀번호를 확인하고 그 명령만 root로', 'UID 0 (root) skips permission checks → sudo checks your password and runs just that command as root'], ['서비스는 전용 계정으로, 로그인 불가 셸로 · root SSH 로그인은 막아요', 'run services under dedicated nologin accounts · disable root SSH login']]);
+  fin(S, 'z', 13.1, [['리눅스에서 “누구”는 UID·GID 숫자 · 접근은 소유자 → 그룹 → 기타 순으로 확인해요', 'in Linux, who you are is a UID/GID number · access is checked as owner → group → others', 'lxx-xs lxx-a'], ['docker·wheel·sudo 그룹은 사실상 root 권한이니 신중하게 추가해요', 'docker, wheel and sudo membership is effectively root, so grant it carefully']]);
+  S.cap(1, '사용자 한 줄', 'One line per user').cap(2, 'UID와 그룹', 'UIDs and groups').cap(3, 'root와 sudo', 'root and sudo').cap(4, '최소 권한', 'Least privilege').cap(5, '사용자·그룹·sudo', 'Users, groups and sudo');
+  return S;
+}
+
+/* ================= text ================= */
+function sJq() {
+  const S = scene({ id: 'lx-jq', steps: 5, per: 1.6 });
+  const J = ['[', '  {"name":"api", "status":"up",   "ms":120},', '  {"name":"db",  "status":"down", "ms":0},', '  {"name":"web", "status":"up",   "ms":340}', ']'];
+  const lh = 1.3, Y = i => 1.2 + .25 + i * lh;
+  code(S, 'js', 1, 1.2, 15.8, J, [], {});
+  rect(S, 'h1', 1.2, Y(1), 15.4, lh, 'ok', 25, 1, { r: .2, off: 2 });
+  [[1, 'ok'], [2, 'danger'], [3, 'ok']].forEach(([i, c]) => rect(S, 'h2' + i, 1.2, Y(i), 15.4, lh, c, 22, 2, { r: .2, off: 3 }));
+  [1, 2, 3].forEach(i => rect(S, 'h3' + i, 1.2, Y(i), 15.4, lh, 'warn', 22, 3, { r: .2, off: 4 }));
+  const STG = [[1, "jq '.[0].name'", ['.[0]', '.name'], ['"api"']], [2, "jq '.[] | select(.status==\"up\") | .name'", ['.[]', 'select(.status=="up")', '.name'], ['"api"', '"web"']], [3, "jq 'map(.ms) | add / length'", ['map(.ms)', 'add / length'], ['153.33333333333334']], [4, "jq -r '.[] | \"\\(.name) \\(.ms)\"'", ['.[]', '"\\(.name) \\(.ms)"'], ['api 120', 'db 0', 'web 340']]];
+  STG.forEach(([st, cmd, stages, outp]) => {
+    const o = { off: st < 4 ? st + 1 : 0 };
+    T(S, 'cmd' + st, 17.6, 1.4, cmd, 'cz-mono lxx-xs lxx-a', st, o);
+    let x = 17.6; const W = stages.map(s => Math.max(2.2, s.length * .33 + .9));
+    stages.forEach((s, i) => { box2(S, `sg${st}_${i}`, x, 2.8, W[i], 1.2, s, 'accent', st, { pct: 22, off: o.off }); if (i < stages.length - 1) ar(S, `sa${st}_${i}`, [x + W[i] + .05, 3.4], [x + W[i] + .65, 3.4], 'ink-3', st, { h: .08, off: o.off }); x += W[i] + .7; });
+    outp.forEach((l, i) => T(S, `o${st}_${i}`, 18.2, 5.6 + i * 1.1, l, 'cz-mono lxx-xs lxx-g', st, o));
+  });
+  rect(S, 'ob', 17.6, 5.1, 13.4, 4.0, 'ink', 5, 1, { r: .4 }); T(S, 'obl', 17.8, 4.4, ['출력', 'output'], 'lxx-tiny', 1);
+  stepT(S, 'k', 1, 10.0, [['.[0].name: 배열의 첫 원소에서 name 필드를 꺼내요', '.[0].name: take the name field of the first element'], ['.[]로 원소를 하나씩 흘려보내고 select로 걸러요 → up인 것의 이름만', '.[] streams each element and select filters → names of the ones that are up'], ['map(.ms)로 숫자 배열을 만들고 add / length로 평균을 내요', 'map(.ms) builds a list of numbers; add / length averages it'], ['-r은 따옴표 없는 원시 출력 → sort·awk 같은 명령으로 이어 붙이기 좋아요', '-r prints raw text without quotes → easy to pipe into sort, awk and friends']]);
+  fin(S, 'z', 11.4, [['jq: JSON을 위한 sed·awk · 필터를 |로 이어 꺼내고, 거르고, 바꾸고, 모아요', 'jq is sed and awk for JSON · chain filters with | to extract, filter, reshape and aggregate', 'lxx-xs lxx-a'], ['curl -s 로 받은 API 응답이나 kubectl -o json 결과를 바로 넘겨 다뤄요', 'pipe curl -s responses or kubectl -o json output straight into it']]);
+  S.cap(1, '필드 꺼내기', 'Pick a field').cap(2, '거르기', 'Filter').cap(3, '집계하기', 'Aggregate').cap(4, '다른 명령과 잇기', 'Hand off to other tools').cap(5, 'jq로 JSON 다루기', 'Working with JSON in jq');
+  return S;
+}
+
+/* ================= admin ================= */
+function sNs() {
+  const S = scene({ id: 'lx-ns', steps: 5, per: 1.6 });
+  rect(S, 'host', 1, 1.0, 30, 8.8, 'ink-3', 6, 0, { r: .5 }); T(S, 'hostl', 1.4, 1.15, ['호스트', 'host'], 'lxx-xs lxx-a', 0);
+  rect(S, 'krn', 1.4, 8.4, 29.2, 1.0, 'accent', 20, 0, { r: .3 }); T(S, 'krnl', 1.4, 8.6, ['리눅스 커널 (모두 함께 사용)', 'Linux kernel (shared by everyone)'], 'cz-tc lxx-xs lxx-a', 0, { w: 29.2 });
+  ['systemd (PID 1)', 'sshd (PID 812)', 'postgres (PID 990)'].forEach((t, i) => box2(S, 'hp' + i, 2, 2.4 + i * 1.7, 7.4, 1.3, t, 'line', 0, { pct: 22 }));
+  frame(S, 'cf', 11, 1.9, 19.4, 6.1, 'accent', 2, { w: .1, dash: 1 }); T(S, 'cfl', 11.3, 1.95, ['컨테이너 web', 'container web'], 'lxx-xs lxx-a', 2);
+  box2(S, 'ng', 12, 2.9, 7.6, 1.3, '', 'ok', 0, { pct: 30 }); ver(S, 'ngv', 12, 3.18, [[0, 'nginx (PID 4321)'], [2, 'nginx (PID 1 ← 4321)']], 'cz-tc cz-mono lxx-xs', 7.6);
+  [['PID: 자기가 1번', 'PID: sees itself as 1'], ['mount: / = 이미지 파일', 'mount: / = image files'], ['net: eth0 172.17.0.2', 'net: eth0 172.17.0.2'], ['UTS: hostname = web', 'UTS: hostname = web']].forEach((t, i) => box2(S, 'ns' + i, 20.4, 2.9 + i * 1.2, 9.6, 1.0, t, 'accent', 2, { pct: 18 }));
+  T(S, 'meml', 12, 4.6, ['메모리 300M / 512M', 'memory 300M / 512M'], 'lxx-xs', 3);
+  rect(S, 'memb', 12, 5.35, 7.6, .7, 'line', 25, 3, { r: .2 }); rect(S, 'memf', 12, 5.35, 7.6 * 300 / 512, .7, 'warn', 55, 3, { r: .2 });
+  T(S, 'cpul', 12, 6.3, ['CPU 0.5코어', 'CPU 0.5 core'], 'lxx-xs', 3);
+  rect(S, 'cpub', 12, 7.05, 7.6, .7, 'line', 25, 3, { r: .2, off: 0 }); rect(S, 'cpuf', 12, 7.05, 3.8, .7, 'accent', 55, 3, { r: .2 });
+  box2(S, 'vm', 1, 10.3, 14.8, 1.2, ['VM: 각자 커널 · 느린 부팅 · 강한 격리', 'VM: own kernel · slow start · isolated'], 'warn', 4, { pct: 25 });
+  box2(S, 'ct', 16.2, 10.3, 14.8, 1.2, ['컨테이너: 커널 공유 · 빠른 시작 · 가벼움', 'container: shared kernel · fast · light'], 'ok', 4, { pct: 25 });
+  stepT(S, 'k', 1, 12.0, [['호스트에서 보면 컨테이너도 그냥 프로세스예요 (nginx = PID 4321)', 'seen from the host, a container is just a process (nginx = PID 4321)'], ['네임스페이스가 따로 보이는 세상을 줘요: 자기 PID 1, 자기 /, 자기 네트워크', 'namespaces give it its own view: its own PID 1, its own / and its own network'], ['cgroup은 쓸 수 있는 양을 제한해요: 메모리 512M를 넘으면 OOM으로 종료', 'cgroups cap what it may use: past 512M of memory it is OOM-killed'], ['커널을 함께 쓰니 VM보다 가볍고 빠르지만, 커널 취약점엔 같이 노출돼요', 'sharing the kernel makes it lighter than a VM, but a kernel bug exposes everyone']]);
+  fin(S, 'z', 13.4, [['컨테이너 = 평범한 프로세스 + 네임스페이스(보이는 범위) + cgroup(쓰는 양) + 이미지(파일)', 'a container = a normal process + namespaces (view) + cgroups (limits) + an image (files)', 'lxx-xs lxx-a'], ['docker run도, 쿠버네티스 파드도 모두 이 커널 기능 위에서 동작해요', 'docker run and Kubernetes pods are all built on these kernel features']]);
+  S.cap(1, '그냥 프로세스', 'Just a process').cap(2, '네임스페이스: 보이는 범위', 'Namespaces: what it sees').cap(3, 'cgroup: 쓰는 양', 'cgroups: what it uses').cap(4, 'VM과 비교', 'Compared with a VM').cap(5, '컨테이너의 정체', 'What a container really is');
+  return S;
+}
+function sStrace() {
+  const S = scene({ id: 'lx-strace', steps: 5, per: 1.6 });
+  box2(S, 'prg', 1, 1.2, 8.4, 1.4, '$ cat hello.txt', 'ok', 0, { pct: 25 });
+  box2(S, 'krn', 1, 7.4, 8.4, 1.4, ['커널', 'kernel'], 'accent', 0, { pct: 22 });
+  ar(S, 'dn', [3.2, 2.7], [3.2, 7.3], 'ink-3', 0, { h: .1 }); ar(S, 'up', [7.2, 7.3], [7.2, 2.7], 'ink-3', 0, { h: .1 });
+  T(S, 'dnl', .2, 3.4, 'syscall', 'cz-tc cz-mono lxx-tiny', 0, { w: 3 }); T(S, 'upl', 7.0, 6.1, ['결과', 'result'], 'cz-tc lxx-tiny', 0, { w: 3 });
+  box2(S, 'st', 2.2, 4.4, 6, 1.3, 'strace 👀', 'warn', 1, { pct: 35 });
+  code(S, 'tr', 10.4, 1.2, 20.6, ['execve("/usr/bin/cat", ["cat", "hello.txt"]) = 0', 'openat(AT_FDCWD, "hello.txt", O_RDONLY) = 3', 'read(3, "hi\\n", 131072) = 3', 'write(1, "hi\\n", 3) = 3', 'read(3, "", 131072) = 0', 'close(3) = 0'], [[0, 1], [1, 2]], { hoff: 3, lh: 1.15 });
+  T(S, 'err', 1, 9.6, 'openat(AT_FDCWD, "/etc/app/config.yml", O_RDONLY) = -1 ENOENT', 'cz-mono lxx-xs lxx-r', 3, { off: 4 });
+  T(S, 'cnt', 1, 9.6, '$ strace -c ./slow-app', 'cz-mono lxx-xs lxx-a', 4, { off: 0 });
+  code(S, 'ct', 1, 10.4, 12.6, ['% time    calls  syscall', '  92.1   120000  read', '   5.3      310  write', '   2.6       12  openat'], [[1, 4]], { st: 4, lh: 1.0 });
+  stepT(S, 'k', 1, 14.6, [['파일·네트워크 작업은 전부 시스템 콜 · strace가 그 호출을 가로채 보여 줘요', 'every file or network action is a syscall · strace intercepts and prints them'], ['openat → fd 3, read로 읽고, write(1, …)로 화면(stdout)에 써요', 'openat → fd 3, read it, then write(1, …) to the screen (stdout)'], ['“파일이 없어요” 오류의 진짜 경로를 바로 찾아요: ENOENT가 난 줄을 보면 돼요', 'find the real path behind “file not found”: look for the ENOENT line'], ['strace -c로 호출 횟수·시간을 집계 → 작은 read 12만 번 = 버퍼링 문제', 'strace -c tallies calls and time → 120,000 tiny reads = a buffering problem']]);
+  fin(S, 'z', 16.0, [['strace: 프로그램과 커널 사이의 대화를 엿들어 실제로 무엇을 하는지 보는 도구', 'strace listens in on a program’s conversation with the kernel to show what it really does', 'lxx-xs lxx-a'], ['-f는 자식까지, -p PID는 실행 중인 프로세스에 붙어요 · 느려지니 운영 환경에선 perf·eBPF', '-f follows children, -p PID attaches · it is slow, so use perf or eBPF in production']]);
+  S.cap(1, '시스템 콜 엿보기', 'Watching system calls').cap(2, 'cat이 하는 일', 'What cat does').cap(3, '없는 파일 찾기', 'Finding the missing file').cap(4, '횟수와 시간 집계', 'Counting calls and time').cap(5, 'strace', 'strace');
+  return S;
+}
+
+/* ================= network ================= */
+function sFirewall() {
+  const S = scene({ id: 'lx-firewall', steps: 5, per: 1.6 });
+  const RULES = [['ct state established,related → accept', 'ok'], ['iif lo → accept', 'ok'], ['tcp dport 22, saddr 203.0.113.0/24 → accept', 'ok'], ['tcp dport { 80, 443 } → accept', 'ok'], [['기본 정책 → drop', 'default policy → drop'], 'danger']];
+  const RY = r => 1.6 + r * 1.35;
+  T(S, 'rt', 1, .35, ['INPUT 체인 (위에서부터 검사)', 'INPUT chain (checked top-down)'], 'lxx-xs lxx-a', 0);
+  RULES.forEach(([t, c], r) => { T(S, 'rn' + r, 1, RY(r) + .25, String(r + 1), 'cz-tc cz-mono lxx-xs', 0, { w: 1 }); box2(S, 'r' + r, 2.1, RY(r), 19.9, 1.1, t, c, 0, { pct: c === 'danger' ? 25 : 15 }); });
+  const PK = ['A', 'B', 'C', 'D'], PX = j => 23.2 + j * 2;
+  PK.forEach((p, j) => T(S, 'ph' + j, PX(j), .35, p, 'cz-tc cz-mono lxx-s lxx-a', j === 0 ? 2 : j === 3 ? 4 : 3, { w: 1.8 }));
+  const RES = [[3, 'ok', 2], [4, 'danger', 3], [4, 'danger', 3], [0, 'ok', 4]];
+  RES.forEach(([m, c, st], j) => { for (let r = 0; r <= m; r++) { const hit = r === m; if (hit) box2(S, `c${j}_${r}`, PX(j), RY(r), 1.8, 1.1, c === 'ok' ? '✓' : '✗', c, st, { pct: 45 }); else T(S, `c${j}_${r}`, PX(j), RY(r) + .25, '–', 'cz-tc cz-mono lxx-xs', st, { w: 1.8 }); } });
+  T(S, 'leg', 1, 8.5, ['A :443 새 연결 · B :22 (허용 안 된 IP) · C :5432 (DB) · D 내가 보낸 요청의 응답', 'A new :443 · B :22 from an unlisted IP · C :5432 (DB) · D reply to my own request'], 'lxx-xs', 2);
+  stepT(S, 'k', 1, 9.8, [['규칙은 위에서부터 차례로 검사 · 처음 맞는 규칙이 결정 · 아무것도 안 맞으면 기본 정책', 'rules are checked top-down · the first match decides · no match falls to the default policy'], ['A: 443번 포트 새 연결 → 4번 규칙에서 허용', 'A: a new connection to port 443 → accepted by rule 4'], ['B: 허용 목록에 없는 IP의 SSH, C: 밖에서 온 DB 포트 → 끝까지 안 맞아 차단', 'B: SSH from an unlisted IP, C: the DB port from outside → no match, dropped'], ['D: 내가 보낸 요청의 응답 → 연결 추적(conntrack) 덕분에 1번 규칙에서 허용', 'D: the reply to my own request → accepted by rule 1 thanks to connection tracking']]);
+  fin(S, 'z', 11.2, [['방화벽: 패킷마다 규칙을 위에서부터 맞춰 보고 허용·차단을 정해요', 'a firewall matches each packet against ordered rules to accept or drop it', 'lxx-xs lxx-a'], ['기본은 막고 필요한 것만 열기 · ufw·firewalld와 클라우드 보안 그룹도 같은 원리', 'deny by default, open only what you need · ufw, firewalld and cloud security groups work alike']]);
+  S.cap(1, '규칙과 기본 정책', 'Rules and the default policy').cap(2, '맞는 규칙에서 허용', 'Accepted by a matching rule').cap(3, '안 맞으면 차단', 'No match, dropped').cap(4, '상태 기반 허용', 'Stateful accept').cap(5, '방화벽', 'Firewalls');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'lx-fs': [
+    item('lx-users', '사용자·그룹·sudo', 'Users, groups and sudo', '리눅스의 사용자는 /etc/passwd에 한 줄씩 있고, 커널은 이름이 아니라 UID·GID 숫자로 권한을 판단해요. sudo는 필요한 명령만 잠깐 root로 실행해요.', '/etc/passwd의 kim:x:1001:1001:Kim:/home/kim:/bin/bash는 이름, 비밀번호 자리(실제 해시는 root만 읽는 /etc/shadow), UID, GID, 설명, 홈 디렉터리, 로그인 셸이에요. id kim으로 속한 그룹을 볼 수 있고, 파일 접근은 소유자 → 그룹 → 기타 순으로 확인돼요. UID 0인 root는 권한 검사를 건너뛰기 때문에 평소엔 일반 계정을 쓰고, sudo가 /etc/sudoers 규칙과 본인 비밀번호를 확인한 뒤 해당 명령만 root로 실행하고 기록을 남겨요. 서비스는 www-data 같은 전용 계정과 nologin 셸로 돌리고, docker·sudo 그룹은 사실상 root라 신중하게 추가해요.', 'Linux users are lines in /etc/passwd, and the kernel checks permissions by UID and GID numbers, not names; sudo runs just the needed command as root.', 'The line kim:x:1001:1001:Kim:/home/kim:/bin/bash holds the name, a password placeholder (the real hash is in root-only /etc/shadow), UID, GID, comment, home directory and login shell. id kim lists the groups, and file access is checked as owner → group → others. Root, UID 0, skips permission checks, so day-to-day work uses normal accounts; sudo checks /etc/sudoers and your own password, runs only that command as root and logs it. Services run under dedicated accounts such as www-data with a nologin shell, and membership in docker or sudo is effectively root, so grant it carefully.', sUsers())
+  ],
+  'lx-text': [
+    item('lx-jq', 'jq로 JSON 다루기', 'Working with JSON in jq', 'jq는 JSON을 위한 sed·awk예요. 필터를 |로 이어 붙여 필드를 꺼내고, 거르고, 모양을 바꾸고, 집계해요.', ".[0].name은 첫 원소의 name을 꺼내요. .[]는 배열 원소를 하나씩 흘려보내고, select(.status==\"up\")로 조건에 맞는 것만 남긴 뒤 .name을 뽑으면 \"api\", \"web\"이 나와요. map(.ms) | add / length는 평균을 계산해요. -r 옵션은 따옴표 없는 원시 텍스트를 출력해 sort, awk 같은 다른 명령으로 이어 붙이기 좋아요. curl -s로 받은 API 응답이나 kubectl get -o json 결과를 바로 넘겨 다룰 수 있어요.", 'jq is sed and awk for JSON: chain filters with | to pull out fields, filter, reshape and aggregate.', '.[0].name takes the name of the first element. .[] streams the array’s elements one by one; select(.status=="up") keeps the matching ones, and .name then yields "api" and "web". map(.ms) | add / length computes an average. The -r option prints raw text without quotes, which pipes neatly into sort, awk and other tools. You can feed it API responses from curl -s or kubectl get -o json output directly.', sJq())
+  ],
+  'lx-admin': [
+    item('lx-ns', '컨테이너의 정체: 네임스페이스와 cgroup', 'What a container is: namespaces and cgroups', '컨테이너는 가상 머신이 아니라 평범한 프로세스예요. 네임스페이스로 보이는 범위를 나누고, cgroup으로 쓸 수 있는 자원을 제한해요.', '호스트에서 ps로 보면 컨테이너 안의 nginx도 PID 4321인 프로세스일 뿐이에요. PID 네임스페이스 안에서는 자기가 PID 1로 보이고, mount 네임스페이스로 이미지 파일들을 자기 /로, net 네임스페이스로 자기만의 eth0과 IP를, UTS 네임스페이스로 자기 호스트 이름을 가져요. cgroup은 메모리 512M, CPU 0.5코어 같은 한도를 걸고, 넘으면 OOM으로 종료돼요. 커널을 함께 쓰기 때문에 VM보다 훨씬 가볍고 빨리 뜨지만, 커널 취약점에는 함께 노출돼요. docker run과 쿠버네티스 파드 모두 이 기능 위에서 동작해요.', 'A container is not a virtual machine but an ordinary process: namespaces limit what it can see and cgroups limit what it can use.', 'From the host, ps shows the container’s nginx as just process 4321. Inside its PID namespace it sees itself as PID 1; the mount namespace makes the image files its /, the net namespace gives it its own eth0 and IP, and the UTS namespace its own hostname. cgroups impose limits such as 512M of memory or half a CPU core, and exceeding the memory limit gets it OOM-killed. Sharing the host kernel makes containers far lighter and quicker to start than VMs, but a kernel vulnerability affects them all. docker run and Kubernetes pods are built on these features.', sNs()),
+    item('lx-strace', 'strace로 시스템 콜 보기', 'Watching system calls with strace', 'strace는 프로그램이 커널에 보내는 시스템 콜을 가로채 한 줄씩 보여 주는 도구예요. 프로그램이 “실제로” 무엇을 하는지 알 수 있어요.', 'strace cat hello.txt를 실행하면 execve, openat(…) = 3, read(3, …), write(1, …), close(3) 순서로 호출이 보여요. 설정 파일을 못 찾는다는 오류가 날 때 ENOENT가 난 openat 줄을 보면 프로그램이 실제로 찾은 경로를 바로 알 수 있어요. strace -c는 호출별 횟수와 시간을 집계해, 작은 read가 12만 번 일어나는 것 같은 버퍼링 문제를 드러내요. -f는 자식 프로세스까지 따라가고 -p PID는 실행 중인 프로세스에 붙어요. ptrace로 동작해 많이 느려지므로 운영 환경에서는 perf나 eBPF 도구를 써요.', 'strace intercepts the system calls a program makes to the kernel and prints them line by line, showing what the program really does.', 'Running strace cat hello.txt shows execve, openat(…) = 3, read(3, …), write(1, …) and close(3) in order. When a program complains it can’t find its config, the openat line ending in ENOENT reveals the path it actually tried. strace -c tallies counts and time per call, exposing problems such as 120,000 tiny reads from missing buffering. -f follows child processes and -p PID attaches to a running one. Because it works through ptrace it slows programs down a lot, so production uses perf or eBPF tools instead.', sStrace())
+  ],
+  'lx-remote': [
+    item('lx-firewall', '방화벽 규칙', 'Firewall rules', '방화벽은 들어오는 패킷마다 규칙 목록을 위에서부터 맞춰 보고 허용하거나 버려요. 처음 맞는 규칙이 결정하고, 아무것도 안 맞으면 기본 정책을 따라요.', 'nftables(또는 iptables)의 INPUT 체인을 “기본 정책 drop”으로 두고, 필요한 것만 accept 규칙으로 열어요. 443번 포트의 새 연결은 4번 규칙에서 허용되고, 허용 목록에 없는 IP의 SSH나 외부에서 온 DB 포트 접속은 어떤 규칙에도 맞지 않아 차단돼요. 내가 보낸 요청의 응답은 연결 추적(conntrack)의 established 상태 덕분에 첫 규칙에서 허용되는데, 이것이 상태 기반 방화벽이에요. ufw allow 443/tcp나 firewalld가 이런 규칙을 만들어 주고, 클라우드 보안 그룹도 같은 원리예요.', 'A firewall checks each incoming packet against an ordered list of rules to accept or drop it; the first match decides, and the default policy applies when nothing matches.', 'An nftables (or iptables) INPUT chain is set to a default policy of drop, with accept rules opening only what is needed. A new connection to port 443 is accepted by rule 4, while SSH from an unlisted IP or the database port reached from outside matches nothing and is dropped. Replies to your own requests pass the first rule thanks to connection tracking’s established state, which is what makes the firewall stateful. ufw allow 443/tcp and firewalld generate such rules, and cloud security groups work the same way.', sFirewall())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('lx-fs', '파일과 권한', 'Files & permissions', '파일과 권한', 'Files and permissions',
     '리눅스 파일 트리를 돌아다니고 접근을 다루는 법이에요.', 'Getting around the Linux file tree and controlling access.', [
@@ -568,7 +805,7 @@ window.UX = page([
     item('lx-perm', '파일 권한 (chmod)', 'File permissions (chmod)', '파일마다 소유자·그룹·그 외 사람에 대해 읽기(r)·쓰기(w)·실행(x) 권한이 있어요. 세 비트씩 묶어 754 같은 숫자로 써요.', 'r = 4, w = 2, x = 1. 644(rw-r--r--)는 일반 파일, 755(rwxr-xr-x)는 실행 파일·디렉터리, 600은 SSH 개인 키. 디렉터리에서 x는 들어가기, r은 목록, w는 파일 생성·삭제. chown으로 소유자 변경, umask가 새 파일의 기본값을 정해요. 777은 거의 항상 잘못된 해결책이에요.', 'Each file grants read (r), write (w) and execute (x) separately to its owner, its group and everyone else. Three bits per group make an octal number such as 754.', 'r = 4, w = 2, x = 1. 644 (rw-r--r--) suits ordinary files, 755 (rwxr-xr-x) executables and directories, 600 SSH private keys. On a directory, x means enter, r list, w create or delete entries. chown changes the owner and umask sets defaults for new files. 777 is almost always the wrong fix.', sPerm()),
     item('lx-links', '하드 링크와 심볼릭 링크', 'Hard and symbolic links', '하드 링크는 같은 데이터(inode)에 이름을 하나 더 붙이고, 심볼릭 링크는 다른 경로를 적어 둔 바로가기예요.', 'ln a b는 하드 링크(링크 수 증가, 원본을 지워도 유지, 같은 디스크·파일만), ln -s a b는 심볼릭 링크(디렉터리·다른 디스크도 가능, 원본이 사라지면 끊김). 버전 전환(current → releases/v2.3), /usr/bin/python → python3 같은 곳에 심링크를 써요. ls -li로 inode 번호 확인.', 'A hard link gives the same data (inode) a second name; a symbolic link is a shortcut that stores another path.', 'ln a b makes a hard link (link count goes up, survives deleting the original, same filesystem and files only); ln -s a b makes a symlink (works for directories and across disks, breaks if the target disappears). Symlinks power version switching (current → releases/v2.3) and aliases such as /usr/bin/python → python3. ls -li shows inode numbers.', sLinks()),
     item('lx-glob', '글로브 패턴과 find', 'Glob patterns and find', '*.log 같은 패턴은 셸이 명령 실행 전에 맞는 파일 이름 목록으로 바꿔요. 하위 폴더까지 조건으로 찾을 땐 find를 써요.', '* 아무 글자, ? 한 글자, [ab] 문자 하나, {a,b} 나열(파일 존재 여부와 무관). 따옴표 안에서는 펼쳐지지 않아요. find . -name "*.log" -mtime -1 -size +10M -exec gzip {} +. 맞는 파일이 없으면 bash는 패턴을 그대로 넘기니 rm 같은 명령에 주의.', 'Patterns such as *.log are turned into matching file names by the shell before the command runs. For subfolders and conditions, use find.', '* matches anything, ? one character, [ab] one of a set, {a,b} lists alternatives whether or not files exist. Quotes stop expansion. find . -name "*.log" -mtime -1 -size +10M -exec gzip {} + searches with conditions. With no match bash passes the pattern through unchanged, so be careful with rm.', sGlob())
-  ]),
+  ].concat(XT.add['lx-fs'] || [])),
   sec('lx-text', '텍스트 처리', 'Text processing', '텍스트 처리', 'Text processing',
     '작은 도구를 파이프로 이어 데이터를 다뤄요.', 'Chaining small tools with pipes to work on data.', [
     item('lx-pipeline', '파이프라인 조합', 'Composing pipelines', '한 가지 일만 하는 작은 명령을 파이프(|)로 이어 복잡한 질문에 답해요. 앞 명령의 출력이 다음 명령의 입력이 돼요.', '예: grep \' 500 \' access.log | awk \'{print $1}\' | sort | uniq -c | sort -rn | head → 500 오류를 가장 많이 낸 IP. uniq는 붙어 있는 중복만 세므로 앞에 sort가 필요해요. 단계마다 head를 붙여 중간 결과를 확인하며 만들어요.', 'Chain single-purpose commands with | to answer complex questions; each command’s output becomes the next one’s input.', 'grep \' 500 \' access.log | awk \'{print $1}\' | sort | uniq -c | sort -rn | head lists the IPs causing the most 500 errors. uniq counts only adjacent duplicates, hence the sort before it. Build pipelines step by step, checking intermediate output with head.', sPipeline()),
@@ -576,7 +813,7 @@ window.UX = page([
     item('lx-sedawk', 'sed와 awk', 'sed and awk', 'sed는 줄 단위로 찾아 바꾸고 지우는 스트림 편집기, awk는 줄을 열로 나눠 거르고 계산하는 작은 언어예요.', "sed 's/old/new/g' 바꾸기, sed -i 파일 직접 수정, sed '/^#/d' 주석 삭제. awk -F, '{s+=$3} END {print s}' 합계, awk '$2==\"web\" {print $1}' 조건 출력. 따옴표 안 쉼표가 있는 CSV, JSON처럼 구조가 복잡해지면 csvkit·jq·파이썬으로 넘어가요.", 'sed is a stream editor for line-by-line find, replace and delete; awk is a tiny language that splits lines into fields to filter and compute.', "sed 's/old/new/g' replaces, sed -i edits files in place, sed '/^#/d' drops comment lines. awk -F, '{s+=$3} END {print s}' sums a column; awk '$2==\"web\" {print $1}' prints by condition. For CSV with quoted commas or for JSON, move to csvkit, jq or Python.", sSedawk()),
     item('lx-redirect', '리다이렉션', 'Redirection', '프로그램을 고치지 않고 입력과 출력의 방향을 바꿔요. >는 출력, 2>는 에러, <는 입력을 파일로 연결해요.', '> 덮어쓰기, >> 이어 쓰기, 2>&1 에러를 출력과 같은 곳으로, &> 둘 다(bash), < 파일 입력, << 히어독, /dev/null 버리기, tee 화면과 파일 동시. 순서가 중요해요: cmd > f 2>&1은 둘 다 파일로, cmd 2>&1 > f는 에러만 화면에 남아요.', 'Rewire a program’s input and output without changing it: > for output, 2> for errors, < for input from a file.', '> overwrites, >> appends, 2>&1 sends errors wherever output goes, &> does both (bash), < reads a file, << is a here-doc, /dev/null discards, tee writes to screen and file at once. Order matters: cmd > f 2>&1 sends both to the file, cmd 2>&1 > f leaves errors on screen.', sRedirect()),
     item('lx-xargs', 'xargs와 명령 치환', 'xargs and command substitution', '앞 명령의 출력을 다른 명령의 인자로 넘겨요. xargs는 입력 줄을 인자로 모아 실행하고, $( )는 출력을 그 자리에 끼워 넣어요.', '공백이 든 파일 이름은 쪼개지므로 find -print0 | xargs -0을 써요. 인자가 너무 많으면 "Argument list too long" → xargs가 나눠 실행해요. -P 8 병렬, -I{} 자리 표시자, -n 1 하나씩. find -exec {} +도 비슷한 일을 해요.', 'Feed one command’s output into another as arguments: xargs gathers input lines into arguments, and $( ) pastes output in place.', 'Names with spaces split apart, so use find -print0 | xargs -0. Too many arguments trigger “Argument list too long”, and xargs batches them for you. -P 8 runs in parallel, -I{} is a placeholder, -n 1 passes one at a time. find -exec {} + does a similar job.', sXargs())
-  ]),
+  ].concat(XT.add['lx-text'] || [])),
   sec('lx-shell', '셸 스크립트', 'Shell scripting', '셸 스크립트', 'Shell scripting',
     '셸이 명령줄을 해석하는 규칙과 자동화의 기본이에요.', 'How the shell reads a command line, and the basics of automation.', [
     item('lx-quote', '셸 확장과 따옴표', 'Expansion and quoting', '셸은 명령을 실행하기 전에 변수·명령 치환·글로브를 펼치고 공백에서 단어를 나눠요. 따옴표가 이 과정을 조절해요.', '순서: 중괄호 {a,b} → ~ → $변수·$( )·$(( )) → 단어 분리 → 글로브. 따옴표 없는 $f에 공백이 있으면 인자가 여러 개로 쪼개져요. "$var"는 변수만 펼치고 한 덩어리, \'…\'은 아무것도 안 펼쳐요. 변수는 거의 항상 큰따옴표로 감싸고 shellcheck로 확인해요.', 'Before running a command the shell expands variables, command substitutions and globs and splits words at spaces. Quotes control that process.', 'Order: braces {a,b} → ~ → $vars, $( ) and $(( )) → word splitting → globs. An unquoted $f containing a space becomes several arguments. "$var" expands but stays one word; \'…\' expands nothing. Quote variables almost always, and let shellcheck catch the misses.', sQuote()),
@@ -584,7 +821,7 @@ window.UX = page([
     item('lx-env', '환경 변수와 PATH', 'Environment variables and PATH', '명령 이름만 입력하면 셸이 PATH의 디렉터리를 앞에서부터 찾아 처음 나온 것을 실행해요. 환경 변수는 자식 프로세스에 복사돼요.', 'which·type으로 실제 실행될 파일 확인. export PATH="$HOME/bin:$PATH"처럼 앞에 넣은 것이 우선. export한 변수만 자식에게 전달되고 부모로는 돌아가지 않아요. VAR=1 cmd는 그 명령에만. 설정은 ~/.bashrc·~/.profile·~/.zshrc에. 비밀 값은 환경 변수로 넘기되 로그에 남지 않게.', 'Type a bare command and the shell walks the directories in PATH, running the first match. Environment variables are copied into child processes.', 'which and type show what will actually run. Entries placed first win, as in export PATH="$HOME/bin:$PATH". Only exported variables reach children, and nothing flows back to the parent. VAR=1 cmd sets it for one command. Settings live in ~/.bashrc, ~/.profile or ~/.zshrc. Pass secrets through the environment, but keep them out of logs.', sEnv()),
     item('lx-script', '셸 스크립트 기본', 'Shell script basics', '#!로 인터프리터를 정하고 실행 권한을 주면 명령처럼 실행돼요. 인자, 조건, 반복으로 반복 작업을 자동화해요.', '$1 $2 위치 인자, $# 개수, "$@" 전체, ${2:-기본값}. [ -d dir ], [ -f file ], [ -z "$s" ], 숫자 비교 -eq -lt. for f in "$dir"/*.conf; do … done. 에러는 >&2로 내고 exit 1. 함수, trap으로 정리 작업. 길어지거나 자료구조가 필요하면 파이썬이 나아요.', 'Pick an interpreter with #!, set the execute bit, and the script runs like any command. Arguments, conditions and loops automate repetitive work.', '$1 $2 are positional arguments, $# their count, "$@" all of them, ${2:-default} a fallback. Tests: [ -d dir ], [ -f file ], [ -z "$s" ], numeric -eq and -lt. for f in "$dir"/*.conf; do … done. Report errors with >&2 and exit 1; clean up with trap. Once it grows or needs real data structures, Python is the better tool.', sScript()),
     item('lx-jobs', '작업 제어와 세션', 'Job control and sessions', '&로 백그라운드 실행, Ctrl+Z로 멈춤, bg·fg로 이어서 실행해요. 터미널을 닫아도 계속 돌리려면 tmux나 nohup이 필요해요.', 'jobs로 목록, fg %2로 2번 작업을 앞으로. 터미널을 닫으면 SIGHUP으로 작업이 종료돼요 → nohup cmd &, disown, 또는 tmux·screen 세션에서 실행하면 SSH가 끊겨도 유지. 계속 돌아야 하는 서비스는 systemd 유닛으로 만들어요.', 'Start work in the background with &, pause it with Ctrl+Z, resume with bg or fg. To survive closing the terminal you need tmux or nohup.', 'jobs lists them and fg %2 brings job 2 forward. Closing the terminal sends SIGHUP and kills jobs, so use nohup cmd &, disown, or a tmux or screen session that survives a dropped SSH connection. Services that must keep running belong in a systemd unit.', sJobs())
-  ]),
+  ].concat(XT.add['lx-shell'] || [])),
   sec('lx-admin', '시스템 관리', 'System administration', '시스템 관리', 'System administration',
     '서버 상태를 보고 서비스·디스크·패키지·일정을 다뤄요.', 'Watching a server and managing services, disks, packages and schedules.', [
     item('lx-top', 'top으로 상태 보기', 'Reading top', 'top은 CPU·메모리·부하와 자원을 많이 쓰는 프로세스를 실시간으로 보여줘요. 서버가 느릴 때 가장 먼저 보는 화면이에요.', 'load average는 실행 중이거나 기다리는 작업 수의 1·5·15분 평균으로 코어 수와 비교해요. us/sy/id/wa 중 wa가 높으면 디스크 병목. free가 작아도 buff/cache는 필요하면 돌려주니 available을 봐요. %CPU 200은 코어 2개. htop, ps aux --sort=-%cpu, vmstat 1, iostat -x 1.', 'top shows CPU, memory, load and the hungriest processes live: the first screen to open when a server is slow.', 'Load average is runnable plus waiting tasks over 1, 5 and 15 minutes; compare it with the core count. Of us/sy/id/wa, a high wa means the disk is the bottleneck. A small free is fine because buff/cache is returned on demand, so watch available. %CPU 200 means two cores. Also htop, ps aux --sort=-%cpu, vmstat 1, iostat -x 1.', sTop()),
@@ -593,15 +830,16 @@ window.UX = page([
     item('lx-pkg', '패키지 관리자', 'Package managers', '패키지 관리자는 저장소에서 소프트웨어를 받아 의존성까지 맞춰 설치·업데이트·삭제해요. 서명을 확인해 변조를 막아요.', 'apt update(목록 갱신) → apt install/upgrade. 데비안·우분투 apt(.deb), 레드햇·페도라 dnf(.rpm), 알파인 apk, macOS brew. dpkg -L로 설치된 파일 목록. 시스템 파이썬에 pip install은 피하고 venv를, 버전 고정은 apt-mark hold. 컨테이너 이미지에서는 설치 후 캐시를 지워 크기를 줄여요.', 'A package manager downloads software from repositories, resolves dependencies and installs, updates or removes it, checking signatures against tampering.', 'apt update refreshes the index, then apt install or upgrade. Debian and Ubuntu use apt (.deb), Red Hat and Fedora dnf (.rpm), Alpine apk, macOS brew. dpkg -L lists a package’s files. Avoid pip-installing into the system Python (use a venv); pin versions with apt-mark hold. In container images, clear the cache after installing to keep them small.', sPkg()),
     item('lx-cron', '크론 예약 작업', 'Scheduled jobs with cron', '크론은 분·시·일·월·요일 다섯 칸으로 정한 시각에 명령을 실행해요. 백업·정리·보고서 같은 반복 작업에 써요.', '*/15 9-18 * * 1-5 = 평일 9~18시 15분마다. crontab -e로 편집. 함정: 최소한의 환경(PATH가 짧음), 출력은 리다이렉션하지 않으면 메일로 가거나 사라짐, 서버 시간대 기준, 이전 실행과 겹침(flock -n). systemd 타이머, 쿠버네티스 CronJob, 클라우드 스케줄러가 대안이에요.', 'cron runs commands at times set by five fields: minute, hour, day of month, month and weekday. Backups, cleanups and reports run this way.', '*/15 9-18 * * 1-5 means every 15 minutes, 9 to 18, Monday to Friday. Edit with crontab -e. Gotchas: a minimal environment (short PATH), output that is mailed or lost unless redirected, the server’s time zone, and overlapping runs (wrap with flock -n). Alternatives: systemd timers, Kubernetes CronJobs, cloud schedulers.', sCron()),
     item('lx-logs', '로그 보기와 관리', 'Reading and managing logs', 'tail -f로 로그를 실시간으로 따라가고, grep으로 거르고, journalctl로 서비스 로그를 봐요. logrotate가 로그가 디스크를 채우지 않게 관리해요.', 'tail -f app.log | grep --line-buffered ERROR, less +F, journalctl -u api --since "1 hour ago" -p err. logrotate: 매일 돌리고 7개 보관·압축. 서버가 여러 대면 ELK(Elasticsearch·Kibana), Loki·Grafana, 클라우드 로깅으로 한곳에 모아요. JSON 구조화 로그는 필드로 거르기 쉬워요.', 'Follow logs live with tail -f, filter them with grep, and read service logs with journalctl. logrotate keeps logs from filling the disk.', 'tail -f app.log | grep --line-buffered ERROR, less +F, journalctl -u api --since "1 hour ago" -p err. logrotate rotates daily, keeping seven compressed copies. With many servers, centralize in ELK (Elasticsearch, Kibana), Loki and Grafana, or cloud logging. Structured JSON logs filter cleanly by field.', sLogs())
-  ]),
+  ].concat(XT.add['lx-admin'] || [])),
   sec('lx-remote', '원격 접속과 네트워크', 'Remote & network', '원격 접속과 네트워크', 'Remote access and networking',
     '서버에 안전하게 들어가고 연결 문제를 찾는 법이에요.', 'Getting into servers safely and tracking down connection problems.', [
     item('lx-ssh', 'SSH 키 인증', 'SSH key authentication', '공개 키를 서버에 등록해 두면, 접속할 때 개인 키로 서명해서 신원을 증명해요. 비밀번호가 네트워크로 오가지 않아요.', 'ssh-keygen -t ed25519로 키 쌍 생성, ssh-copy-id로 공개 키를 ~/.ssh/authorized_keys에 등록. 처음 접속 때 서버 호스트 키 지문을 확인해 known_hosts에 저장하고, 바뀌면 경고(재설치 또는 중간자 공격). 비밀번호 로그인 끄기, ~/.ssh/config 별칭, ssh-agent, 개인 키 권한 600.', 'Register your public key on the server and prove your identity by signing with the private key at login; no password ever crosses the network.', 'ssh-keygen -t ed25519 makes the pair; ssh-copy-id adds the public key to ~/.ssh/authorized_keys. On first connect you confirm the server’s host-key fingerprint, stored in known_hosts; a changed key raises a warning (a rebuild, or a man-in-the-middle). Disable password logins, use ~/.ssh/config aliases and ssh-agent, and keep the private key at mode 600.', sSsh()),
     item('lx-netdiag', '네트워크 진단', 'Network troubleshooting', '“접속이 안 돼요”는 DNS → IP 도달 → 포트 → 애플리케이션 순으로 아래 계층부터 하나씩 확인해요.', 'dig·nslookup(이름 해석), ping(도달·지연), nc -zv host 443(포트 열림), curl -v(HTTP·TLS 상세). 서버에서는 ss -tlnp로 듣고 있는 포트와 프로세스, 방화벽(ufw, iptables, 보안 그룹) 확인. 경로는 traceroute·mtr, 패킷은 tcpdump·Wireshark.', 'Break “it won’t connect” into layers and check from the bottom: DNS, then reachability, then the port, then the application.', 'dig or nslookup for name resolution, ping for reachability and latency, nc -zv host 443 for an open port, curl -v for HTTP and TLS details. On the server, ss -tlnp shows which process listens where; check firewalls (ufw, iptables, security groups). traceroute or mtr for the path, tcpdump or Wireshark for packets.', sNetdiag()),
     item('lx-tunnel', 'SSH 포트 포워딩', 'SSH port forwarding', 'SSH 연결을 통로로 삼아 내 컴퓨터의 포트를 원격 네트워크 안의 서버로 이어요. 사설망의 DB에 안전하게 접속할 때 써요.', 'ssh -L 5433:db.internal:5432 bastion → localhost:5433이 db:5432로 연결. -R은 반대(원격 포트 → 내 컴퓨터), -D는 SOCKS 프록시, -J는 점프 호스트 경유, -N은 명령 없이 터널만. 트래픽이 SSH로 암호화돼요. 상시로 쓰면 VPN이나 클라우드의 세션 관리 기능이 더 적합해요.', 'Use an SSH connection as a pipe linking a port on your machine to a server inside a remote network, such as a database on a private subnet.', 'ssh -L 5433:db.internal:5432 bastion makes localhost:5433 reach db:5432. -R forwards the other way (remote port → your machine), -D runs a SOCKS proxy, -J hops through a jump host, -N opens only the tunnel. Traffic rides encrypted inside SSH. For permanent access, a VPN or the cloud’s session manager fits better.', sTunnel()),
     item('lx-rsync', 'rsync 동기화', 'Syncing with rsync', 'rsync는 양쪽 파일을 비교해 바뀐 부분만 보내는 동기화 도구예요. 백업과 배포에 많이 써요.', '크기·수정 시각으로 비교하고, 바뀐 파일은 롤링 체크섬으로 다른 블록만 전송. -a 권한·시각 유지, -z 압축, -P 진행률·이어받기, --delete 원본에 없는 파일 삭제. 끝 슬래시 주의: src/는 내용물, src는 폴더째. 실행 전 -n(--dry-run)으로 확인해요.', 'rsync compares both sides and transfers only what changed: a staple of backups and deployments.', 'It compares size and modification time, then sends only the differing blocks of changed files using a rolling checksum. -a preserves permissions and times, -z compresses, -P shows progress and resumes, --delete removes files missing from the source. Mind the trailing slash: src/ copies the contents, src the folder itself. Dry-run first with -n.', sRsync())
-  ])
-]);
+  ].concat(XT.add['lx-remote'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .lx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .lx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}

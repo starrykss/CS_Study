@@ -126,11 +126,11 @@ function sGrammar() {
   const S = scene({ id: 'cp-grammar', steps: 5, per: 1.4 });
   code(S, 'g', 1, 1.4, 14, ['expr   → expr + term   | term', 'term   → term * factor | factor', 'factor → NUM | ( expr )'], [[0, 2], [1, 3]]);
   const D = [['expr', 1], ['expr + term', 2], ['term + term', 2], ['factor + term', 2], ['2 + term', 2], ['2 + term * factor', 3], ['2 + factor * factor', 3], ['2 + 3 * factor', 3], ['2 + 3 * 4', 3]];
-  T(S, 'dh', 17, 1.4, ['유도 (가장 왼쪽부터)', 'leftmost derivation'], 'cp-xs', 1);
-  D.forEach(([d, st], i) => T(S, 'd' + i, 17, 2.8 + i * 1.35, (i ? '⇒ ' : '') + d, 'cz-mono cp-s' + (i === D.length - 1 ? ' cp-g' : ''), st));
-  T(S, 'n1', 1, 6.4, ['기호 → 바꿀 수 있는 것들 · 규칙을 반복 적용해 문장을 만들어요', 'symbol → what it can become · apply rules repeatedly to build sentences'], 'cp-xs', 1);
-  T(S, 'n4', 1, 8.2, ['*는 term 단계, +는 expr 단계 → *가 트리에서 더 깊이 들어가 먼저 계산돼요', '* lives at the term level and + at expr → * sits deeper in the tree and binds tighter'], 'cp-xs cp-a', 4);
-  T(S, 'n4b', 1, 9.5, ['expr → expr + term 처럼 왼쪽에 자기 자신 → 왼쪽 결합 (1 − 2 − 3 = (1 − 2) − 3)', 'expr on the left of its own rule → left-associative (1 − 2 − 3 = (1 − 2) − 3)'], 'cp-xs', 4);
+  T(S, 'dh', 20, 1.4, ['유도 (가장 왼쪽부터)', 'leftmost derivation'], 'cp-xs', 1);
+  D.forEach(([d, st], i) => T(S, 'd' + i, 20, 2.8 + i * 1.35, (i ? '⇒ ' : '') + d, 'cz-mono cp-s' + (i === D.length - 1 ? ' cp-g' : ''), st));
+  T(S, 'n1', 1, 6.4, ['규칙을 반복 적용해 문장을 만들어요', 'apply the rules repeatedly to build sentences'], 'cp-xs', 1);
+  T(S, 'n4', 1, 15.6, ['*는 term 단계, +는 expr 단계 → *가 트리에서 더 깊이 들어가 먼저 계산돼요', '* lives at the term level and + at expr → * sits deeper in the tree and binds tighter'], 'cp-xs cp-a', 4, { off: 5 });
+  T(S, 'n4b', 1, 16.9, ['expr → expr + term 처럼 왼쪽에 자기 자신 → 왼쪽 결합 (1 − 2 − 3 = (1 − 2) − 3)', 'expr on the left of its own rule → left-associative (1 − 2 − 3 = (1 − 2) − 3)'], 'cp-xs', 4, { off: 5 });
   T(S, 'n5', 1, 15.6, ['BNF·EBNF로 언어의 문법을 정확히 적어요 (JSON, SQL, 파이썬 명세)', 'BNF and EBNF pin syntax down exactly (the JSON, SQL and Python specs)'], 'cp-xs', 5);
   T(S, 'n5b', 1, 16.9, ['파서 생성기(ANTLR, yacc·bison)의 입력이기도 해요', 'they also feed parser generators (ANTLR, yacc/bison)'], 'cp-xs', 5);
   S.cap(1, '문맥 자유 문법은 기호를 바꿔 쓰는 규칙의 모음', 'A context-free grammar is a set of rewrite rules')
@@ -317,8 +317,8 @@ function sSsa() {
   lnk(S, 'l0', [23, 10.4], [18.6, 13.4], 2); lnk(S, 'l1', [23, 10.4], [27.4, 13.4], 2); lnk(S, 'l2', [18.6, 13.4], [23, 16.4], 3); lnk(S, 'l3', [27.4, 13.4], [23, 16.4], 3);
   T(S, 'n2', 1, 9.4, ['대입할 때마다 새 이름(버전)을 붙여요', 'every assignment gets a fresh name (version)'], 'cp-xs', 2);
   T(S, 'n3', 1, 10.7, ['흐름이 합쳐지는 곳엔 φ: 온 길에 따라 값을 골라요', 'where paths merge, φ picks the value by the incoming edge'], 'cp-xs cp-w', 3);
-  T(S, 'n4', 1, 12.4, ['모든 변수의 정의가 딱 한 곳 → “이 값은 어디서 왔나”가 바로 보여요', 'each variable has exactly one definition → where a value came from is obvious'], 'cp-xs cp-g', 4);
-  T(S, 'n4b', 1, 13.7, ['상수 전파·죽은 코드 제거·레지스터 할당이 쉬워져요', 'constant propagation, dead code removal and register allocation get easier'], 'cp-xs', 4);
+  T(S, 'n4', 1, 12.4, ['모든 변수의 정의가 딱 한 곳 → “이 값은 어디서 왔나”가 바로 보여요', 'one definition per variable → origin is obvious'], 'cp-xs cp-g', 4);
+  T(S, 'n4b', 1, 13.7, ['상수 전파·죽은 코드 제거·레지스터 할당이 쉬워져요', 'simpler constant propagation, DCE, regalloc'], 'cp-xs', 4);
   T(S, 'n5', 1, 18.6, ['LLVM IR, GCC의 GIMPLE, V8·HotSpot JIT 모두 SSA 기반 · 기계어로 갈 때 φ는 복사 명령으로 풀어요', 'LLVM IR, GCC’s GIMPLE and the V8 and HotSpot JITs are all SSA-based · φs become copies on the way to machine code'], 'cp-xs', 5);
   S.cap(1, '같은 변수 x에 여러 번 대입하는 코드', 'Code that assigns x several times')
     .cap(2, 'SSA는 대입마다 새 이름을 붙여요', 'SSA gives every assignment a new name')
@@ -390,8 +390,8 @@ function sLicm() {
   code(S, 'a', 1, 1.4, 14, ['for (i = 0; i < n; i++)', '  a[i] = x * y + i * 4;'], []);
   rect(S, 'h1', 7.3, 1.65 + 1.25, 3.2, 1.25, 'warn', 35, 2, { r: .2 }); rect(S, 'h2', 11.2, 1.65 + 1.25, 2.8, 1.25, 'accent', 35, 3, { r: .2 });
   code(S, 'b', 17, 1.4, 14, [['t = x * y;', 2, 'cp-w'], ['p = 0;', 3, 'cp-a'], ['for (i = 0; i < n; i++) {', 2], ['  a[i] = t + p;', 2], ['  p += 4;', 3, 'cp-a'], ['}', 2]], []);
-  T(S, 'n2', 1, 5.6, ['x * y는 반복 안에서 안 바뀌어요 → 밖으로 (루프 불변 코드 이동)', 'x * y never changes inside the loop → hoist it out (loop-invariant code motion)'], 'cp-xs cp-w', 2);
-  T(S, 'n3', 1, 6.9, ['i * 4는 매번 4씩 늘어요 → 곱셈 대신 덧셈 (강도 감소)', 'i * 4 grows by 4 each time → an add replaces the multiply (strength reduction)'], 'cp-xs cp-a', 3);
+  T(S, 'n2', 1, 5.6, ['x * y는 반복 안에서 안 바뀌어요 → 밖으로 (루프 불변 코드 이동)', 'x * y never changes in the loop → hoist it out (LICM)'], 'cp-xs cp-w', 2);
+  T(S, 'n3', 1, 6.9, ['i * 4는 매번 4씩 늘어요 → 곱셈 대신 덧셈 (강도 감소)', 'i * 4 grows by 4 each time → add instead of multiply'], 'cp-xs cp-a', 3);
   T(S, 'th', 1, 10.6, ['반복 한 번당', 'per iteration'], 'cp-xs', 4);
   T(S, 't1', 1, 11.9, ['전: 곱셈 2 + 덧셈 1', 'before: 2 multiplies + 1 add'], 'cz-mono cp-s cp-r', 4); T(S, 't2', 1, 13.3, ['후: 덧셈 2', 'after: 2 adds'], 'cz-mono cp-s cp-g', 4);
   T(S, 't3', 17, 11.9, ['n = 1,000,000이면 곱셈 200만 번 절약', 'with n = 1,000,000 that saves two million multiplies'], 'cp-xs', 4);
@@ -521,8 +521,8 @@ function sLlvm() {
   const S = scene({ id: 'cp-llvm', steps: 5, per: 1.4 });
   [['C/C++ → Clang', 'accent'], ['Rust → rustc', 'warn'], ['Swift → swiftc', 'danger'], ['Zig · Julia …', 'line']].forEach(([t, c], i) => { box(S, 'f' + i, 1, 1.6 + i * 2.6, 8.4, 2, t, c, 1, { pct: 30 }); ar(S, 'fa' + i, [9.5, 2.6 + i * 2.6], [11.4, 6.2], 'ink-3', 1, { h: .1 }); });
   box(S, 'ir', 11.6, 4.6, 8.4, 3.2, 'LLVM IR', 'ok', 1, { pct: 40 });
-  code(S, 'irc', 1, 12.4, 14, ['define i32 @add1(i32 %x) {', '  %r = add i32 %x, 1', '  ret i32 %r', '}'], [], { st: 2 });
-  T(S, 'irl', 1, 11.2, ['SSA 형식의 공통 중간 표현', 'a shared SSA intermediate form'], 'cp-xs', 2);
+  code(S, 'irc', 1, 12.9, 14, ['define i32 @add1(i32 %x) {', '  %r = add i32 %x, 1', '  ret i32 %r', '}'], [], { st: 2 });
+  T(S, 'irl', 1, 11.85, ['SSA 형식의 공통 중간 표현', 'a shared SSA intermediate form'], 'cp-xs', 2);
   ['mem2reg (→ SSA)', 'inline', 'GVN', 'LICM', 'loop-vectorize'].forEach((p, i) => box(S, 'p' + i, 11.6, 9 + i * 1.9 - 0, 8.4, 1.6, p, 'ok', 3, { pct: 22 }));
   T(S, 'pl', 11.6, 18.6, ['-O2: 수십 개의 패스를 차례로', '-O2 runs dozens of passes'], 'cp-xs cp-g', 3);
   [['x86-64', 'accent'], ['ARM64', 'warn'], ['RISC-V', 'ok'], ['WebAssembly', 'danger']].forEach(([t, c], i) => { box(S, 'b' + i, 23.6, 1.6 + i * 2.6, 7.4, 2, t, c, 4, { pct: 30 }); ar(S, 'ba' + i, [20.1, 6.2], [23.5, 2.6 + i * 2.6], 'ink-3', 4, { h: .1 }); });
@@ -544,7 +544,7 @@ function sJit() {
   code(S, 'mc', 12, 9.2, 14, [['cmp [o].shape, S1', 2], [['jne deopt   // 다른 모양이면 탈출', 'jne deopt   // bail out on another shape'], 2], ['mov eax, [o + 12]   ; o.x', 2], ['ret', 2]], [[2, 2]], { st: 2 });
   T(S, 'mcl', 12, 14.8, ['가정을 확인하고 바로 오프셋으로 읽기 (인라인 캐시)', 'check the assumption, then read the field at a fixed offset (inline cache)'], 'cp-xs', 2);
   box(S, 'd', 23.6, 5.6, 7.4, 2.4, ['{y: 2, x: 1} → 모양 S2', '{y: 2, x: 1} → shape S2'], 'danger', 3, { pct: 30 });
-  elb(S, 'dp', [[23.5, 7.4], [22, 7.4], [22, 9], [5.3, 9], [5.3, 8.1]], 'danger', 3, { h: .14 }); T(S, 'dpl', 16, 3.6, ['가정 깨짐 → 탈최적화', 'assumption broken → deoptimize'], 'cp-xs cp-r', 3);
+  elb(S, 'dp', [[23.5, 7.4], [22, 7.4], [22, 9], [8.6, 9], [8.6, 8.1]], 'danger', 3, { h: .14 }); T(S, 'dpl', 16, 3.6, ['가정 깨짐 → 탈최적화', 'assumption broken → deoptimize'], 'cp-xs cp-r', 3);
   T(S, 'n4', 1, 11.4, ['다시 기록해 두 모양을 함께 처리하도록 재최적화', 'record again and reoptimize for both shapes'], 'cp-xs', 4);
   T(S, 'n5', 1, 16.6, ['V8: Ignition → Sparkplug → Maglev → TurboFan · 자바 HotSpot: 인터프리터 → C1 → C2 · PyPy, LuaJIT', 'V8: Ignition → Sparkplug → Maglev → TurboFan · Java HotSpot: interpreter → C1 → C2 · PyPy, LuaJIT'], 'cz-mono cp-xs', 5);
   T(S, 'n6', 1, 18, ['성능 팁: 객체의 필드를 같은 순서로 만들어 모양을 일정하게 유지하세요', 'performance tip: create objects with the same fields in the same order so their shapes stay uniform'], 'cp-xs cp-g', 5);
@@ -555,6 +555,250 @@ function sJit() {
     .cap(5, '투기적 최적화와 인라인 캐시', 'Speculative optimization and inline caches');
   return S;
 }
+
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'cpx-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono cpx-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono cpx-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c cpx-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono cpx-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c cpx-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'cpx-s cpx-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono cpx-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono cpx-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono cpx-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono cpx-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono cpx-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'cpx-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'cpx-xs', 5));
+
+
+const CSSX = `
+.cpx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.cpx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.cpx-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.cpx-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.cpx-r .in{color:var(--danger);font-weight:800}
+.cpx-g .in{color:var(--ok);font-weight:800}
+.cpx-a .in{color:var(--accent);font-weight:800}
+.cpx-w .in{color:var(--warn);font-weight:800}
+.cpx-c .in{font-size:.6em;font-weight:700}
+.cpx-c2 .in{font-size:.5em;font-weight:700}
+.cpx-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.cpx-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'cpx-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 0) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+
+/* ================= front end ================= */
+function sFirstFollow() {
+  const S = scene({ id: 'cp-firstfollow', steps: 5, per: 1.6 });
+  code(S, 'g', 1, 1.0, 11.4, ["E  → T E'", "E' → + T E' | ε", "T  → F T'", "T' → * F T' | ε", 'F  → ( E ) | id'], [], {});
+  const NT = ["E", "E'", "T", "T'", "F"], FI = ['( id', '+ ε', '( id', '* ε', '( id'], FO = [') $', ') $', '+ ) $', '+ ) $', '* + ) $'];
+  T(S, 'hfi', 15.6, .3, 'FIRST', 'cz-tc cz-mono cpx-xs cpx-a', 2, { w: 6.6 }); T(S, 'hfo', 22.6, .3, 'FOLLOW', 'cz-tc cz-mono cpx-xs cpx-w', 3, { w: 8.4 });
+  NT.forEach((n, r) => { const y = 1.2 + r * 1.2; box2(S, 'n' + r, 13.2, y, 2.2, 1.0, n, 'ink-3', 1, { pct: 12 }); box2(S, 'fi' + r, 15.6, y, 6.6, 1.0, '{ ' + FI[r] + ' }', 'accent', 2, { pct: 20 }); box2(S, 'fo' + r, 22.6, y, 8.4, 1.0, '{ ' + FO[r] + ' }', 'warn', 3, { pct: 22 }); });
+  const TOK = ['id', '+', '*', '(', ')', '$'], CX = j => 3.6 + j * 4.55, RY = r => 9.5 + r * 1.1;
+  TOK.forEach((t, j) => T(S, 'tk' + j, CX(j), 8.45, t, 'cz-tc cz-mono cpx-xs cpx-a', 4, { w: 4.35 }));
+  const M = [["TE'", '', '', "TE'", '', ''], ['', "+TE'", '', '', 'ε', 'ε'], ["FT'", '', '', "FT'", '', ''], ['', 'ε', "*FT'", '', 'ε', 'ε'], ['id', '', '', '(E)', '', '']];
+  M.forEach((row, r) => { box2(S, 'mn' + r, 1, RY(r), 2.4, .95, NT[r], 'ink-3', 4, { pct: 12 }); row.forEach((v, j) => box2(S, `m${r}_${j}`, CX(j), RY(r), 4.35, .95, v, v ? 'ok' : 'line', 4, { pct: v ? 22 : 8 })); });
+  tsets(S, 'm0_0', [[4, 'ok', 55], [5, 'ok', 22]]);
+  stepT(S, 'k', 1, 15.3, [['왼쪽 재귀를 없앤 식 문법이에요 · E′, T′는 “더 이어지거나 끝(ε)”을 뜻해요', 'an expression grammar without left recursion · E′ and T′ mean “more, or stop (ε)”'], ['FIRST: 그 기호로 시작할 수 있는 첫 토큰들 · E, T, F는 모두 ( 또는 id로 시작', 'FIRST: tokens that can start each symbol · E, T and F all start with ( or id'], ['FOLLOW: 그 기호 바로 뒤에 올 수 있는 토큰 · ε 규칙을 언제 고를지 알려 줘요', 'FOLLOW: tokens that can come right after · it tells when to pick an ε rule'], ['LL(1) 표: 칸마다 규칙이 하나뿐 → 다음 토큰 하나만 보고 결정 (E와 id → TE′)', 'the LL(1) table: one rule per cell → one lookahead token decides (E with id → TE′)']]);
+  fin(S, 'z', 16.7, [['FIRST·FOLLOW로 만든 표가 충돌 없이 채워지면 그 문법은 LL(1)이에요', 'if the table built from FIRST and FOLLOW has no conflicts, the grammar is LL(1)', 'cpx-xs cpx-a'], ['한 칸에 규칙이 둘이면 문법을 고치거나(좌인수분해·왼쪽 재귀 제거) LR 파서를 써요', 'two rules in a cell means rewriting the grammar (left factoring, removing left recursion) or using LR']]);
+  S.cap(1, 'LL(1)용 문법', 'A grammar for LL(1)').cap(2, 'FIRST 집합', 'FIRST sets').cap(3, 'FOLLOW 집합', 'FOLLOW sets').cap(4, 'LL(1) 파싱 표', 'The LL(1) parse table').cap(5, 'FIRST·FOLLOW와 LL(1)', 'FIRST, FOLLOW and LL(1)');
+  return S;
+}
+function sErrRec() {
+  const S = scene({ id: 'cp-errrec', steps: 5, per: 1.6 });
+  code(S, 'src', 1, 1.0, 13, ['1  let x = (1 + 2;', '2  let y = x * 3', '3  print(y)'], [[0, 1], [1, 2]], { hoff: 3 });
+  rect(S, 'msg', 15, 1.0, 16, 4.0, 'ink', 5, 1, { r: .4 });
+  ver(S, 'm0', 15.5, 1.3, [[1, "error: expected ')'  (1:15)"]], 'cz-mono cpx-xs cpx-r');
+  T(S, 'm1a', 15.5, 2.4, ['빌드 중단 → 고치고 다시…', 'build stopped → fix and retry…'], 'cpx-xs', 1, { off: 2 });
+  T(S, 'm1b', 15.5, 2.4, "error: expected ';'  (2:14)", 'cz-mono cpx-xs cpx-r', 2);
+  ver(S, 'm2', 15.5, 3.6, [[2, ['오류 2개를 한 번에', '2 errors in one run']]], 'cpx-xs cpx-g');
+  const TK = ['let', 'x', '=', '(', '1', '+', '2', ';', 'let', 'y', '=', 'x', '*', '3', 'print'], TX = i => 1 + i * 2.0;
+  TK.forEach((t, i) => box2(S, 't' + i, TX(i), 7.0, 1.8, 1.1, t, 'line', 1, { pct: 20 }));
+  tsets(S, 't7', [[1, 'danger', 40]]); tsets(S, 't14', [[2, 'danger', 40]]);
+  tsets(S, 't8', [[2, 'ok', 35], [3, 'line', 20]]);
+  T(S, 'e1', TX(7) - .6, 8.25, "▲ ')' ?", 'cz-mono cpx-tiny cpx-r', 1); T(S, 'e2', TX(14) - .9, 8.25, "▲ ';' ?", 'cz-mono cpx-tiny cpx-r', 2);
+  elb(S, 'sync', [[TX(7) + .9, 6.95], [TX(7) + .9, 6.2], [TX(8) + .9, 6.2], [TX(8) + .9, 6.95]], 'ok', 2, { h: .08, off: 3 });
+  T(S, 'syncl', TX(8) + 1.4, 5.85, ['여기서 다시 시작', 'resume here'], 'cpx-tiny cpx-g', 2, { off: 3 });
+  box2(S, 'ins', TX(6) + 1.0, 5.75, 1.8, 1.1, ')', 'ok', 3, { pct: 40, css: 'border-style:dashed' });
+  T(S, 'insl', TX(6) - 3.6, 6.0, ['있다고 치고 계속', 'assume it'], 'cpx-tiny cpx-g', 3, { off: 4 });
+  code(S, 'dg', 1, 9.1, 21, ["error: expected ')'", ' --> main.x:1:15', '  |', '1 | let x = (1 + 2;', "  |         -     ^ expected ')'", "  |         unclosed '('", "help: add ')' before ';'"], [], { st: 4, lh: .95 });
+  stepT(S, 'k', 1, 16.5, [['첫 오류에서 멈추면 하나 고치고, 다시 빌드하고, 또 하나… 반복이에요', 'stopping at the first error means fix one, rebuild, find the next… over and over'], ['패닉 모드: 오류가 나면 ;나 다음 문장 키워드까지 건너뛰고 다시 시작해요', 'panic mode: on an error, skip to a synchronizing token (; or the next statement) and resume'], ['구 수준 복구: 빠진 )를 있었던 것처럼 끼워 넣어 엉뚱한 연쇄 오류를 막아요', 'phrase-level recovery: pretend the missing ) was there to avoid a cascade of bogus errors'], ['좋은 진단: 줄:열 위치, 밑줄과 이유, 고치는 방법까지 · Rust·Elm·Clang 스타일', 'good diagnostics: line:column, underline and reason, plus a fix · Rust, Elm and Clang style']]);
+  fin(S, 'z', 17.9, [['오류 복구: 한 번 컴파일할 때 진짜 오류는 최대한 많이, 가짜 오류는 없이 보고하는 기술', 'error recovery reports as many real errors as possible per compile, with no bogus ones', 'cpx-xs cpx-a'], ['IDE는 고치는 중인 코드도 계속 파싱해야 해서 특히 중요해요 (tree-sitter, Roslyn)', 'IDEs parse half-written code constantly, so it matters even more (tree-sitter, Roslyn)']]);
+  S.cap(1, '첫 오류에서 멈추면', 'Stopping at the first error').cap(2, '건너뛰고 다시 시작', 'Skip and resume').cap(3, '빠진 토큰 끼워 넣기', 'Insert the missing token').cap(4, '읽기 좋은 진단', 'Readable diagnostics').cap(5, '구문 오류 복구', 'Syntax error recovery');
+  return S;
+}
+
+/* ================= middle ================= */
+function sEscape() {
+  const S = scene({ id: 'cp-escape', steps: 5, per: 1.6 });
+  code(S, 'a', 1, 1.0, 15.6, ['func dist(x, y float64) float64 {', '    p := &Point{x, y}', '    return math.Sqrt(p.x*p.x + p.y*p.y)', '}'], [[1, 2]], { hoff: 3, lh: 1.2 });
+  code(S, 'b', 1, 7.6, 15.6, ['func newPoint(x, y float64) *Point {', '    return &Point{x, y}', '}'], [[1, 3]], { hoff: 4, lh: 1.2 });
+  T(S, 'ma', 1, 6.55, ['p는 함수 밖으로 안 나가요 → 스택에', 'p never leaves the function → stack'], 'cpx-xs cpx-g', 2);
+  T(S, 'mb', 1, 12.0, ['포인터를 반환하니 밖으로 나가요(탈출) → 힙에', 'the pointer is returned, so it escapes → heap'], 'cpx-xs cpx-r', 3);
+  T(S, 'sl', 18, .2, ['스택', 'stack'], 'cpx-xs cpx-a', 0); T(S, 'hl', 25.2, .2, ['힙', 'heap'], 'cpx-xs cpx-w', 0);
+  rect(S, 'heap', 25.2, 1.0, 5.8, 10.8, 'warn', 8, 0, { r: .4 });
+  rect(S, 'fa', 18, 1.0, 6.4, 4.4, 'accent', 8, 0, { r: .3 }); T(S, 'fal', 18.3, 1.1, 'dist()', 'cz-mono cpx-tiny', 0);
+  rect(S, 'fb', 18, 7.6, 6.4, 3.2, 'accent', 8, 3, { r: .3 }); T(S, 'fbl', 18.3, 7.7, 'newPoint()', 'cz-mono cpx-tiny', 3);
+  [1.6, 3.2, 4.8].forEach((y, i) => box2(S, 'ho' + i, 25.7, y, 4.8, 1.1, 'Point', 'warn', 1, { pct: 30, off: 2 }));
+  T(S, 'gc', 25.5, 6.3, ['GC가 치워야 해요', 'the GC must clean up'], 'cpx-tiny cpx-r', 1, { off: 2 });
+  box2(S, 'sp', 18.4, 2.2, 5.6, 1.2, 'Point{x, y}', 'ok', 2, { pct: 35, off: 4 });
+  box2(S, 'rg', 18.4, 2.2, 5.6, 1.2, ['x, y → 레지스터', 'x, y → registers'], 'ok', 4, { pct: 35 });
+  box2(S, 'rv', 18.4, 8.6, 5.6, 1.1, 'ret = 0xc000', 'accent', 3, { pct: 25 });
+  box2(S, 'hp', 25.7, 8.6, 4.8, 1.1, 'Point', 'danger', 3, { pct: 30 });
+  ar(S, 'rva', [24.05, 9.15], [25.65, 9.15], 'danger', 3, { h: .08 });
+  code(S, 'gm', 1, 13.0, 21, ['$ go build -gcflags=-m', './p.go:2: &Point{...} does not escape', './p.go:6: &Point{...} escapes to heap'], [], { st: 4, lh: 1.0 });
+  stepT(S, 'k', 1, 16.8, [['객체를 힙에 만들면 할당 비용이 들고, 나중에 GC가 치워야 해요', 'heap objects cost an allocation and later work for the GC'], ['p는 반환되지도, 전역에 저장되지도, 다른 스레드로 가지도 않아요 → 스택이면 충분', 'p is never returned, stored globally or shared → the stack is enough'], ['반환된 포인터는 함수가 끝나도 살아 있어야 해서 “탈출” → 힙에 할당', 'a returned pointer must outlive the call, so it escapes → heap allocation'], ['더 나아가 객체를 필드로 쪼개 레지스터에 두면 할당 자체가 사라져요 (스칼라 치환)', 'going further, splitting it into fields in registers removes the allocation (scalar replacement)']]);
+  fin(S, 'z', 18.2, [['탈출 분석: 포인터가 어디까지 흘러가는지 따져, 밖으로 안 나가는 객체를 스택·레지스터에 둬요', 'escape analysis keeps objects whose pointers never leave on the stack or in registers', 'cpx-xs cpx-a'], ['Go(-gcflags=-m로 확인), 자바 HotSpot, .NET이 GC 부담을 줄이려고 써요', 'Go (check with -gcflags=-m), Java HotSpot and .NET use it to cut GC pressure']]);
+  S.cap(1, '힙 할당의 비용', 'The cost of heap allocation').cap(2, '탈출하지 않으면 스택', 'No escape, stack').cap(3, '탈출하면 힙', 'Escapes, heap').cap(4, '스칼라 치환', 'Scalar replacement').cap(5, '탈출 분석', 'Escape analysis');
+  return S;
+}
+function sVectorize() {
+  const S = scene({ id: 'cp-vectorize', steps: 5, per: 1.6 });
+  T(S, 'loop', 1, .25, 'for (i = 0; i < 16; i++)  c[i] = a[i] + b[i];', 'cz-mono cpx-xs cpx-a', 0);
+  const X = i => 3.4 + i * 1.7, ROWS = [['a', 1.6, i => String(i)], ['b', 2.9, () => '10'], ['c', 4.6, i => String(i + 10)]];
+  ROWS.forEach(([n, y, f], r) => { T(S, 'rl' + r, 1.4, y + .15, n, 'cz-mono cpx-s', 0); for (let i = 0; i < 16; i++) { if (r < 2) box2(S, `v${r}_${i}`, X(i), y, 1.55, 1.0, f(i), r ? 'warn' : 'accent', 0, { pct: 18 }); else box2(S, `v${r}_${i}`, X(i), y, 1.55, 1.0, f(i), 'ok', i < 4 ? 1 : 2, { pct: 30 }); } });
+  T(S, 'plus', 1.4, 3.85, '+', 'cz-mono cpx-s', 0); hl(S, 'eq', 3.3, 30.6, 4.3, 'ink-3', 0, { w: .06 });
+  frame(S, 'f0', X(0) - .1, 1.45, 1.75, 4.3, 'accent', 1, { w: .1, off: 2 });
+  frame(S, 'f1', X(0) - .1, 1.45, 8 * 1.7 - .05, 4.3, 'accent', 2, { w: .12 }); frame(S, 'f2', X(8) - .1, 1.45, 8 * 1.7 - .05, 4.3, 'warn', 2, { w: .12 });
+  ver(S, 'ins', 1, 6.3, [[1, ['addss: 한 번에 1개 → 16번', 'addss: one at a time → 16 times']], [2, ['vaddps ymm: 한 번에 8개 → 2번', 'vaddps ymm: 8 at a time → twice']]], 'cz-mono cpx-xs cpx-a');
+  T(S, 'f1l', X(0), 5.75, ['1번째 vaddps', '1st vaddps'], 'cz-tc cpx-tiny cpx-a', 2, { w: 8 * 1.7 }); T(S, 'f2l', X(8), 5.75, ['2번째 vaddps', '2nd vaddps'], 'cz-tc cpx-tiny cpx-w', 2, { w: 8 * 1.7 });
+  [['✗ c[i] = c[i-1] + a[i]   앞 결과가 있어야 다음 계산 (의존성)', '✗ c[i] = c[i-1] + a[i]   each step needs the previous result'], ['✗ a와 c가 겹칠 수 있으면 불가 → restrict로 겹치지 않음을 약속', '✗ not if a and c might overlap → promise otherwise with restrict'], ['n이 8의 배수가 아니면 남은 원소는 스칼라로 마무리 (또는 마스크)', 'when n isn’t a multiple of 8, a scalar tail (or masking) finishes up']].forEach((t, i) => T(S, 'c' + i, 1, 7.6 + i * 1.05, t, 'cz-mono cpx-xs' + (i < 2 ? ' cpx-r' : ''), 3));
+  T(S, 'flag', 1, 11.0, 'gcc -O3 -march=native -fopt-info-vec   →   loop vectorized using 32 byte vectors', 'cz-mono cpx-xs cpx-g', 4);
+  stepT(S, 'k', 1, 12.4, [['기본 코드는 덧셈 명령 하나에 원소 하나씩, 16번 반복해요', 'plain code adds one element per instruction, 16 times'], ['AVX2 레지스터(256비트)는 float 8개를 한 번에 더해요 → 16번이 2번으로', 'an AVX2 register (256 bits) adds 8 floats at once → 16 steps become 2'], ['반복끼리 의존이 없고 배열이 겹치지 않을 때만 안전하게 벡터화돼요', 'it is only safe when iterations are independent and the arrays don’t overlap'], ['-O3와 -march=native로 켜고, 컴파일러 보고서로 됐는지 확인해요', 'enable it with -O3 and -march=native, then confirm in the compiler’s report']]);
+  fin(S, 'z', 13.8, [['자동 벡터화: 컴파일러가 반복문을 SIMD 명령으로 바꿔 여러 값을 한 번에 처리해요', 'auto-vectorization turns loops into SIMD instructions that process several values at once', 'cpx-xs cpx-a'], ['이미지·오디오 처리, 행렬 연산, 문자열 검색(memchr)이 몇 배씩 빨라지는 비결이에요', 'it is why image and audio code, matrix math and string search (memchr) run several times faster']]);
+  S.cap(1, '하나씩 더하기', 'One at a time').cap(2, '8개씩 한 번에', 'Eight at once').cap(3, '벡터화의 조건', 'When it is allowed').cap(4, '켜고 확인하기', 'Turning it on and checking').cap(5, '자동 벡터화', 'Auto-vectorization');
+  return S;
+}
+
+/* ================= real compilers ================= */
+function sPgo() {
+  const S = scene({ id: 'cp-pgo', steps: 5, per: 1.6 });
+  const B = { A: [4, 1.0, 6, 'A: parse()'], B: [.8, 4.4, 5.4, 'B: error'], C: [8.6, 4.4, 5.4, 'C: compute'], D: [4, 7.8, 6, 'D: return'] };
+  Object.entries(B).forEach(([k, [x, y, w, t]]) => box2(S, 'b' + k, x, y, w, 1.2, t, k === 'B' ? 'danger' : 'accent', 0, { pct: 22 }));
+  tsets(S, 'bB', [[3, 'ink-3', 15]]);
+  const E = [['AB', [5.4, 2.25], [3.5, 4.35], 'ink-3'], ['AC', [8.6, 2.25], [11.3, 4.35], 'ink-3'], ['BD', [3.5, 5.65], [5.4, 7.75], 'ink-3'], ['CD', [11.3, 5.65], [8.6, 7.75], 'ink-3']];
+  E.forEach(([k, a, b, c]) => ar(S, 'e' + k, a, b, c, 0, { h: .1 }));
+  ['AC', 'CD'].forEach(k => S.set('e' + k, 3, { background: cv('ok'), 'border-color': cv('ok') }));
+  ver(S, 'lab', 1.6, 2.9, [[1, '50%?'], [2, '12']], 'cz-mono cpx-xs cpx-r'); ver(S, 'lac', 10.6, 2.9, [[1, '50%?'], [2, '98,800']], 'cz-mono cpx-xs cpx-g');
+  T(S, 'bf', 16, .9, ['배치 (전)', 'layout (before)'], 'cpx-xs', 0);
+  ['A', 'B', 'C', 'D'].forEach((k, i) => box2(S, 'o' + k, 16 + i * 3.6, 1.7, 3.4, 1.1, k, k === 'B' ? 'danger' : 'accent', 0, { pct: 22 }));
+  T(S, 'af', 16, 3.5, ['배치 (후)', 'layout (after)'], 'cpx-xs cpx-g', 3);
+  ['A', 'C', 'D'].forEach((k, i) => box2(S, 'n' + k, 16 + i * 3.6, 4.3, 3.4, 1.1, k, 'ok', 3, { pct: 30 }));
+  box2(S, 'nB', 27.6, 4.3, 3.4, 1.1, 'B', 'ink-3', 3, { pct: 15 }); T(S, 'cold', 27.6, 5.55, ['차가운 영역', 'cold section'], 'cz-tc cpx-tiny', 3, { w: 3.4 });
+  T(S, 'inl', 16, 6.6, ['C 안의 뜨거운 호출 → 인라인', 'hot call inside C → inlined'], 'cpx-xs cpx-g', 3);
+  [['① 계측해서 빌드', '① build with counters'], ['② 실제 작업으로 실행', '② run real work'], ['③ 프로필 넣고 다시 빌드', '③ rebuild with profile']].forEach((t, i) => { box2(S, 'p' + i, 1 + i * 10.3, 9.6, 9.5, 1.2, t, i === 2 ? 'ok' : 'warn', 2, { pct: 25 }); if (i) ar(S, 'pa' + i, [i * 10.3 + .55, 10.2], [i * 10.3 + .95, 10.2], 'ink-3', 2, { h: .08 }); });
+  T(S, 'cmd', 1, 11.2, 'clang -fprofile-generate → ./app → llvm-profdata merge → clang -fprofile-use', 'cz-mono cpx-xs', 2);
+  stepT(S, 'k', 1, 12.6, [['프로필이 없으면 컴파일러는 어느 쪽 분기가 자주 실행될지 짐작만 해요', 'without a profile the compiler can only guess which branch runs more often'], ['계측 빌드로 실제 작업을 돌려 간선마다 실행 횟수를 모아요', 'run an instrumented build on real work to count how often each edge is taken'], ['자주 가는 길(A→C→D)은 붙여 배치하고 드문 B는 멀리 · 뜨거운 호출은 인라인', 'lay the hot path (A→C→D) out together, push rare B away and inline hot calls'], ['보통 10~20% 빨라져요 · AutoFDO는 운영 서버의 샘플링 프로필(perf)을 그대로 써요', 'usually 10–20% faster · AutoFDO uses sampled profiles (perf) from production instead']]);
+  fin(S, 'z', 14.0, [['PGO: 실제 실행 통계를 컴파일러에 알려 줘서 추측 대신 데이터로 최적화하게 해요', 'PGO feeds real execution statistics to the compiler so it optimizes from data, not guesses', 'cpx-xs cpx-a'], ['크롬, 파이어폭스, 클랭 자신, Go 1.21+ 빌드가 PGO로 성능을 끌어올려요', 'Chrome, Firefox, Clang itself and Go 1.21+ builds use PGO for speed']]);
+  S.cap(1, '짐작하는 컴파일러', 'A compiler that guesses').cap(2, '실행 횟수 모으기', 'Collecting counts').cap(3, '프로필로 다시 배치', 'Re-laying out with the profile').cap(4, '얼마나 빨라지나', 'How much faster').cap(5, '프로필 기반 최적화', 'Profile-guided optimization');
+  return S;
+}
+
+return { css: CSSX, secs: [], add: {
+  'cp-front': [
+    item('cp-firstfollow', 'FIRST·FOLLOW와 LL(1) 파싱 표', 'FIRST, FOLLOW and LL(1) parse tables', '하향식 파서가 다음 토큰 하나만 보고 규칙을 고를 수 있게, 문법에서 FIRST·FOLLOW 집합을 구해 파싱 표를 만들어요.', 'E → T E′, E′ → + T E′ | ε 처럼 왼쪽 재귀를 없앤 문법에서, FIRST는 각 기호로 시작할 수 있는 첫 토큰들(E, T, F는 { (, id })이고 FOLLOW는 그 기호 바로 뒤에 올 수 있는 토큰들(E′는 { ), $ })이에요. 표 M[A, a]에는 a ∈ FIRST(α)인 규칙 A → α를 넣고, α가 ε을 만들 수 있으면 FOLLOW(A)의 토큰 칸에도 넣어요. 모든 칸에 규칙이 하나 이하면 LL(1) 문법이라 스택과 표만으로 결정적으로 파싱해요. 한 칸에 두 규칙이 들어가면 좌인수분해나 왼쪽 재귀 제거로 문법을 고치거나 LR 파서를 써요.', 'To let a top-down parser choose a rule from a single lookahead token, compute FIRST and FOLLOW sets from the grammar and build a parse table.', 'In a grammar without left recursion such as E → T E′, E′ → + T E′ | ε, FIRST is the set of tokens that can start each symbol (E, T and F give { (, id }) and FOLLOW the tokens that can appear right after it (E′ gives { ), $ }). The table M[A, a] gets rule A → α wherever a ∈ FIRST(α), and, if α can derive ε, in the columns of FOLLOW(A) too. If no cell holds more than one rule the grammar is LL(1), and a stack plus the table parse it deterministically. A cell with two rules means left-factoring or removing left recursion, or switching to an LR parser.', sFirstFollow()),
+    item('cp-errrec', '구문 오류 복구와 진단', 'Syntax error recovery and diagnostics', '좋은 컴파일러는 첫 오류에서 멈추지 않고 다시 파싱을 이어 가 진짜 오류를 한 번에 최대한 많이 보고해요. 메시지도 위치와 고칠 방법까지 알려 줘요.', '첫 오류에서 멈추면 하나 고치고 다시 빌드하는 일을 반복해야 해요. 패닉 모드 복구는 오류가 나면 ;나 다음 문장 키워드 같은 동기화 토큰까지 건너뛰고 다시 시작해, let x = (1 + 2;의 빠진 )와 다음 줄의 빠진 ;를 한 번에 보고해요. 구 수준 복구는 빠진 )를 있었던 것처럼 끼워 넣고 계속해서 엉뚱한 연쇄 오류를 막고, AST에는 오류 노드를 남겨요. 좋은 진단은 줄:열 위치, 문제 지점 밑줄과 이유, 짝이 맞지 않는 여는 괄호, 고치는 방법(help)까지 보여 줘요(Rust, Elm, Clang). IDE는 작성 중인 코드를 계속 파싱하므로 복구가 특히 중요해요.', 'Good compilers don’t stop at the first error; they recover and keep parsing to report as many real errors as possible, with messages that show where and how to fix them.', 'Stopping at the first error forces a fix-rebuild loop. Panic-mode recovery skips to a synchronizing token such as ; or the next statement keyword and resumes, so the missing ) in let x = (1 + 2; and the missing ; on the next line are reported together. Phrase-level recovery inserts the missing ) as if it were there, avoiding a cascade of bogus errors and leaving an error node in the AST. Good diagnostics show line:column, underline the spot with a reason, point at the unclosed bracket and suggest a fix (Rust, Elm, Clang). IDEs reparse half-written code constantly, so recovery matters even more there.', sErrRec())
+  ],
+  'cp-mid': [
+    item('cp-escape', '탈출 분석', 'Escape analysis', '포인터가 함수 밖으로 “탈출”하는지 분석해서, 탈출하지 않는 객체는 힙 대신 스택이나 레지스터에 둬요. 할당과 GC 부담이 줄어요.', 'p := &Point{x, y}로 만든 객체의 포인터가 반환되지도, 전역 변수에 저장되지도, 다른 고루틴·스레드로 넘어가지도 않으면 함수가 끝날 때 함께 사라져도 되므로 스택에 할당해요. 반대로 return &Point{x, y}처럼 포인터를 돌려주면 함수가 끝나도 살아 있어야 해서 탈출로 보고 힙에 할당해요. 한 걸음 더 나아가 객체를 필드로 쪼개 레지스터에 두면 할당 자체가 사라지는데, 이를 스칼라 치환이라고 해요. Go는 go build -gcflags=-m으로 결과를 보여 주고, 자바 HotSpot과 .NET도 GC 부담을 줄이려고 써요.', 'Escape analysis checks whether a pointer can leave its function; objects that don’t escape go on the stack or in registers instead of the heap, saving allocations and GC work.', 'If the pointer from p := &Point{x, y} is never returned, stored in a global or passed to another goroutine or thread, the object can die with the function, so it is allocated on the stack. If the pointer is returned, as in return &Point{x, y}, it must outlive the call, so it escapes and is allocated on the heap. Going further, splitting the object into its fields held in registers removes the allocation entirely, which is called scalar replacement. Go reports the decisions with go build -gcflags=-m, and Java HotSpot and .NET use the same analysis to reduce GC pressure.', sEscape()),
+    item('cp-vectorize', '자동 벡터화 (SIMD)', 'Auto-vectorization (SIMD)', '컴파일러가 반복문을 SIMD 명령으로 바꿔, 레지스터 하나에 담긴 값 여러 개를 명령 하나로 동시에 처리하게 해요.', 'c[i] = a[i] + b[i]를 그대로 컴파일하면 덧셈 명령 하나가 원소 하나를 처리해 16번 반복해요. AVX2의 256비트 레지스터에는 float 8개가 들어가므로 vaddps 한 번에 8개를 더해 2번이면 끝나요. 이렇게 하려면 반복끼리 의존이 없어야 하고(c[i] = c[i-1] + a[i]는 불가), 배열이 서로 겹치지 않아야 해요(C에서는 restrict로 약속). n이 8의 배수가 아니면 남은 원소는 스칼라 반복이나 마스크로 처리해요. -O3와 -march=native로 켜고 -fopt-info-vec 보고서나 어셈블리로 확인해요.', 'The compiler turns a loop into SIMD instructions so that one instruction processes several values packed into a register at once.', 'Compiled as-is, c[i] = a[i] + b[i] adds one element per instruction, 16 times. An AVX2 256-bit register holds 8 floats, so one vaddps adds 8 at once and two are enough. This requires iterations to be independent (c[i] = c[i-1] + a[i] cannot be vectorized) and the arrays not to overlap (promised with restrict in C). When n isn’t a multiple of 8, a scalar tail loop or masking handles the rest. Enable it with -O3 and -march=native, and confirm with the -fopt-info-vec report or the assembly.', sVectorize())
+  ],
+  'cp-real': [
+    item('cp-pgo', '프로필 기반 최적화 (PGO)', 'Profile-guided optimization (PGO)', '프로그램을 실제처럼 실행해 모은 통계(어느 분기·함수가 자주 쓰이는지)를 컴파일러에 알려 줘서, 추측 대신 데이터로 최적화하게 해요.', '프로필이 없으면 컴파일러는 if (err) 같은 분기가 얼마나 자주 실행될지 짐작해야 해요. PGO는 먼저 계측 코드를 넣어 빌드하고(-fprofile-generate), 대표적인 작업으로 실행해 간선·함수별 실행 횟수를 모은 뒤, 그 프로필로 다시 빌드해요(-fprofile-use). 그러면 자주 가는 경로를 메모리에 붙여 배치하고 드문 오류 처리 코드는 차가운 영역으로 보내며, 뜨거운 호출은 인라인하고 레지스터 할당도 뜨거운 코드에 집중해요. 보통 10~20% 빨라지고, AutoFDO는 계측 없이 운영 서버의 perf 샘플링 프로필을 써요. 크롬, 파이어폭스, 클랭 자신, Go 1.21 이상이 PGO를 써요.', 'PGO feeds statistics gathered from realistic runs, such as which branches and functions are hot, back to the compiler so it optimizes from data rather than guesses.', 'Without a profile the compiler has to guess how often a branch such as if (err) is taken. PGO first builds with instrumentation (-fprofile-generate), runs a representative workload to count executions per edge and function, then rebuilds with that profile (-fprofile-use). The hot path is laid out contiguously while rare error handling moves to a cold section, hot calls are inlined and register allocation focuses on hot code. Gains of 10–20% are typical, and AutoFDO skips instrumentation by using perf sampling profiles from production. Chrome, Firefox, Clang itself and Go 1.21+ use PGO.', sPgo())
+  ]
+} };
+})();
 
 window.UX = page([
   sec('cp-front', '앞단: 읽고 이해하기', 'Front end', '앞단: 읽고 이해하기', 'Front end: reading and understanding',
@@ -569,7 +813,7 @@ window.UX = page([
     item('cp-symtab', '심볼 테이블과 스코프', 'Symbol tables and scopes', '선언된 이름과 그 정보(타입, 위치)를 스코프별 표에 기록해요. 이름은 가장 안쪽 스코프부터 바깥으로 찾아요.', '함수·블록마다 새 표를 바깥 표에 연결해요. 안쪽 선언이 바깥 이름을 가리고(shadowing), 스코프를 나오면 그 이름들은 사라져요. “선언되지 않은 변수”, “중복 선언” 오류가 여기서 나오고, IDE의 정의로 이동·이름 바꾸기도 같은 정보를 써요.', 'Each declared name and its information (type, location) is recorded in a per-scope table, and lookups search from the innermost scope outward.', 'Every function or block chains a new table to its parent. Inner declarations shadow outer names, and leaving a scope drops its entries. “Undeclared variable” and “duplicate declaration” errors come from here, and IDE go-to-definition and rename rely on the same data.', sSymtab()),
     item('cp-types', '타입 검사', 'Type checking', '트리의 잎부터 타입을 붙이고 규칙(int + int → int 같은)을 적용해 전체 타입을 구해요. 맞는 규칙이 없으면 위치와 함께 오류를 내요.', 'len(name) + 1: name은 string, len은 string → int이므로 len(name)은 int, 1은 int, 덧셈 결과도 int. 정적 타입 언어(TypeScript, Java, Rust, Go)는 실행 전에 오류를 잡고 코드 생성에 크기·레이아웃 정보를 줘요. 동적 타입 언어는 같은 검사를 실행 중에 해요.', 'Type the leaves, then apply rules such as int + int → int up the tree. If no rule fits, report an error with its location.', 'In len(name) + 1, name is a string and len is string → int, so len(name) is an int, 1 is an int and the sum is an int. Statically typed languages (TypeScript, Java, Rust, Go) catch errors before running and tell code generation sizes and layouts; dynamic languages check the same things at run time.', sTypes()),
     item('cp-infer', '타입 추론', 'Type inference', '타입을 적지 않아도 쓰임새에서 제약을 모아 풀어 타입을 알아내요. 제약이 남지 않으면 제네릭 타입이 돼요.', 'x => x + 1: x에 α를 붙이고 +가 int를 요구하니 α = int → int → int. x => x는 ∀α. α → α. 힌들리-밀너 추론(ML, OCaml, Haskell)이 대표적이고, Rust·TypeScript·Kotlin·Swift는 지역 추론으로 let x = 5 같은 곳의 표기를 줄여요.', 'Infer types from how values are used, collecting and solving constraints without annotations; whatever stays unconstrained becomes generic.', 'For x => x + 1, give x a type α; + demands ints, so α = int and the function is int → int. x => x is ∀α. α → α. Hindley–Milner inference (ML, OCaml, Haskell) is the classic; Rust, TypeScript, Kotlin and Swift use local inference to drop annotations like those in let x = 5.', sInfer())
-  ]),
+  ].concat(XT.add['cp-front'] || [])),
   sec('cp-mid', '중간 표현과 최적화', 'IR & optimization', '중간 표현과 최적화', 'Intermediate representation and optimization',
     'CPU와 무관한 형태로 바꿔 더 빠르고 작게 다듬어요.', 'A CPU-neutral form where code is made faster and smaller.', [
     item('cp-tac', '3주소 코드', 'Three-address code', '각 명령이 “결과 = 피연산자 연산 피연산자” 꼴인 중간 표현이에요. 트리를 아래에서 위로 돌며 연산마다 임시 변수를 만들어요.', 'a = b * c + d * e → t1 = b * c; t2 = d * e; t3 = t1 + t2; a = t3. 기계어와 가깝지만 레지스터 수 제한이 없고 CPU와 무관해 최적화하기 좋아요. LLVM IR, JVM 바이트코드, 파이썬 바이트코드도 비슷한 중간 표현이에요.', 'An intermediate form where every instruction is “result = operand op operand”, built by walking the tree bottom-up with one temporary per operation.', 'a = b * c + d * e becomes t1 = b * c; t2 = d * e; t3 = t1 + t2; a = t3. Close to machine code but CPU-neutral with unlimited temporaries, it is easy to optimize. LLVM IR, JVM bytecode and Python bytecode are relatives.', sTac()),
@@ -581,20 +825,21 @@ window.UX = page([
     item('cp-licm', '루프 최적화', 'Loop optimizations', '반복문 안에서 매번 같은 계산은 밖으로 꺼내고(루프 불변 코드 이동), 규칙적으로 변하는 곱셈은 덧셈으로 바꿔요(강도 감소).', 'a[i] = x * y + i * 4 → 반복문 앞에서 t = x * y, 안에서는 p += 4. 반복 횟수만큼 이득이 쌓여 효과가 가장 큰 최적화 영역이에요. 이 밖에 반복문 펼치기, SIMD 벡터화(4~16개씩), 합치기·나누기, 캐시를 위한 타일링이 있어요.', 'Hoist computations that never change out of the loop (loop-invariant code motion) and turn regularly growing multiplies into adds (strength reduction).', 'a[i] = x * y + i * 4 becomes t = x * y before the loop and p += 4 inside. Savings multiply by the iteration count, making loops the richest target. Others include unrolling, SIMD vectorization (4–16 elements at a time), fusion, fission and cache tiling.', sLicm()),
     item('cp-inline', '함수 인라이닝', 'Function inlining', '함수 호출 자리에 함수 몸체를 펼쳐 넣어 호출 비용을 없애고, 다른 최적화가 함수 안까지 보게 해요.', 'sq(a + 1) → t = a + 1; t * t, sq(3) → 9(인라인 후 상수 접기). 대가는 코드 크기 증가와 명령어 캐시 부담이라, 작고 자주 불리는 함수 위주로 휴리스틱이 정해요(inline 키워드는 힌트). 가상 호출은 탈가상화가 필요하고, JIT은 실제로 불리는 대상을 보고 인라인해요.', 'Paste a function’s body into its call site to remove call overhead and let other optimizations see inside.', 'sq(a + 1) becomes t = a + 1; t * t, and sq(3) folds to 9 after inlining. The cost is code growth and instruction-cache pressure, so heuristics favor small, hot functions (the inline keyword is just a hint). Virtual calls need devirtualization first; JITs inline the targets they actually observe.', sInline()),
     item('cp-live', '생존 분석', 'Liveness analysis', '각 지점에서 나중에 값이 읽힐 변수(살아 있는 변수)를 거꾸로 계산하는 데이터 흐름 분석이에요.', 'in = use ∪ (out − def)를 끝에서부터 계산하고, 반복문이 있으면 변화가 없을 때까지 반복해요(고정점). 살아 있는 구간이 겹치는 변수는 같은 레지스터를 못 써요. 레지스터 할당, 죽은 코드 제거, 초기화하지 않은 변수 경고가 이 분석을 써요.', 'A backward dataflow analysis that finds, at each point, which variables will still be read later (are live).', 'Compute in = use ∪ (out − def) from the end, iterating to a fixpoint when loops exist. Variables with overlapping live ranges cannot share a register. Register allocation, dead code removal and uninitialized-variable warnings all build on it.', sLive())
-  ]),
+  ].concat(XT.add['cp-mid'] || [])),
   sec('cp-back', '뒷단: 기계어로', 'Back end', '뒷단: 기계어로', 'Back end: down to machine code',
     '중간 표현을 실제 CPU 명령으로 바꾸고 다듬어요.', 'Turning IR into real CPU instructions and polishing them.', [
     item('cp-isel', '명령어 선택', 'Instruction selection', '중간 표현의 트리를 CPU 명령 “타일”로 덮어 기계어로 바꿔요. 여러 노드를 한 번에 처리하는 명령을 고르면 코드가 짧아져요.', 'load(add(p, 8)) + 1 → x86의 주소 모드로 mov rax, [rdi + 8]; add rax, 1 두 줄. 비용이 가장 작은 덮기를 동적 계획법이나 최대 먹기로 찾아요. CPU마다 고르는 명령이 달라요(x86 lea, ARM 곱셈-덧셈). LLVM SelectionDAG·GlobalISel, 명령 설명은 TableGen.', 'Cover the IR tree with CPU instruction “tiles” to produce machine code; instructions that handle several nodes at once make it shorter.', 'load(add(p, 8)) + 1 becomes two x86 instructions via an addressing mode: mov rax, [rdi + 8]; add rax, 1. The cheapest covering is found by dynamic programming or maximal munch. Choices differ per CPU (x86 lea, ARM multiply-add). LLVM uses SelectionDAG or GlobalISel with TableGen descriptions.', sIsel()),
     item('cp-regalloc', '레지스터 할당', 'Register allocation', '무한한 임시 변수를 몇 개 안 되는 실제 레지스터에 배정해요. 동시에 살아 있는 변수끼리 다른 레지스터를 쓰도록 그래프를 색칠해요.', '간섭 그래프에서 이웃끼리 다른 색 = 다른 레지스터. 색이 모자라면 일부를 스택으로 내려(spill) 메모리 읽기·쓰기가 늘어요. 차이틴의 그래프 색칠, JIT이 쓰는 빠른 선형 스캔, LLVM greedy 할당기. x86-64는 범용 레지스터 16개, ARM64는 31개.', 'Map unlimited temporaries onto a handful of real registers, coloring a graph so that variables live at the same time get different registers.', 'In the interference graph, neighbors get different colors, meaning different registers. With too few colors, some values spill to the stack, adding memory traffic. Approaches: Chaitin’s graph coloring, the fast linear scan used by JITs, LLVM’s greedy allocator. x86-64 has 16 general-purpose registers; ARM64 has 31.', sRegalloc()),
     item('cp-sched', '명령어 스케줄링', 'Instruction scheduling', '결과가 늦게 나오는 명령(메모리 읽기 등) 뒤에 독립된 명령을 끼워 넣어 파이프라인이 멈추는 시간을 줄여요.', '예: load 두 개를 앞당겨 겹치면 8사이클 → 5사이클. 비순차 실행 CPU는 하드웨어가 일부를 대신하지만, 순차 실행 코어(많은 ARM·임베디드), GPU, VLIW에서는 컴파일러가 중요해요. 의존성 그래프 위의 리스트 스케줄링이 기본이에요.', 'Fill the wait after slow instructions (such as memory loads) with independent work so the pipeline stalls less.', 'Overlapping two loads turns 8 cycles into 5. Out-of-order CPUs partly do this in hardware, but in-order cores (many ARM and embedded chips), GPUs and VLIW designs depend on the compiler. List scheduling over a dependency graph is the standard method.', sSched()),
     item('cp-peep', '핍홀 최적화', 'Peephole optimization', '몇 줄짜리 창을 기계어 위로 미끄러뜨리며 알려진 비효율 패턴을 더 나은 것으로 바꿔요.', 'mov eax, 0 → xor eax, eax(더 짧음), imul ×8 → shl 3, 저장 직후 같은 값 다시 읽기 삭제, 다음 줄로 가는 jmp 삭제. 단순하지만 효과적이라 거의 모든 컴파일러의 마지막 단계에 있어요. Compiler Explorer(godbolt.org)에서 실제 출력을 확인해 보세요.', 'Slide a small window over the machine code and replace known inefficient patterns with better ones.', 'mov eax, 0 becomes xor eax, eax (shorter), multiplying by 8 becomes shl 3, a reload right after a store goes away, and a jmp to the next line is dropped. Simple but effective, it runs near the end of almost every compiler. See real output on Compiler Explorer (godbolt.org).', sPeep())
-  ]),
+  ].concat(XT.add['cp-back'] || [])),
   sec('cp-real', '실제 컴파일러', 'Real-world compilers', '실제 컴파일러', 'Real-world compilers',
     '오늘날의 컴파일러 인프라와 JIT이에요.', 'Today’s compiler infrastructure and JITs.', [
     item('cp-llvm', 'LLVM 구조', 'The LLVM architecture', '언어마다 앞단이 공통 중간 표현(LLVM IR)을 만들고, 공용 최적화 패스와 CPU별 뒷단이 나머지를 맡는 구조예요.', 'Clang(C/C++), rustc, Swift, Zig, Julia가 LLVM IR을 만들고, -O2에서 mem2reg·inline·GVN·LICM·벡터화 등 수십 개 패스를 거쳐 x86-64·ARM64·RISC-V·WebAssembly로 내려가요. 언어 M개 × CPU N개를 M + N개 구현으로 줄여요. GCC(GIMPLE·RTL), Cranelift, MLIR도 비슷한 구조예요.', 'Each language’s front end emits a shared intermediate form (LLVM IR); common optimization passes and per-CPU back ends do the rest.', 'Clang (C/C++), rustc, Swift, Zig and Julia emit LLVM IR; at -O2 it passes through dozens of passes (mem2reg, inline, GVN, LICM, vectorization) before reaching x86-64, ARM64, RISC-V or WebAssembly. M languages × N CPUs need only M + N implementations. GCC (GIMPLE, RTL), Cranelift and MLIR share the shape.', sLlvm()),
     item('cp-jit', 'JIT과 투기적 최적화', 'JITs and speculative optimization', 'JIT은 실행하며 관찰한 타입·모양을 “가정”으로 삼아 빠른 기계어를 만들고, 가정이 깨지면 인터프리터로 되돌아가요(탈최적화).', '인라인 캐시: 객체 모양(hidden class)이 S1인지 확인하고 고정 오프셋에서 필드를 읽어요. 다른 모양이 오면 탈최적화 후 다시 최적화. V8: Ignition → Sparkplug → Maglev → TurboFan, 자바 HotSpot: 인터프리터 → C1 → C2, PyPy, LuaJIT. 객체 필드를 같은 순서로 만들면 빨라져요.', 'A JIT compiles fast machine code under assumptions about the types and shapes it has observed, falling back to the interpreter when an assumption breaks (deoptimization).', 'An inline cache checks that an object has hidden class S1 and reads the field at a fixed offset; a different shape triggers deoptimization and later reoptimization. V8 runs Ignition → Sparkplug → Maglev → TurboFan; Java HotSpot runs interpreter → C1 → C2; PyPy and LuaJIT work similarly. Creating objects with fields in a consistent order keeps them fast.', sJit())
-  ])
-]);
+  ].concat(XT.add['cp-real'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .cp-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .cp-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
