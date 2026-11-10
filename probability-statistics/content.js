@@ -697,42 +697,6 @@ function sBirthday() {
 }
 
 /* ================= distributions ================= */
-function sCov() {
-  const S = scene({ id: 'pr-cov', steps: 5, per: 1.6 });
-  const xs = [1, 2, 2.5, 3.5, 4.2, 5, 5.5, 6.4, 7, 8, 8.5, 9.2], ys = [2.2, 1.6, 3.6, 3.0, 5.8, 4.4, 6.2, 4.6, 7.4, 6.6, 8.4, 8.0], n = xs.length;
-  const mx = avg(xs), my = avg(ys), cov = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / (n - 1), r = cov / (sdev(xs) * sdev(ys));
-  const F = fr(0, 10, 0, 10, 1.6, 14.4, 1.2, 13.0);
-  ax2(S, 'ga', F, 'X', 'Y', 0);
-  xs.forEach((x, i) => { const c = (x - mx) * (ys[i] - my) > 0 ? 'ok' : 'danger', a = F.X(Math.min(x, mx)), b = F.Y(Math.max(ys[i], my));
-    rect(S, 'r' + i, a, b, Math.abs(F.X(x) - F.X(mx)), Math.abs(F.Y(ys[i]) - F.Y(my)), c, 0, 2, { r: 0, css: `background:color-mix(in srgb,var(--${c}) 22%,transparent)!important`, off: 3 }); });
-  mline(S, 'mx', F, [mx, 0], [mx, 10], { st: 1, color: 'warn', h: .08, dash: 1 }); mline(S, 'my', F, [0, my], [10, my], { st: 1, color: 'warn', h: .08, dash: 1 });
-  xs.forEach((x, i) => mpt(S, 'p' + i, F, [x, ys[i]], 0, C.cur, .3));
-  mpt(S, 'c', F, [mx, my], 1, C.badf, .3); T(S, 'clx', F.X(mx) + .3, .3, 'x̄', 'cz-mono prx-s prx-w', 1); T(S, 'cly', F.R + .25, F.Y(my) - .5, 'ȳ', 'cz-mono prx-s prx-w', 1);
-  mline(S, 'fit', F, [0, my - r * sdev(ys) / sdev(xs) * mx], [10, my + r * sdev(ys) / sdev(xs) * (10 - mx)], { st: 3, color: 'ok', h: .1 });
-  const RX = 16.2;
-  T(S, 'm1', RX, 1.2, `x̄ = ${mx.toFixed(2)} · ȳ = ${my.toFixed(2)}`, 'cz-mono prx-xs', 1);
-  T(S, 'c1', RX, 2.5, 'Cov = Σ(x − x̄)(y − ȳ) / (n − 1)', 'cz-mono prx-xs', 2);
-  T(S, 'c2', RX, 3.6, ['초록(+) 넓이가 빨강(−)보다 훨씬 커요', 'green (+) areas outweigh red (−)'], 'prx-xs', 2);
-  T(S, 'c3', RX, 4.7, `= ${cov.toFixed(2)}`, 'cz-mono prx-s prx-g', 2);
-  T(S, 'r1', RX, 6.2, 'r = Cov / (sx · sy)', 'cz-mono prx-xs', 3);
-  T(S, 'r2', RX, 7.3, `= ${r.toFixed(2)}`, 'cz-mono prx-s prx-g', 3);
-  T(S, 'r3', RX, 8.5, ['−1 ≤ r ≤ 1 · 단위를 바꿔도 그대로', '−1 ≤ r ≤ 1 · unchanged by units'], 'prx-xs', 3);
-  const NZ = [.04, -.05, .06, -.03, -.06, .05, .02, -.04, .06, -.05, .03, -.02, .05, -.04], XX = NZ.map((_, i) => .08 + i * .84 / 13);
-  const PN = [XX.map((x, i) => [x, .5 + .8 * (x - .5) + NZ[i]]), [[.1, .6], [.18, .22], [.27, .86], [.34, .42], [.42, .12], [.5, .68], [.56, .3], [.63, .9], [.7, .16], [.77, .55], [.85, .8], [.91, .36]], XX.map((x, i) => [x, .5 - .75 * (x - .5) + 1.6 * NZ[13 - i]]), XX.map(x => [x, .12 + 2.9 * (x - .5) ** 2])];
-  PN.forEach((pts, j) => {
-    const px = pts.map(q => q[0]), py = pts.map(q => q[1]);
-    const rr = px.reduce((s, x, i) => s + (x - avg(px)) * (py[i] - avg(py)), 0) / ((px.length - 1) * sdev(px) * sdev(py));
-    const x0 = RX + j * 3.8, y0 = 10.0, W = 3.3, st = j < 3 ? 3 : 4;
-    rect(S, 'mb' + j, x0, y0, W, W, j < 3 ? 'line' : 'danger', j < 3 ? 22 : 12, st, { r: .25 });
-    px.forEach((x, i) => pt(S, `mp${j}_${i}`, x0 + x * W, y0 + (1 - py[i]) * W, st, j < 3 ? C.cur : C.badf, .13));
-    T(S, 'ml' + j, x0 - .3, y0 + W + .15, (j < 3 ? 'r = ' : 'r = ') + (Math.abs(rr) < .005 ? '0.00' : rr.toFixed(2)) + (j < 3 ? '' : ' ?!'), 'cz-tc cz-mono prx-xs' + (j < 3 ? '' : ' prx-r'), st, { w: W + .6 });
-  });
-  stepT(S, 'k', 1, 15.4, [['키와 몸무게처럼 함께 움직이는 두 변수 · 평균선이 평면을 네 칸으로 나눠요', 'two variables that move together, like height and weight · the means split the plane in four'], ['평균에서의 편차를 곱한 넓이의 평균이 공분산 · 같은 방향이면 +, 반대면 −', 'covariance averages the products of deviations (the areas) · same direction +, opposite −'], ['두 표준편차로 나누면 상관계수 r · −1에서 1 사이라 서로 비교할 수 있어요', 'divide by both standard deviations to get r · between −1 and 1, comparable across data'], ['r은 직선 관계만 재요 · U자처럼 뚜렷한 관계도 r ≈ 0일 수 있어요', 'r only measures straight-line relationships · a clear U shape can still give r ≈ 0']]);
-  fin(S, 'z', 15.4, [['상관은 인과가 아니에요: 아이스크림 판매와 물놀이 사고는 둘 다 기온 따라 올라요', 'correlation is not causation: ice-cream sales and drownings both rise with temperature', 'prx-xs prx-a'], ['Cov(X, Y) = E[XY] − E[X]E[Y] · 독립이면 0 (0이라고 독립은 아님)', 'Cov(X, Y) = E[XY] − E[X]E[Y] · independent ⇒ 0 (not the reverse)'], ['Var(X + Y) = Var X + Var Y + 2Cov(X, Y) · 포트폴리오 위험이 이렇게 더해져요', 'Var(X + Y) = Var X + Var Y + 2Cov(X, Y) · how portfolio risk adds up']]);
-  S.cap(1, '두 변수의 흩어짐', 'Two variables together').cap(2, '공분산 = 넓이의 평균', 'Covariance = average area').cap(3, '상관계수 r', 'The correlation coefficient r').cap(4, 'r이 놓치는 것', 'What r misses').cap(5, '공분산과 상관', 'Covariance and correlation');
-  return S;
-}
-
 /* ================= limits & simulation ================= */
 function sMarkov() {
   const S = scene({ id: 'pr-markov', steps: 5, per: 1.7 });
@@ -830,13 +794,166 @@ function sTtest() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+function sJointDist() {
+  const S = scene({ id: 'pr-jointdist', steps: 5, per: 1.6 });
+  const Pm = [[.05, .15, .10], [.10, .20, .10], [.15, .10, .05]], RX = ['커피 0잔', '커피 1잔', '커피 2잔+'], RE = ['0 coffees', '1 coffee', '2+ coffees'];
+  const CK = ['6시간 미만', '6~8시간', '8시간 이상'], CE = ['< 6 h', '6–8 h', '8 h +'];
+  const CX = j => 6.2 + j * 3.9, RY = i => 2.4 + i * 2.1, W = 3.6, H = 1.8;
+  const px = Pm.map(r => r.reduce((a, b) => a + b, 0)), py = [0, 1, 2].map(j => Pm.reduce((a, r) => a + r[j], 0));
+  T(S, 'ttl', .6, .2, ['X = 하루 커피 · Y = 수면 시간', 'X = coffee a day · Y = hours of sleep'], 'prx-xs prx-a', 0);
+  CK.forEach((k, j) => T(S, 'ch' + j, CX(j), 1.25, [k, CE[j]], 'cz-tc prx-xs', 0, { w: W }));
+  RX.forEach((k, i) => { T(S, 'rh' + i, .4, RY(i) + .45, [k, RE[i]], 'prx-xs', 0, { w: 5.4, css: 'text-align:right' }); Pm[i].forEach((p, j) => cell(S, `c${i}${j}`, CX(j), RY(i), W, H, p.toFixed(2), 'accent', 10 + p * 180, 0)); });
+  T(S, 'mxh', 18.2, 1.25, 'P(X)', 'cz-tc cz-mono prx-xs prx-w', 2, { w: 3.2 });
+  px.forEach((p, i) => cell(S, 'mx' + i, 18.2, RY(i), 3.2, H, p.toFixed(2), 'warn', 32, 2));
+  T(S, 'myh', .4, RY(3) + .65, 'P(Y)', 'cz-mono prx-xs prx-a', 3, { w: 5.4, css: 'text-align:right' });
+  py.forEach((p, j) => cell(S, 'my' + j, CX(j), RY(3) + .2, W, H, p.toFixed(2), 'accent', 30, 3));
+  frame(S, 'hit', CX(0) - .15, RY(2) - .15, W + .3, H + .3, 'danger', 4, { w: .14, r: .3 });
+  const R = 22.4;
+  T(S, 'p1', R, 1.1, 'P(X = x, Y = y)', 'cz-mono prx-xs', 1); T(S, 'p2', R, 2.2, ['모든 칸의 합 = 1', 'all cells sum to 1'], 'prx-xs', 1);
+  T(S, 'p3', R, 3.6, ['행을 더하면 X의 주변분포', 'row sums: the marginal of X'], 'prx-xs prx-w', 2, { w: 8.6 });
+  T(S, 'p4', R, 5.3, ['열을 더하면 Y의 주변분포', 'column sums: the marginal of Y'], 'prx-xs prx-a', 3, { w: 8.6 });
+  T(S, 'p5', R, 7.0, ['P(2잔+, 6h 미만) = 0.15', 'P(2+, < 6 h) = 0.15'], 'cz-mono prx-xs', 4);
+  T(S, 'p6', R, 8.0, `P(X)P(Y) = ${px[2].toFixed(2)}·${py[0].toFixed(2)} = ${(px[2] * py[0]).toFixed(2)}`, 'cz-mono prx-xs', 4);
+  T(S, 'p7', R, 9.1, ['0.15 ≠ 0.09 → 독립 아님 ✗', '0.15 ≠ 0.09 → not independent ✗'], 'prx-xs prx-r', 4);
+  T(S, 'p8', R, 10.5, ['P(Y | X = 2+) = 행 ÷ 0.30', 'P(Y | X = 2+) = row ÷ 0.30'], 'prx-xs', 4);
+  T(S, 'p9', R, 11.5, Pm[2].map(p => (p / px[2]).toFixed(2)).join(' · '), 'cz-mono prx-xs prx-a', 4);
+  stepT(S, 'k', 1, 15.6, [['두 확률변수를 함께 본 표 · 칸마다 “X = x이면서 Y = y”일 확률이고, 모두 더하면 1', 'two random variables at once · each cell is P(X = x and Y = y), and all cells sum to 1'], ['행을 더하면 Y는 신경 쓰지 않은 X만의 분포(주변분포)가 나와요', 'summing each row gives the distribution of X alone, ignoring Y (the marginal)'], ['열을 더하면 Y의 주변분포 · 표의 가장자리(margin)에 적어서 주변분포예요', 'summing each column gives the marginal of Y, written in the table’s margins'], ['독립이면 모든 칸이 P(x)·P(y)와 같아야 해요 · 한 칸만 달라도 독립이 아니에요', 'independence needs every cell to equal P(x)·P(y) · one mismatch rules it out']]);
+  fin(S, 'z', 15.6, [['결합분포: 여러 변수를 한꺼번에 · 주변분포: 나머지 변수를 더해(적분해) 없앤 것', 'a joint distribution covers several variables; a marginal sums (integrates) the others away', 'prx-xs prx-a'], ['조건부 분포 = 결합 ÷ 주변 · P(y | x) = P(x, y) / P(x)', 'conditional = joint ÷ marginal · P(y | x) = P(x, y) / P(x)'], ['연속이면 f(x, y)를 y에 대해 적분해 f_X(x)를 얻어요', 'for continuous variables, integrate f(x, y) over y to get f_X(x)']]);
+  S.cap(1, '결합분포 표', 'A joint distribution table').cap(2, 'X의 주변분포', 'The marginal of X').cap(3, 'Y의 주변분포', 'The marginal of Y').cap(4, '독립인지 확인', 'Checking independence').cap(5, '결합분포와 주변분포', 'Joint and marginal distributions');
+  return S;
+}
+
+function sTotal() {
+  const S = scene({ id: 'pr-total', steps: 5, per: 1.6 });
+  const B = [['맑음', 'sunny', .5, .1, 'warn'], ['비', 'rain', .3, .4, 'accent'], ['눈', 'snow', .2, .7, 'ink-3']];
+  const X0 = 1.5, Y0 = 1.6, W = 14, H = 12; let x = X0;
+  rect(S, 'bg', X0, Y0, W, H, 'line', 12, 0, { r: .2 });
+  B.forEach(([ko, en, p, q, c], i) => { const w = p * W;
+    rect(S, 'b' + i, x, Y0, w, H, c, 16, 1, { r: 0 }); if (i) vl(S, 'sep' + i, x, Y0, Y0 + H, 'ui', 1, { w: .12 });
+    T(S, 'bl' + i, x, Y0 - 1.2, [`${ko} ${p}`, `${en} ${p}`], 'cz-tc prx-xs', 1, { w });
+    rect(S, 'd' + i, x, Y0 + H - q * H, w, q * H, 'danger', 42, 2, { r: 0 });
+    T(S, 'dq' + i, x, Y0 + H - q * H + .2, String(q), 'cz-tc cz-mono prx-xs', 2, { w, off: 3 });
+    T(S, 'da' + i, x, Y0 + H - q * H + .2, (p * q).toFixed(2), 'cz-tc cz-mono prx-xs prx-r', 3, { w });
+    x += w; });
+  T(S, 'hl', X0, Y0 + H + .3, ['칠한 높이 = P(지각 | 날씨)', 'shaded height = P(late | weather)'], 'prx-xs', 2, { off: 3 });
+  T(S, 'al', X0, Y0 + H + .3, ['칠한 넓이 = P(지각 ∩ 날씨)', 'shaded area = P(late ∩ weather)'], 'prx-xs prx-r', 3);
+  const R = 17.4, tot = B.reduce((s, b) => s + b[2] * b[3], 0);
+  T(S, 'r1', R, 1.2, ['P(맑음) + P(비) + P(눈) = 1', 'P(sunny) + P(rain) + P(snow) = 1'], 'cz-mono prx-xs', 1);
+  T(S, 'r2', R, 2.3, ['겹치지 않고 빈틈없이 나눈 분할', 'a partition: no overlap, no gap'], 'prx-xs', 1);
+  B.forEach(([ko, en, p, q], i) => T(S, 'rq' + i, R, 3.8 + i * 1.1, [`P(지각 | ${ko}) = ${q}`, `P(late | ${en}) = ${q}`], 'cz-mono prx-xs', 2));
+  T(S, 'r3', R, 7.5, ['P(지각 ∩ B) = P(지각 | B)·P(B)', 'P(late ∩ B) = P(late | B)·P(B)'], 'cz-mono prx-xs', 3);
+  T(S, 'r4', R, 9.0, ['P(지각) = Σ P(지각 | Bᵢ)·P(Bᵢ)', 'P(late) = Σ P(late | Bᵢ)·P(Bᵢ)'], 'cz-mono prx-xs', 4);
+  T(S, 'r5', R, 10.2, `= ${B.map(b => (b[2] * b[3]).toFixed(2)).join(' + ')} = ${tot.toFixed(2)}`, 'cz-mono prx-s prx-g', 4);
+  T(S, 'r6', R, 11.7, [`거꾸로: P(눈 | 지각) = 0.14 / ${tot.toFixed(2)} ≈ ${(.14 / tot).toFixed(2)}`, `reverse: P(snow | late) = 0.14 / ${tot.toFixed(2)} ≈ ${(.14 / tot).toFixed(2)}`], 'prx-xs prx-a', 4);
+  stepT(S, 'k', 1, 15.6, [['날씨를 맑음·비·눈으로 빠짐없이, 겹치지 않게 나눠요 · 폭이 각 날씨의 확률', 'split the weather into sunny, rain and snow with no gaps or overlaps · widths are their probabilities'], ['날씨마다 지각할 확률이 달라요 · 칠한 높이가 조건부 확률 P(지각 | 날씨)', 'each weather has its own chance of being late · the shaded height is P(late | weather)'], ['폭 × 높이 = 그 날씨이면서 지각할 확률 · 칸마다 넓이를 구해요', 'width × height = the chance of that weather and being late · one area per strip'], [`칠한 넓이를 모두 더하면 전체 지각 확률 ${tot.toFixed(2)} · 이것이 전확률 공식`, `add up the shaded areas for the overall chance of being late, ${tot.toFixed(2)} · the law of total probability`]]);
+  fin(S, 'z', 15.6, [['전확률 공식: 경우를 나눠 조건부 확률을 구한 뒤 가중합해요', 'the law of total probability: split into cases, then take the weighted sum of conditional probabilities', 'prx-xs prx-a'], ['베이즈 정리의 분모가 바로 이 값 · P(B | D) = P(D | B)P(B) / P(D)', 'it is the denominator in Bayes’ theorem · P(B | D) = P(D | B)P(B) / P(D)'], ['공장별 불량률, 유입 경로별 전환율처럼 집단별 비율을 섞을 때 늘 쓰여요', 'used whenever group rates are combined, from defect rates to conversion rates']]);
+  S.cap(1, '경우 나누기', 'Split into cases').cap(2, '경우별 조건부 확률', 'Conditional probability per case').cap(3, '넓이 = 곱', 'Area = product').cap(4, '모두 더하기', 'Add them up').cap(5, '전확률 공식', 'The law of total probability');
+  return S;
+}
+
+function sVar() {
+  const S = scene({ id: 'pr-var', steps: 5, per: 1.6 });
+  const A = [4, 5, 5, 5, 6], Bv = [1, 3, 5, 7, 9], mu = 5, X = v => 2.4 + v * 1.4;
+  const vA = A.reduce((s, v) => s + (v - mu) ** 2, 0) / 5, vB = Bv.reduce((s, v) => s + (v - mu) ** 2, 0) / 5, sA = Math.sqrt(vA), sB = Math.sqrt(vB);
+  const YA = 2.6, YB = 6.6;
+  rect(S, 'ba', X(mu - sA), YA - 2.0, X(mu + sA) - X(mu - sA), 2.5, 'ok', 18, 4, { r: .2 }); rect(S, 'bb', X(mu - sB), YB - .7, X(mu + sB) - X(mu - sB), 1.4, 'ok', 18, 4, { r: .2 });
+  hl(S, 'ax', X(0), X(10), 11.0, 'ink-3', 0, { w: .1 });
+  [0, 2, 4, 6, 8, 10].forEach(v => T(S, 'tx' + v, X(v) - 1, 11.15, String(v), 'cz-tc cz-mono prx-xs', 0, { w: 2 }));
+  vl(S, 'mu', X(mu), .2, 11.0, 'warn', 1, { w: .08, dash: 1 }); T(S, 'mul', X(mu) + .3, .1, 'μ = 5', 'cz-mono prx-xs prx-w', 1);
+  T(S, 'la', .4, YA - .45, 'A', 'cz-mono prx-s', 0); T(S, 'lb', .4, YB - .45, 'B', 'cz-mono prx-s prx-a', 0);
+  const seen = {}; A.forEach((v, i) => { const k = seen[v] = (seen[v] || 0) + 1; pt(S, 'a' + i, X(v), YA - (k - 1) * .75, 0, { background: 'var(--ink-3)', 'border-color': 'transparent' }, .3); });
+  Bv.forEach((v, i) => { const d = v - mu; pt(S, 'b' + i, X(v), YB, 0, C.cur, .3);
+    T(S, 'bd' + i, X(v) - 1 + (d ? 0 : .75), YB - 1.35, (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d), 'cz-tc cz-mono prx-xs prx-w', 2, { w: 2 });
+    if (d) rect(S, 'sq' + i, X(v) - Math.abs(d) * .225, 7.5, Math.abs(d) * .45, Math.abs(d) * .45, 'danger', 30, 3, { r: .05 });
+    T(S, 'sv' + i, X(v) - 1 + (d ? 0 : .75), 9.4, String(d * d), 'cz-tc cz-mono prx-xs prx-r', 3, { w: 2 }); });
+  const R = 18.4;
+  T(S, 'r1', R, 1.0, ['두 반의 점수, 평균은 둘 다 5', 'two classes, both averaging 5'], 'prx-xs', 1);
+  T(S, 'r2', R, 2.1, 'A: 4 5 5 5 6', 'cz-mono prx-xs', 1); T(S, 'r3', R, 3.1, 'B: 1 3 5 7 9', 'cz-mono prx-xs prx-a', 1);
+  T(S, 'r4', R, 4.5, ['편차 x − μ의 합은 늘 0 → 제곱해요', 'deviations x − μ sum to 0 → square them'], 'prx-xs prx-w', 2, { w: 12.4 });
+  T(S, 'r5', R, 6.1, 'Var = E[(X − μ)²]', 'cz-mono prx-s', 3);
+  T(S, 'r6', R, 7.4, `A: (1+0+0+0+1)/5 = ${vA}`, 'cz-mono prx-xs', 3); T(S, 'r7', R, 8.5, `B: (16+4+0+4+16)/5 = ${vB}`, 'cz-mono prx-xs prx-a', 3);
+  T(S, 'r8', R, 10.0, 'σ = √Var', 'cz-mono prx-s', 4);
+  T(S, 'r9', R, 11.3, `A: ${sA.toFixed(2)} · B: ${sB.toFixed(2)}`, 'cz-mono prx-xs prx-g', 4);
+  T(S, 'r10', R, 12.4, ['σ는 원래 단위(점)로 돌아와요', 'σ is back in the original units'], 'prx-xs', 4);
+  stepT(S, 'k', 1, 15.6, [['평균이 같아도 흩어진 정도는 달라요 · 평균만으로는 두 반을 구별 못 해요', 'the same mean can hide very different spreads · the mean alone cannot tell the classes apart'], ['평균에서 떨어진 거리(편차)를 보면 되는데, 그냥 더하면 0이 돼요', 'look at the distance from the mean, but the raw deviations add up to 0'], ['편차를 제곱해 평균 내면 분산 · 멀리 떨어진 값일수록 크게 반영돼요', 'square the deviations and average them for the variance · far values count much more'], ['분산의 제곱근이 표준편차 σ · 단위가 원래대로 돌아와 해석하기 쉬워요', 'the square root of the variance is the standard deviation σ, back in the original units']]);
+  fin(S, 'z', 15.6, [['분산 = 평균에서의 거리 제곱의 평균 · E[X²] − μ²로도 계산해요', 'variance is the mean squared distance from the mean · also E[X²] − μ²', 'prx-xs prx-a'], ['Var(aX + b) = a² Var X · 단위를 바꾸면 분산은 제곱 배로 변해요', 'Var(aX + b) = a² Var X · changing units scales the variance by the square'], ['표본으로 모집단 분산을 추정할 땐 n 대신 n − 1로 나눠요', 'to estimate a population variance from a sample, divide by n − 1 instead of n']]);
+  S.cap(1, '평균은 같은데', 'Same mean, different spread').cap(2, '편차', 'Deviations').cap(3, '제곱해서 평균', 'Square and average').cap(4, '표준편차 σ', 'The standard deviation σ').cap(5, '분산과 표준편차', 'Variance and standard deviation');
+  return S;
+}
+
+function sCheby() {
+  const S = scene({ id: 'pr-chebyshev', steps: 5, per: 1.6 });
+  const F = fr(1, 4, 0, 1, 3.0, 19.0, 1.6, 12.6), bnd = k => Math.min(1, 1 / (k * k)), nrm = k => 2 * (1 - Phi(k)), ex = k => Math.exp(-(1 + k));
+  hl(S, 'ax', F.L, F.R, F.B, 'ink-3', 0, { w: .1 }); vl(S, 'ay', F.L, F.T, F.B, 'ink-3', 0, { w: .1 });
+  [1, 2, 3, 4].forEach(k => T(S, 'tx' + k, F.X(k) - 1, F.B + .15, String(k), 'cz-tc cz-mono prx-xs', 0, { w: 2 }));
+  [[0, '0'], [.25, '25%'], [.5, '50%'], [1, '100%']].forEach(([v, l]) => T(S, 'ty' + v, .1, F.Y(v) - .45, l, 'cz-mono prx-xs', 0, { w: 2.7, css: 'text-align:right' }));
+  T(S, 'xl', F.R - 2, F.B + 1.0, 'k', 'cz-mono prx-s', 0, { w: 2, css: 'text-align:right' });
+  T(S, 'yl', F.L + .4, .3, 'P(|X − μ| ≥ kσ)', 'cz-mono prx-xs', 0);
+  mplot(S, 'cb', F, k => [k, bnd(k)], 1, 4, { st: 1, color: 'danger', h: .14, n: 60 });
+  mplot(S, 'cn', F, k => [k, nrm(k)], 1, 4, { st: 3, color: 'accent', h: .12, n: 60 });
+  mplot(S, 'ce', F, k => [k, ex(k)], 1, 4, { st: 3, color: 'ok', h: .12, n: 60 });
+  T(S, 'lg1', 13.4, 2.0, ['— 상한 1/k²', '— bound 1/k²'], 'prx-xs prx-r', 1); T(S, 'lg2', 13.4, 3.0, ['— 지수분포', '— exponential'], 'prx-xs prx-g', 3); T(S, 'lg3', 13.4, 4.0, ['— 정규분포', '— normal'], 'prx-xs prx-a', 3);
+  mline(S, 'k2', F, [2, 0], [2, .25], { st: 2, color: 'ink-3', h: .07, dash: 1 });
+  mpt(S, 'pb2', F, [2, .25], 2, C.badf, .28); mpt(S, 'pe2', F, [2, ex(2)], 2, C.okf, .26);
+  mT(S, 'lb2', F, [2, .25], .4, -.95, '25%', 'cz-mono prx-xs prx-r', 2);
+  mline(S, 'k3', F, [3, 0], [3, 1 / 9], { st: 4, color: 'ink-3', h: .07, dash: 1 });
+  mpt(S, 'pb3', F, [3, 1 / 9], 4, C.badf, .28); mpt(S, 'pn3', F, [3, nrm(3)], 4, C.cur, .26);
+  mT(S, 'lb3', F, [3, 1 / 9], .4, -.95, '11.1%', 'cz-mono prx-xs prx-r', 4);
+  const G = fr(0, 5, 0, 1, 21.6, 30.6, 1.6, 6.0);
+  hl(S, 'gx', G.L, G.R, G.B, 'ink-3', 2, { w: .08 });
+  shade(S, 'gs', G, x => Math.exp(-x), 3, 5, 'danger', 50, 2);
+  mplot(S, 'gc', G, x => [x, Math.exp(-x)], 0, 5, { st: 2, color: 'ok', h: .1, n: 40 });
+  [[1, 'μ'], [3, 'μ+2σ']].forEach(([v, l], i) => { mline(S, 'gv' + i, G, [v, 0], [v, .85], { st: 2, color: 'ink-3', h: .06, dash: 1 }); T(S, 'gl' + i, G.X(v) - 1.5, G.B + .1, l, 'cz-tc cz-mono prx-xs', 2, { w: 3 }); });
+  const R = 21.6;
+  T(S, 'f1', R, 7.4, 'P(|X − μ| ≥ kσ) ≤ 1/k²', 'cz-mono prx-xs prx-a', 1);
+  T(S, 'f2', R, 8.5, ['어떤 분포든 성립해요', 'holds for any distribution'], 'prx-xs', 1);
+  T(S, 'f3', R, 9.9, [`k = 2 · 상한 25% · 실제 ${(ex(2) * 100).toFixed(1)}%`, `k = 2 · bound 25% · actual ${(ex(2) * 100).toFixed(1)}%`], 'cz-mono prx-xs', 2);
+  T(S, 'f4', R, 11.0, [`k = 3 · 상한 11.1% · 정규 ${(nrm(3) * 100).toFixed(2)}%`, `k = 3 · bound 11.1% · normal ${(nrm(3) * 100).toFixed(2)}%`], 'cz-mono prx-xs', 4);
+  T(S, 'f5', R, 12.1, ['확실하지만 느슨한 보장', 'certain, but loose'], 'prx-xs prx-r', 4);
+  stepT(S, 'k', 1, 15.6, [['분포를 몰라도 평균과 표준편차만 알면, kσ 이상 벗어날 확률은 1/k² 이하예요', 'with only the mean and standard deviation, the chance of landing kσ or more away is at most 1/k²'], [`k = 2면 최대 25% · 평균 1인 지수분포의 실제 값은 ${(ex(2) * 100).toFixed(1)}%`, `for k = 2 that is at most 25% · an exponential with mean 1 actually gives ${(ex(2) * 100).toFixed(1)}%`], ['실제 분포의 꼬리는 늘 상한 곡선 아래에 있어요', 'real distributions’ tails always stay under the bound'], [`k = 3이면 상한 11.1%, 정규분포는 ${(nrm(3) * 100).toFixed(2)}% · 보장하는 대신 느슨해요`, `k = 3: bound 11.1%, normal ${(nrm(3) * 100).toFixed(2)}% · a guarantee, but a loose one`]]);
+  fin(S, 'z', 15.6, [['체비쇼프 부등식: 어떤 분포에도 쓰는 꼬리 확률의 상한', 'Chebyshev’s inequality: a tail bound for any distribution', 'prx-xs prx-a'], ['평균 ± kσ 안에 최소 1 − 1/k² · 2σ 안에 75% 이상', 'at least 1 − 1/k² lies within μ ± kσ · 75% or more within 2σ'], ['큰 수의 법칙 증명, 알고리즘 성능 보장, 분포를 모를 때 이상치 기준에 써요', 'used to prove the law of large numbers, bound algorithms and flag outliers without a model']]);
+  S.cap(1, '상한 1/k²', 'The 1/k² bound').cap(2, 'k = 2일 때', 'At k = 2').cap(3, '실제 분포와 비교', 'Against real distributions').cap(4, '보장은 느슨해요', 'A loose guarantee').cap(5, '체비쇼프 부등식', 'Chebyshev’s inequality');
+  return S;
+}
+
+function sPower() {
+  const S = scene({ id: 'pr-power', steps: 5, per: 1.7 });
+  const d = .5, za = 1.645, NS = [4, 16, 36], pw = n => Phi((d - za / Math.sqrt(n)) / (1 / Math.sqrt(n)));
+  const F = fr(-1.2, 1.8, 0, 2.6, 1.6, 19.6, 1.8, 12.4);
+  hl(S, 'ax', F.L, F.R, F.B, 'ink-3', 0, { w: .1 });
+  [-1, 0, .5, 1].forEach(v => T(S, 'tx' + v, F.X(v) - 1, F.B + .15, String(v), 'cz-tc cz-mono prx-xs', 0, { w: 2 }));
+  NS.forEach((n, j) => { const se = 1 / Math.sqrt(n), cut = za * se, st = j + 1, off = j < 2 ? j + 2 : 0;
+    shade(S, 'sp' + j, F, x => npdf(x, d, se), cut, 1.8, 'accent', 30, st, { off });
+    shade(S, 'sa' + j, F, x => npdf(x, 0, se), cut, 1.8, 'danger', 55, st, { off });
+    mplot(S, 'h0' + j, F, x => [x, npdf(x, 0, se)], -1.2, 1.8, { st, off, color: 'ink-3', h: .12, n: 70 });
+    mplot(S, 'h1' + j, F, x => [x, npdf(x, d, se)], -1.2, 1.8, { st, off, color: 'accent', h: .12, n: 70 });
+    mline(S, 'cut' + j, F, [cut, 0], [cut, 2.5], { st, off, color: 'danger', h: .07, dash: 1 });
+    mT(S, 'l0' + j, F, [0, npdf(0, 0, se)], -1.1, -.95, 'H₀', 'cz-tc cz-mono prx-xs', st, { w: 2.2, off });
+    mT(S, 'l1' + j, F, [d, npdf(d, d, se)], -1.1, -.95, 'H₁', 'cz-tc cz-mono prx-xs prx-a', st, { w: 2.2, off });
+    T(S, 'nl' + j, 1.6, .2, [`n = ${n} · 검정력 ${Math.round(pw(n) * 100)}%`, `n = ${n} · power ${Math.round(pw(n) * 100)}%`], 'cz-mono prx-s prx-a', st, { off }); });
+  const G = fr(0, 60, 0, 1, 22.6, 30.6, 1.4, 7.4);
+  hl(S, 'gx', G.L, G.R, G.B, 'ink-3', 1, { w: .08 }); vl(S, 'gy', G.L, G.T, G.B, 'ink-3', 1, { w: .08 });
+  T(S, 'gxl', G.R - 3, G.B + .1, 'n', 'cz-mono prx-xs', 1, { w: 3, css: 'text-align:right' }); T(S, 'gyl', G.L - 3.1, G.T - .5, ['검정력', 'power'], 'prx-xs', 1, { w: 2.9, css: 'text-align:right' });
+  mline(S, 'g80', G, [0, .8], [60, .8], { st: 4, color: 'ok', h: .06, dash: 1 }); T(S, 'g80l', G.L - 2.2, G.Y(.8) - .45, '80%', 'cz-mono prx-xs prx-g', 4, { w: 2.0, css: 'text-align:right' });
+  mplot(S, 'gc', G, n => [n, pw(n)], 1, 60, { st: 4, color: 'accent', h: .1, n: 60 });
+  NS.forEach((n, j) => mpt(S, 'gp' + j, G, [n, pw(n)], j + 1, C.cur, .22));
+  const nreq = Math.ceil(((za + .8416) / d) ** 2);
+  mline(S, 'gnv', G, [nreq, 0], [nreq, .8], { st: 4, color: 'ok', h: .06, dash: 1 });
+  const R = 21.0;
+  NS.forEach((n, j) => T(S, 'pr' + j, R, 9.0 + j * 1.1, [`n = ${n} → ${Math.round(pw(n) * 100)}%`, `n = ${n} → ${Math.round(pw(n) * 100)}%`], 'cz-mono prx-xs' + (j === 2 ? ' prx-g' : ''), j + 1));
+  T(S, 'nr', R, 12.6, [`80%가 되려면 n ≈ ${nreq}`, `n ≈ ${nreq} for 80% power`], 'prx-s prx-g', 4);
+  stepT(S, 'k', 1, 15.6, [[`효과 δ = 0.5가 진짜 있어도, n = 4로는 기준선을 넘길 확률(검정력)이 ${Math.round(pw(4) * 100)}%뿐이에요`, `even with a real effect δ = 0.5, n = 4 crosses the cutoff (power) only ${Math.round(pw(4) * 100)}% of the time`], [`n = 16이면 두 분포가 좁아져 덜 겹치고, 검정력이 ${Math.round(pw(16) * 100)}%로 올라요`, `with n = 16 both curves narrow and overlap less; power rises to ${Math.round(pw(16) * 100)}%`], [`n = 36이면 ${Math.round(pw(36) * 100)}% · 빨간 α = 5%는 그대로인데 놓칠 확률 β만 줄어요`, `at n = 36 it is ${Math.round(pw(36) * 100)}% · the red α = 5% stays put while the miss rate β shrinks`], ['실험 전에 원하는 검정력(보통 80%)에서 필요한 n을 거꾸로 구해요', 'before an experiment, work back from the power you want (often 80%) to the n you need']]);
+  fin(S, 'z', 15.6, [['검정력 = 1 − β: 실제로 있는 효과를 찾아낼 확률', 'power = 1 − β: the chance of detecting an effect that is really there', 'prx-xs prx-a'], ['n ≈ ((z_α + z_β)·σ / δ)² · 효과가 절반이면 표본은 4배 필요해요', 'n ≈ ((z_α + z_β)·σ / δ)² · halve the effect and you need four times the data'], ['검정력이 낮은 실험의 “차이 없음”은 증거가 아니에요 · A/B 테스트의 최소 검출 효과(MDE)', 'a “no difference” from an underpowered test is not evidence · the MDE of an A/B test']]);
+  S.cap(1, 'n = 4', 'n = 4').cap(2, 'n = 16', 'n = 16').cap(3, 'n = 36', 'n = 36').cap(4, '필요한 표본 크기', 'Required sample size').cap(5, '검정력과 표본 크기', 'Power and sample size');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'pr-base': [
     item('pr-birthday', '생일 문제와 해시 충돌', 'The birthday problem and hash collisions', '23명만 모여도 생일이 같은 두 사람이 있을 확률이 50%를 넘어요. 비교할 쌍의 수가 사람 수의 제곱으로 늘기 때문이에요.', 'n명의 생일이 모두 다를 확률은 365/365 × 364/365 × … × (365 − n + 1)/365이고, 1에서 빼면 겹칠 확률이에요. 23명이면 50.7%, 50명이면 97%예요. 사람은 23명뿐이어도 쌍은 C(23, 2) = 253개라서, 쌍마다 1/365인 작은 확률이 금방 쌓여요. 근사식은 P ≈ 1 − e^(−n²/2N)이고, 값이 N가지일 때 약 1.18√N개를 뽑으면 충돌 확률이 50%가 돼요. 그래서 32비트 해시는 약 7만 7천 개, 64비트는 약 50억 개에서 충돌이 반반이에요. 이를 이용한 생일 공격 때문에 n비트 해시의 충돌 저항은 n/2비트뿐이라, SHA-256의 충돌 저항은 128비트로 봐요. 해시 테이블 크기, UUID·랜덤 ID 길이를 정할 때도 같은 계산을 써요.', 'With just 23 people, the chance that two share a birthday tops 50%, because the number of pairs grows with the square of the group size.', 'The probability that n birthdays are all different is 365/365 × 364/365 × … × (365 − n + 1)/365; subtracting it from 1 gives the chance of a match. It is 50.7% for 23 people and 97% for 50. Only 23 people, but C(23, 2) = 253 pairs, and the small 1/365 chance per pair adds up quickly. Approximately P ≈ 1 − e^(−n²/2N), so with N possible values a collision becomes a coin flip after about 1.18√N draws: roughly 77,000 for a 32-bit hash and 5 billion for a 64-bit one. The birthday attack exploits this, which is why an n-bit hash offers only n/2 bits of collision resistance (128 bits for SHA-256). The same calculation sizes hash tables, UUIDs and random IDs.', sBirthday())
   ],
-  'pr-rv': [
-    item('pr-cov', '공분산과 상관계수', 'Covariance and correlation', '두 변수가 함께 움직이는 정도예요. 공분산은 방향을, 상관계수 r은 그 세기를 −1부터 1 사이로 알려 줘요.', '공분산 Cov(X, Y) = E[(X − μx)(Y − μy)]는 평균에서의 편차를 곱해 평균 낸 값이에요. 두 변수가 같은 방향으로 움직이면 곱이 대부분 양수라 공분산이 +, 반대면 −예요. 표본에서는 Σ(x − x̄)(y − ȳ)/(n − 1)로 구하고, Cov(X, Y) = E[XY] − E[X]E[Y]로도 계산해요. 공분산은 단위에 따라 크기가 바뀌므로 두 표준편차로 나눈 상관계수 r = Cov(X, Y)/(σx σy)를 써요. r은 −1에서 1 사이이고, ±1이면 완벽한 직선 관계, 0이면 직선 관계가 없다는 뜻이에요. 하지만 r은 직선 관계만 재서 U자 같은 뚜렷한 관계도 0이 될 수 있고, 이상치 하나에 크게 흔들려요. 독립이면 공분산이 0이지만 그 역은 성립하지 않아요. Var(X + Y) = Var X + Var Y + 2Cov(X, Y)라서 포트폴리오 위험 계산에 쓰이고, 상관이 있어도 인과라는 뜻은 아니에요.', 'How strongly two variables move together. Covariance gives the direction; the correlation coefficient r gives the strength on a scale from −1 to 1.', 'Covariance Cov(X, Y) = E[(X − μx)(Y − μy)] averages the products of deviations from the means. When the variables move together most products are positive and the covariance is positive; when they move oppositely it is negative. From a sample it is Σ(x − x̄)(y − ȳ)/(n − 1), and it also equals E[XY] − E[X]E[Y]. Because covariance depends on units, we divide by both standard deviations to get the correlation r = Cov(X, Y)/(σx σy). r lies between −1 and 1: ±1 is a perfect straight line and 0 means no linear relationship. r measures only straight-line relationships, so a clear U shape can give r = 0, and a single outlier can swing it a lot. Independence implies zero covariance, but not the other way round. Var(X + Y) = Var X + Var Y + 2Cov(X, Y) is how portfolio risk is computed, and correlation never proves causation.', sCov())
-  ],
+  'pr-rv': [],
   'pr-lim': [
     item('pr-markov', '마르코프 체인', 'Markov chains', '다음 상태가 지금 상태에만 달린 확률 과정이에요. 오래 굴리면 시작과 상관없이 정상 분포에 머물러요.', '마르코프 성질은 “미래는 현재에만 달리고 과거와는 무관하다”는 거예요. 상태 사이를 옮겨 갈 확률을 전이 행렬 P에 모으면 각 행의 합은 1이에요. 지금 분포가 πₜ이면 다음 분포는 πₜ₊₁ = πₜP이고, n단계 뒤는 π₀Pⁿ이에요. 예시의 날씨 체인은 맑은 날에서 시작해도 비 오는 날에서 시작해도 며칠 뒤에는 (5/13, 5/13, 3/13) ≈ (0.38, 0.38, 0.23)에 머물러요. 이렇게 π = πP를 만족하는 분포를 정상 분포라고 하고, 모든 상태가 서로 오갈 수 있고(기약) 주기가 없으면 하나로 수렴해요. 구글의 PageRank는 링크를 무작위로 따라가는 서퍼의 정상 분포이고, MCMC 샘플링, 큐잉 이론, n-gram 텍스트 생성, 강화학습의 마르코프 결정 과정도 같은 틀이에요.', 'A random process whose next state depends only on the current one. Run it long enough and it settles into a stationary distribution, whatever the start.', 'The Markov property says the future depends only on the present, not on the past. Transition probabilities between states form the matrix P, whose rows each sum to 1. If the current distribution is πₜ, the next is πₜ₊₁ = πₜP, and after n steps it is π₀Pⁿ. The example weather chain, started on a sunny day or a rainy one, settles after a few days at (5/13, 5/13, 3/13) ≈ (0.38, 0.38, 0.23). A distribution with π = πP is called stationary, and if every state can reach every other (irreducible) and there is no periodicity, the chain converges to a unique one. Google’s PageRank is the stationary distribution of a surfer following random links, and MCMC sampling, queueing theory, n-gram text generation and the Markov decision processes of reinforcement learning share the same framework.', sMarkov()),
     item('pr-bootstrap', '부트스트랩', 'The bootstrap', '가진 표본을 모집단처럼 여기고 복원 추출로 여러 번 다시 뽑아, 추정값이 얼마나 흔들리는지 재는 방법이에요.', '모집단에서 표본을 더 뽑을 수 없을 때, 가진 표본 n개에서 복원 추출로 n개를 다시 뽑아(같은 값이 여러 번 나올 수 있어요) 통계량을 계산하는 일을 수백~수천 번 반복해요. 이렇게 얻은 값들의 분포가 그 통계량의 표본분포를 흉내 내요. 그 표준편차가 표준오차의 추정값이고, 가운데 95%(2.5%와 97.5% 백분위)를 자르면 백분위 신뢰구간이 돼요. 평균처럼 공식이 있는 경우뿐 아니라 중앙값, 상관계수, 비율의 차이, 머신러닝 모델의 정확도처럼 공식이 어렵거나 없는 통계량에도 그대로 쓸 수 있는 게 장점이에요. 다만 표본이 너무 작거나 모집단을 대표하지 못하면 결과도 틀리고, 최댓값 같은 극단 통계량에는 잘 맞지 않아요. 랜덤 포레스트의 배깅(bootstrap aggregating)도 같은 아이디어예요.', 'Treat the sample you have as the population, resample it with replacement many times, and see how much an estimate wobbles.', 'When you cannot draw more data from the population, draw n values with replacement from your own n (the same value may repeat), compute the statistic, and repeat hundreds or thousands of times. The distribution of those values mimics the statistic’s sampling distribution. Its standard deviation estimates the standard error, and cutting out the middle 95% (the 2.5th and 97.5th percentiles) gives a percentile confidence interval. It works not only where formulas exist, like the mean, but also for medians, correlations, differences in proportions and the accuracy of machine-learning models, where formulas are hard or missing. It fails when the sample is tiny or unrepresentative, and it handles extreme statistics such as the maximum poorly. Bagging (bootstrap aggregating) in random forests uses the same idea.', sBoot())
@@ -844,6 +961,13 @@ return { css: CSSX, secs: [], add: {
   'pr-inf': [
     item('pr-ttest', 't 검정', 'The t-test', '두 그룹의 평균 차이가 우연인지 판단하는 검정이에요. 차이를 그 차이의 표준오차로 나눈 t를 t분포에 비춰 봐요.', '두 그룹의 평균 차이를 표준오차로 나누면 t = (x̄₂ − x̄₁)/√(s₁²/n₁ + s₂²/n₂)이에요. 차이가 잡음보다 몇 배 큰지를 나타내요. 모집단의 σ를 모르고 표본으로 추정하면 그 불확실성 때문에 정규분포보다 꼬리가 두꺼운 t분포를 따라요. 자유도가 작을수록 꼬리가 두껍고, 자유도가 커지면 정규분포에 가까워져요. 귀무가설(차이 없음)에서 관측한 t만큼 극단적인 값이 나올 확률이 p값이고, 보통 0.05보다 작으면 유의하다고 해요. 분산이 다를 수 있으면 웰치(Welch) t 검정을, 같은 대상을 전후로 재면 차이를 한 표본으로 보는 대응 t 검정을 써요. 셋 이상 그룹은 분산분석(ANOVA)으로 비교해요. 데이터가 대략 정규분포이거나 표본이 충분히 커야 하고, 유의하다는 것이 효과가 크다는 뜻은 아니니 효과 크기와 신뢰구간도 함께 봐요.', 'A test of whether the difference between two group means is just chance: divide the difference by its standard error and compare t with the t distribution.', 'Dividing the difference in means by its standard error gives t = (x̄₂ − x̄₁)/√(s₁²/n₁ + s₂²/n₂): how many times larger the difference is than the noise. Because σ is unknown and estimated from the sample, t follows the t distribution, whose tails are heavier than the normal’s; the fewer the degrees of freedom, the heavier the tails, and with many it approaches the normal. The p-value is the chance of a t at least this extreme if there were no difference (the null hypothesis), and below 0.05 is the usual bar for significance. Welch’s t-test allows unequal variances, the paired t-test treats before-and-after differences on the same subjects as one sample, and ANOVA compares three or more groups. The data should be roughly normal or the samples reasonably large, and significance is not size, so report effect sizes and confidence intervals too.', sTtest())
   ]
+},
+after: {
+  'pr-normal': [item('pr-jointdist', '결합분포와 주변분포', 'Joint and marginal distributions', '두 확률변수가 함께 가지는 값의 확률을 표로 나타낸 것이 결합분포이고, 한 변수에 대해 더해 없앤 것이 주변분포예요.', '이산 확률변수 X, Y의 결합분포는 P(X = x, Y = y)를 모든 짝에 대해 적은 표이고, 모든 칸을 더하면 1이에요. 행마다 더하면 Y와 상관없는 X의 분포 P(X = x) = Σ_y P(x, y)가, 열마다 더하면 Y의 분포가 나와요. 표의 가장자리(margin)에 적는다고 해서 주변분포라고 불러요. 예시에서 커피 2잔 이상인 날은 30%, 6시간 미만 수면은 30%인데, 둘이 함께인 날은 15%로 0.30 × 0.30 = 9%보다 많아서 두 변수는 독립이 아니에요. 독립이려면 모든 칸에서 P(x, y) = P(x)P(y)여야 해요. 조건부 분포는 결합을 주변으로 나눈 P(y | x) = P(x, y)/P(x)이고, 연속이면 결합밀도 f(x, y)를 다른 변수로 적분해 주변밀도를 구해요. 공분산·상관계수, 베이즈 추론, 나이브 베이즈 분류기가 모두 이 위에서 계산돼요.', 'A joint distribution gives the probability of each pair of values two random variables take together; a marginal sums one variable away.', 'For discrete X and Y, the joint distribution lists P(X = x, Y = y) for every pair, and all the cells add up to 1. Summing each row gives the distribution of X regardless of Y, P(X = x) = Σ_y P(x, y); summing each column gives that of Y. They are called marginals because they are written in the table’s margins. In the example, 30% of days have two or more coffees and 30% have under six hours of sleep, but 15% have both, more than 0.30 × 0.30 = 9%, so the variables are not independent; independence requires P(x, y) = P(x)P(y) in every cell. The conditional distribution is joint over marginal, P(y | x) = P(x, y)/P(x), and for continuous variables the marginal density comes from integrating the joint density f(x, y) over the other variable. Covariance, correlation, Bayesian inference and naive Bayes classifiers are all computed on top of it.', sJointDist())],
+  'pr-tree': [item('pr-total', '전확률 공식', 'The law of total probability', '경우를 빠짐없이, 겹치지 않게 나눈 뒤, 경우별 조건부 확률에 그 경우의 확률을 곱해 모두 더하면 전체 확률이 나와요.', 'B₁, B₂, …가 표본공간을 겹치지 않고 빈틈없이 나누는 분할이면 P(D) = Σ P(D | Bᵢ)P(Bᵢ)예요. 정사각형을 확률 1로 보고 폭을 P(Bᵢ), 칠한 높이를 P(D | Bᵢ)로 그리면, 각 칸의 칠한 넓이가 P(D ∩ Bᵢ)이고 모두 더한 넓이가 P(D)예요. 예: 맑은 날 50%(지각 10%), 비 30%(40%), 눈 20%(70%)이면 P(지각) = 0.05 + 0.12 + 0.14 = 0.31이에요. 이 값은 베이즈 정리의 분모가 되어, 지각했을 때 눈이 왔을 확률 P(눈 | 지각) = 0.14/0.31 ≈ 0.45를 구하게 해 줘요. 공장별 불량률을 합친 전체 불량률, 유입 경로별 전환율을 합친 전체 전환율처럼 집단별 비율을 섞을 때마다 쓰는 공식이에요. 분할 조건이 깨지면(겹치거나 빠진 경우) 결과가 틀려요.', 'Split the possibilities into non-overlapping cases that cover everything, weight each case’s conditional probability by the case’s probability, and add.', 'If B₁, B₂, … partition the sample space with no overlaps or gaps, then P(D) = Σ P(D | Bᵢ)P(Bᵢ). Draw a unit square with widths P(Bᵢ) and shaded heights P(D | Bᵢ): each shaded area is P(D ∩ Bᵢ), and their total is P(D). With sunny days 50% of the time (late 10%), rain 30% (40%) and snow 20% (70%), P(late) = 0.05 + 0.12 + 0.14 = 0.31. That value is the denominator in Bayes’ theorem, giving P(snow | late) = 0.14/0.31 ≈ 0.45. The formula appears whenever group rates are combined, such as overall defect rates across factories or overall conversion across traffic sources. If the cases overlap or miss something, the result is wrong.', sTotal())],
+  'pr-expect': [item('pr-var', '분산과 표준편차', 'Variance and standard deviation', '분산은 값들이 평균에서 얼마나 떨어져 있는지를 제곱해 평균 낸 값이고, 그 제곱근인 표준편차는 원래 단위로 흩어짐을 알려 줘요.', '평균이 같아도 흩어진 정도는 다를 수 있어요. 점수 4, 5, 5, 5, 6과 1, 3, 5, 7, 9는 평균이 모두 5지만 퍼진 정도가 전혀 달라요. 편차 x − μ를 그냥 더하면 늘 0이 되므로 제곱해서 평균 내는데, 이것이 분산 Var X = E[(X − μ)²]이에요(첫 반 0.4, 둘째 반 8). 제곱 때문에 단위도 제곱이 되므로, 제곱근을 씌운 표준편차 σ(0.63, 2.83)로 원래 단위에서 해석해요. 계산은 E[X²] − μ²로 해도 같고, Var(aX + b) = a²Var X라서 단위를 cm에서 m로 바꾸면 분산은 10000분의 1이 돼요. 독립인 변수의 합은 분산이 더해져서 Var(X + Y) = Var X + Var Y예요. 표본으로 모집단의 분산을 추정할 땐 평균 자체를 표본에서 구했기 때문에 n 대신 n − 1로 나눠요(베셀 보정).', 'Variance averages the squared distances from the mean; its square root, the standard deviation, gives the spread back in the original units.', 'The same mean can hide very different spreads: the scores 4, 5, 5, 5, 6 and 1, 3, 5, 7, 9 both average 5. Raw deviations x − μ always sum to 0, so we square them and average, giving the variance Var X = E[(X − μ)²] (0.4 and 8 here). Squaring also squares the units, so the standard deviation σ (0.63 and 2.83) takes the square root to read the spread in the original units. Equivalently Var X = E[X²] − μ², and Var(aX + b) = a²Var X, so converting centimetres to metres divides the variance by 10,000. For independent variables, variances add: Var(X + Y) = Var X + Var Y. When estimating a population variance from a sample, divide by n − 1 rather than n, because the mean itself was estimated from the same data (Bessel’s correction).', sVar())],
+  'pr-cheb': [item('pr-chebyshev', '체비쇼프 부등식', 'Chebyshev’s inequality', '분포의 모양을 몰라도 평균과 표준편차만으로, 평균에서 kσ 이상 벗어날 확률이 1/k² 이하라고 보장해 줘요.', '체비쇼프 부등식은 P(|X − μ| ≥ kσ) ≤ 1/k²예요. 어떤 분포에서든 성립해서, 평균에서 2σ 이상 떨어질 확률은 최대 25%, 3σ 이상은 최대 11.1%예요. 거꾸로 말하면 평균 ± kσ 안에 최소 1 − 1/k²이 모여 있어요(2σ 안에 75% 이상). 실제 분포는 대개 훨씬 작아서, 정규분포는 2σ 밖이 4.6%, 3σ 밖이 0.27%이고 평균 1인 지수분포도 2σ 밖이 5.0%예요. 그래서 보장은 확실하지만 느슨해요. 증명은 마르코프 부등식 P(Y ≥ a) ≤ E[Y]/a를 Y = (X − μ)²에 적용하면 한 줄로 끝나요. 표본 평균의 분산이 σ²/n이라는 사실과 합치면 큰 수의 법칙이 바로 나오고, 분포를 모르는 상황에서 알고리즘의 실행 시간이나 오차를 보장할 때, 분포를 가정하지 않는 이상치 기준을 정할 때 써요.', 'Without knowing a distribution’s shape, the mean and standard deviation alone guarantee that the chance of landing kσ or more from the mean is at most 1/k².', 'Chebyshev’s inequality states P(|X − μ| ≥ kσ) ≤ 1/k² for any distribution: at most 25% lies 2σ or more from the mean and at most 11.1% lies 3σ away. Put the other way, at least 1 − 1/k² lies within μ ± kσ (75% within 2σ). Real distributions usually do far better: a normal has 4.6% beyond 2σ and 0.27% beyond 3σ, and an exponential with mean 1 has 5.0% beyond 2σ. The guarantee is certain but loose. The proof is one line: apply Markov’s inequality P(Y ≥ a) ≤ E[Y]/a to Y = (X − μ)². Combined with the fact that a sample mean has variance σ²/n, it yields the law of large numbers, and it is used to guarantee running times or errors when the distribution is unknown and to set distribution-free outlier thresholds.', sCheby())],
+  'pr-errors': [item('pr-power', '검정력과 표본 크기', 'Power and sample size', '검정력은 실제로 있는 효과를 검정이 찾아낼 확률(1 − β)이에요. 표본을 늘리면 커지고, 실험 전에 필요한 표본 크기를 정할 때 써요.', '효과 δ가 실제로 있을 때 검정이 귀무가설을 기각할 확률이 검정력 1 − β예요. 표본 평균의 표준오차는 σ/√n이라, n이 커지면 귀무가설(μ = 0)과 대립가설(μ = δ)의 분포가 좁아져 덜 겹쳐요. 유의수준 α = 5%(단측, 기준 1.645 SE)에서 σ = 1, δ = 0.5이면 n = 4일 때 검정력이 약 26%, n = 16이면 64%, n = 36이면 91%예요. α는 그대로인데 놓칠 확률 β만 줄어드는 거예요. 필요한 표본 크기는 n ≈ ((z_α + z_β)σ/δ)²로, 검정력 80%(z_β = 0.84)면 ((1.645 + 0.84)/0.5)² ≈ 25예요. 효과가 절반이면 필요한 표본은 4배가 돼요. 검정력이 낮은 실험에서 나온 “유의하지 않음”은 효과가 없다는 증거가 아니라 그냥 못 본 것일 수 있어서, A/B 테스트는 시작 전에 최소 검출 효과(MDE)와 표본 크기를 먼저 정해요.', 'Power is the chance that a test detects an effect that is really there (1 − β). It grows with sample size and is used to choose the sample size before an experiment.', 'Power, 1 − β, is the probability that a test rejects the null hypothesis when an effect δ is real. The standard error of a sample mean is σ/√n, so larger n narrows the null (μ = 0) and alternative (μ = δ) distributions and they overlap less. At α = 5% one-sided (cutoff 1.645 SE) with σ = 1 and δ = 0.5, power is about 26% for n = 4, 64% for n = 16 and 91% for n = 36: α stays fixed while the miss rate β shrinks. The required sample size is n ≈ ((z_α + z_β)σ/δ)², so 80% power (z_β = 0.84) needs ((1.645 + 0.84)/0.5)² ≈ 25. Halving the effect quadruples the sample. A non-significant result from an underpowered test is not evidence of no effect; it may simply have been missed, which is why A/B tests fix a minimum detectable effect (MDE) and a sample size before they start.', sPower())]
 } };
 })();
 
@@ -887,6 +1011,7 @@ window.UX = page([
   ].concat(XT.add['pr-inf'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .pr-b .in{font-weight:800;color:var(--ink)}
 .pr-l .in{font-size:.86em;color:var(--ink);font-weight:700}
