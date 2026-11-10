@@ -733,6 +733,301 @@ function sRelease() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'mox-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono mox-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono mox-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c mox-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono mox-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c mox-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'mox-s mox-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono mox-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono mox-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono mox-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono mox-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono mox-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'mox-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'mox-xs', 5));
+
+
+const CSSX = `
+.mox-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.mox-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.mox-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.mox-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.mox-r .in{color:var(--danger);font-weight:800}
+.mox-g .in{color:var(--ok);font-weight:800}
+.mox-a .in{color:var(--accent);font-weight:800}
+.mox-w .in{color:var(--warn);font-weight:800}
+.mox-c .in{font-size:.6em;font-weight:700}
+.mox-c2 .in{font-size:.5em;font-weight:700}
+.mox-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.mox-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+const stepT = (S, k, x, y, list, cls, lastOff) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'mox-xs', i + 1, { off: i < list.length - 1 ? i + 2 : (lastOff || 5) }));
+const ver = (S, k, x, y, list, cls, w) => list.forEach(([s, t], i) => T(S, k + i, x, y, t, cls, s, { w, off: list[i + 1] ? list[i + 1][0] : 0 }));
+const fixed = (S, k, x, y, w, h, bg, st, o = {}) => rect(S, k, x, y, w, h, 'ui', 0, st, { r: o.r ?? .3, css: `background:${bg}!important;${o.css || ''}`, off: o.off });
+
+/* ================= platforms ================= */
+function sStartup() {
+  const S = scene({ id: 'mo-startup', steps: 5, per: 1.6 });
+  const X = ms => 7.8 + ms * .016;
+  [0, 400, 800, 1200].forEach(ms => { vl(S, 'g' + ms, X(ms), 1.4, 14.4, 'line', 0, { w: .06, dash: 1 }); T(S, 'gt' + ms, X(ms) - 1.6, .3, ms ? ms + ' ms' : '0', 'cz-tc cz-mono mox-xs', 0, { w: 3.2 }); });
+  const row = (k, y, segs, st, lab, sub, labCls, end, endCls) => {
+    T(S, k + 'l', 1, y + .05, lab, 'mox-s ' + (labCls || ''), st); T(S, k + 'sub', 1, y + .95, sub, 'mox-xs', st);
+    segs.forEach(([a, b, l, c], i) => box2(S, k + i, X(a), y, X(b) - X(a), 1.6, l, c, st, { pct: c === 'ink-3' ? 22 : 34 }));
+    T(S, k + 'e', X(segs[segs.length - 1][1]) + .4, y + .3, end, 'mox-s ' + endCls, st);
+  };
+  const PR = ['프로세스 생성', 'new process'], AC = ['화면 생성', 'Activity'], DR = ['그림', 'draw'];
+  row('c', 1.8, [[0, 250, PR, 'ink-3'], [250, 850, ['Application 초기화 (SDK들)', 'Application init (SDKs)'], 'warn'], [850, 1100, AC, 'accent'], [1100, 1200, DR, 'ok']], 1, ['콜드 스타트', 'cold start'], ['프로세스부터', 'from scratch'], '', '1.2 s', 'mox-r');
+  T(S, 'cn', X(250), 3.65, ['분석·광고·DB SDK를 시작할 때 한꺼번에 초기화', 'analytics, ads and DB SDKs all set up at launch'], 'mox-xs mox-w', 1);
+  row('w', 5.4, [[0, 250, AC, 'accent'], [250, 350, DR, 'ok']], 2, ['웜 스타트', 'warm start'], ['프로세스는 살아 있음', 'process alive'], '', '0.35 s', 'mox-w');
+  row('h', 8.4, [[0, 80, '', 'ok']], 3, ['핫 스타트', 'hot start'], ['화면도 메모리에', 'screen in memory'], '', '0.08 s', 'mox-g');
+  row('f', 11.4, [[0, 250, PR, 'ink-3'], [250, 400, 'App', 'warn'], [400, 650, AC, 'accent'], [650, 750, DR, 'ok']], 4, ['개선한 콜드', 'cold, improved'], ['초기화 미루기', 'deferred init'], 'mox-a', '0.75 s ✓', 'mox-g');
+  rect(S, 'bg', X(400), 13.25, X(1000) - X(400), 1.1, 'warn', 14, 4, { r: .2, css: 'border:.08em dashed var(--warn)' });
+  T(S, 'bgl', X(400), 13.4, ['백그라운드 스레드: 급하지 않은 SDK 초기화', 'background: non-urgent SDK init'], 'cz-tc mox-xs', 4, { w: X(1000) - X(400) });
+  stepT(S, 'k', 1, 15.6, [['콜드 스타트: 프로세스를 만들고, Application을 초기화하고, 첫 화면을 그려요', 'cold start: create the process, initialize the Application, draw the first screen'], ['웜 스타트: 프로세스는 살아 있고 화면(Activity)만 다시 만들어요', 'warm start: the process survives and only the screen (Activity) is rebuilt'], ['핫 스타트: 화면까지 메모리에 남아 있어 앞으로 가져오기만 해요', 'hot start: the screen is still in memory and just comes to the front'], ['급하지 않은 SDK 초기화를 미루거나 백그라운드로 옮기면 첫 화면이 빨라져요', 'deferring or backgrounding non-urgent SDK init gets the first frame out sooner']]);
+  fin(S, 'z', 15.6, [['앱 시작 시간: 사용자가 가장 먼저 느끼는 성능 · 콜드 스타트를 기준으로 재요', 'startup time is the first performance users feel · measure the cold start', 'mox-xs mox-a'], ['지표: TTID(첫 프레임까지) · TTFD(내용이 다 그려질 때까지)', 'metrics: TTID (first frame) and TTFD (fully drawn)'], ['기준 프로필(Baseline Profile)로 시작 코드를 미리 컴파일해 두면 더 빨라요', 'Baseline Profiles precompile the startup path for an extra boost']]);
+  S.cap(1, '콜드 스타트', 'Cold start').cap(2, '웜 스타트', 'Warm start').cap(3, '핫 스타트', 'Hot start').cap(4, '초기화 미루기', 'Defer initialization').cap(5, '앱 시작 시간', 'App startup time');
+  return S;
+}
+
+/* ================= UI ================= */
+function sA11y() {
+  const S = scene({ id: 'mo-a11y', steps: 5, per: 1.7 });
+  fixed(S, 'ph', 1.2, 1.0, 9.8, 14.0, '#fff', 0, { r: 1, css: 'border:.16em solid var(--ink-3)' }); rect(S, 'phn', 5.0, 1.3, 2.2, .28, 'ink-3', 55, 0, { r: .2 });
+  fixed(S, 'bar', 1.6, 1.9, 9.0, 1.8, '#f1f3f5');
+  T(S, 'tt', 2.1, 2.3, 'Shop', 'mox-s mox-ph', 0);
+  fixed(S, 'icb', 8.9, 2.3, 1.0, 1.0, '#e3e7ec', 0, { r: .25 }); T(S, 'ic', 8.9, 2.32, '🔍', 'cz-tc mox-s mox-ph', 0, { w: 1.0 });
+  fixed(S, 'card', 1.6, 4.3, 9.0, 4.4, '#fff', 0, { r: .4, css: 'border:.08em solid #dfe3e8' });
+  fixed(S, 'img', 2.0, 4.7, 3.2, 3.2, 'linear-gradient(135deg,#9ec5ff,#d6e6ff)', 0);
+  T(S, 'pn', 5.6, 4.75, 'Sneakers', 'mox-s mox-ph', 0); T(S, 'pp', 5.6, 5.85, '₩89,000', 'mox-xs mox-ph', 0);
+  T(S, 'fs0', 5.6, 6.95, ['무료 배송', 'Free shipping'], 'mox-xs mox-low', 0, { off: 4 }); T(S, 'fs1', 5.6, 6.95, ['무료 배송', 'Free shipping'], 'mox-xs mox-dk', 4);
+  fixed(S, 'btn', 1.6, 9.2, 9.0, 1.8, '#2f6fed', 0, { r: .4 }); T(S, 'btl', 1.6, 9.62, ['장바구니 담기', 'Add to cart'], 'cz-tc mox-xs mox-wt', 0, { w: 9.0 });
+  fixed(S, 'r1', 1.6, 11.8, 9.0, .9, '#eef0f3'); fixed(S, 'r2', 1.6, 13.0, 6.0, .9, '#eef0f3');
+  frame(S, 'f1', 8.65, 2.05, 1.5, 1.5, 'danger', 1, { off: 2, w: .14, r: .35 });
+  frame(S, 'f2', 8.65, 2.05, 1.5, 1.5, 'ok', 2, { off: 3, w: .14, r: .35 });
+  frame(S, 'h1', 8.9, 2.3, 1.0, 1.0, 'danger', 3, { off: 4, w: .1, r: .2, dash: 1 });
+  frame(S, 'h2', 8.4, 1.8, 2.0, 2.0, 'ok', 3, { off: 4, w: .12, r: .4, dash: 1 });
+  frame(S, 'f4', 5.35, 6.75, 4.9, 1.25, 'ok', 4, { off: 5, w: .12, r: .3 });
+  T(S, 'srl', 12.4, .9, ['🔊 스크린 리더(TalkBack·VoiceOver)가 읽는 말', '🔊 what the screen reader (TalkBack, VoiceOver) says'], 'mox-xs', 1);
+  rect(S, 'bub', 12.4, 2.0, 18.6, 2.0, 'ink-3', 12, 1, { r: .6 });
+  T(S, 'b1', 13.0, 2.5, ['“버튼” … 무엇을 하는 버튼인지 몰라요 ✗', '“Button” … but what does it do? ✗'], 'mox-s mox-r', 1, { off: 2 });
+  T(S, 'b2', 13.0, 2.5, ['“검색, 버튼” ✓', '“Search, button” ✓'], 'mox-s mox-g', 2);
+  code(S, 'cd', 12.4, 4.8, 18.6, ['<ImageButton', '    android:src="@drawable/ic_search"', ''], [[2, 2]], { st: 1, lh: 1.2 });
+  ver(S, 'cl', 12.9, 7.5, [[1, '    />'], [2, ['    android:contentDescription="검색" />', '    android:contentDescription="Search" />']]], 'cz-mono mox-code', 18);
+  T(S, 'ios', 12.4, 9.4, ['iOS: searchButton.accessibilityLabel = "검색"', 'iOS: searchButton.accessibilityLabel = "Search"'], 'cz-mono mox-xs', 2);
+  T(S, 'c1', 12.4, 11.0, ['① 라벨: 아이콘에도 읽어 줄 이름을 붙여요', '① labels: give every icon a spoken name'], 'mox-xs', 2);
+  T(S, 'c2', 12.4, 12.2, ['② 터치 영역: 보이는 건 24dp, 누르는 곳은 48dp 이상', '② touch target: 24dp to see, 48dp or more to tap'], 'mox-xs', 3);
+  T(S, 'c3', 12.4, 13.4, ['③ 글자 대비: 2.3 : 1 ✗ → 4.5 : 1 이상 ✓', '③ text contrast: 2.3 : 1 ✗ → 4.5 : 1 or more ✓'], 'mox-xs', 4);
+  stepT(S, 'k', 1, 15.9, [['시각 장애인은 스크린 리더로 화면을 들어요 · 이름 없는 아이콘은 그냥 “버튼”', 'blind users hear the screen through a screen reader · an unnamed icon is just “button”'], ['아이콘에 설명(contentDescription, accessibilityLabel)을 붙이면 뜻이 전달돼요', 'a description (contentDescription, accessibilityLabel) carries the meaning'], ['손가락은 아이콘보다 커요 · 보이는 크기와 별개로 누르는 영역을 넉넉히', 'fingers are bigger than icons · make the hit area generous, whatever the visual size'], ['흐린 회색 글씨는 저시력이나 햇빛 아래에서 안 보여요 · 대비를 4.5 : 1 이상으로', 'pale grey text vanishes for low vision or in sunlight · keep contrast at 4.5 : 1 or more']]);
+  fin(S, 'z', 15.9, [['접근성: 장애가 있어도, 한 손이 바빠도, 햇빛 아래서도 쓸 수 있게 만드는 일', 'accessibility: usable with a disability, with one busy hand, in bright sunlight', 'mox-xs mox-a'], ['글자 크기를 키워도(Dynamic Type, 글꼴 배율 200%) 깨지지 않는 레이아웃', 'layouts that survive larger text (Dynamic Type, 200% font scale)'], ['점검: Accessibility Scanner, Xcode Accessibility Inspector, 직접 스크린 리더 켜 보기', 'check with Accessibility Scanner, Xcode Accessibility Inspector, or the screen reader itself']]);
+  S.cap(1, '스크린 리더로 듣기', 'Listening with a screen reader').cap(2, '이름 붙이기', 'Give it a name').cap(3, '터치 영역', 'Touch targets').cap(4, '색 대비', 'Color contrast').cap(5, '모바일 접근성', 'Mobile accessibility');
+  return S;
+}
+
+/* ================= architecture ================= */
+function sDeepLink() {
+  const S = scene({ id: 'mo-deeplink', steps: 5, per: 1.6 });
+  phone(S, 'p1', 1, 1.2, 7.6, 11.6, 0);
+  T(S, 'p1t', 1, 2.1, ['메신저', 'Messenger'], 'cz-tc mox-xs', 0, { w: 7.6 });
+  rect(S, 'bb', 1.6, 3.3, 6.4, 2.5, 'line', 45, 0, { r: .6 });
+  T(S, 'u1', 2.0, 3.55, 'shop.example.com', 'cz-mono mox-xs mox-a', 0); T(S, 'u2', 2.0, 4.6, '/item/42', 'cz-mono mox-xs mox-a', 0);
+  rect(S, 'rb', 3.0, 6.5, 5.0, 1.6, 'accent', 30, 0, { r: .6 }); T(S, 'rbl', 3.4, 6.75, ['이거 어때?', 'How about this?'], 'mox-xs', 0);
+  ring(S, 'tap', 4.8, 4.55, .95, 'ok', 1, { w: .16, off: 2 });
+  ar(S, 'a1', [8.8, 2.6], [10.2, 2.6], 'ink-3', 1, { h: .12 });
+  box(S, 'os', 10.4, 1.4, 12.2, 2.4, ['OS: 이 주소를 맡은 앱이 있나?', 'OS: does an app own this URL?'], 'ink-3', 1, { pct: 18 });
+  code(S, 'al', 10.4, 4.4, 12.2, ['GET /.well-known/assetlinks.json', '"package_name": "com.example.shop"', '"sha256_cert_…": ["14:6D:…"]'], [], { st: 2, lh: 1.2 });
+  T(S, 'v1', 10.4, 8.9, ['앱 서명과 맞으면 → 검증된 앱 링크 ✓', 'signature matches → verified App Link ✓'], 'mox-xs mox-g', 2);
+  T(S, 'v2', 10.4, 9.95, ['설치할 때 OS가 미리 받아 확인해 둬요', 'the OS fetches and checks this at install time'], 'mox-xs', 2);
+  T(S, 'v3', 10.4, 11.0, ['iOS: apple-app-site-association → 유니버설 링크', 'iOS: apple-app-site-association'], 'mox-xs', 2);
+  ar(S, 'a2', [22.8, 2.6], [23.4, 2.6], 'ok', 3, { h: .12 });
+  phone(S, 'p2', 23.6, 1.2, 7.4, 11.6, 3);
+  rect(S, 'ab', 24.1, 2.0, 6.4, 1.5, 'accent', 20, 3, { r: .3, off: 4 }); T(S, 'abl', 24.4, 2.3, ['← 상품', '← Item'], 'mox-xs', 3, { off: 4 });
+  rect(S, 'im', 24.4, 4.0, 5.8, 3.4, 'accent', 30, 3, { r: .3, off: 4 });
+  T(S, 'nm', 24.4, 7.7, 'Sneakers', 'mox-s', 3, { off: 4 }); T(S, 'pr', 24.4, 8.8, '₩89,000', 'mox-xs', 3, { off: 4 });
+  T(S, 'bs', 23.6, 13.1, ['뒤로 → 홈', 'Back → Home'], 'cz-tc mox-xs mox-a', 3, { off: 4, w: 7.4 });
+  T(S, 'rt', 10.4, 12.3, 'route /item/{id} → ItemScreen(id = 42)', 'cz-mono mox-xs mox-a', 3, { off: 4 });
+  rect(S, 'wa', 24.1, 2.0, 6.4, 1.4, 'line', 50, 4, { r: .6 }); T(S, 'wal', 24.1, 2.3, '🔒 shop.example.com', 'cz-tc cz-mono mox-xs', 4, { w: 6.4 });
+  rect(S, 'wi', 24.4, 4.0, 5.8, 3.4, 'ink-3', 20, 4, { r: .3 }); T(S, 'wn', 24.4, 7.7, 'Sneakers', 'mox-s', 4);
+  rect(S, 'wb', 24.1, 9.6, 6.4, 1.8, 'warn', 30, 4, { r: .4 }); T(S, 'wbl', 24.1, 10.05, ['앱에서 열기', 'Open in app'], 'cz-tc mox-xs', 4, { w: 6.4 });
+  T(S, 'nw', 10.4, 12.3, ['앱이 없으면 → 같은 주소의 웹 페이지가 열려요', 'no app → the same URL opens on the web'], 'mox-xs mox-w', 4);
+  stepT(S, 'k', 1, 15.8, [['메신저에서 https 링크를 누르면 OS가 이 주소를 맡은 앱이 있는지 찾아요', 'tap an https link in a chat and the OS looks for an app that owns the address'], ['앱을 설치할 때 OS가 그 도메인의 파일을 받아, 정말 그 회사의 앱인지 서명으로 확인해 둬요', 'at install time the OS fetches a file from the domain and checks the app’s signature against it'], ['검증된 앱이 링크의 경로를 해석해 그 화면을 바로 열어요 · 뒤로 가면 홈', 'the verified app parses the path and opens that screen directly · Back goes Home'], ['앱이 없으면 같은 주소가 웹에서 열리고, 설치 뒤 첫 실행에 그 화면으로 이어 줄 수도 있어요', 'without the app the same URL opens on the web, and can resume there after install']]);
+  fin(S, 'z', 15.8, [['딥 링크: 앱의 특정 화면으로 바로 들어가는 링크 · 앱 링크(Android)·유니버설 링크(iOS)', 'deep links open a specific screen in an app · App Links (Android), Universal Links (iOS)', 'mox-xs mox-a'], ['myapp:// 같은 사용자 정의 스킴은 검증이 없어 다른 앱이 가로챌 수 있어요 ✗', 'custom schemes like myapp:// are unverified, so another app can claim them ✗', 'mox-xs mox-r'], ['푸시·이메일·광고·QR에서 바로 그 화면으로 · 설치 후 이어 주면 디퍼드 딥 링크', 'used from push, email, ads and QR codes · resuming after install is a deferred deep link']]);
+  S.cap(1, '링크를 누르면', 'Tapping a link').cap(2, '도메인이 앱을 보증해요', 'The domain vouches for the app').cap(3, '바로 그 화면으로', 'Straight to the screen').cap(4, '앱이 없으면 웹으로', 'No app? The web').cap(5, '딥 링크', 'Deep links');
+  return S;
+}
+
+/* ================= data & network ================= */
+function sAuth() {
+  const S = scene({ id: 'mo-auth', steps: 5, per: 1.7 });
+  box(S, 'ha', 2, 1.0, 6, 1.8, ['📱 앱', '📱 app'], 'accent', 0, { pct: 22 });
+  box(S, 'hs', 13.5, 1.0, 7, 1.8, ['🔐 인증 서버', '🔐 auth server'], 'warn', 0, { pct: 22 });
+  vl(S, 'la', 5, 2.9, 14.8, 'ink-3', 0, { dash: 1, w: .08 }); vl(S, 'ls', 17, 2.9, 14.8, 'ink-3', 0, { dash: 1, w: .08 });
+  code(S, 'cv', .8, 3.3, 11.6, ['verifier  = "dBjftJeZ4CVP…"', 'challenge = SHA256(verifier)'], [], { st: 1, lh: 1.15 });
+  ar(S, 'm1', [5.1, 7.6], [16.9, 7.6], 'accent', 2, { h: .12 });
+  T(S, 'm1l', 5.6, 6.6, 'authorize?code_challenge=E9Mel…', 'cz-mono mox-xs mox-a', 2);
+  T(S, 'm1s', 5.6, 7.9, ['시스템 브라우저로 열어요', 'in the system browser'], 'mox-xs', 2);
+  hl(S, 'lgc', 17.1, 19.3, 7.5, 'warn', 2, { w: .08 });
+  box(S, 'lg', 19.4, 6.6, 7.6, 1.8, ['🔑 사용자 로그인', '🔑 user signs in'], 'warn', 2, { pct: 28 });
+  T(S, 'lgs', 19.4, 8.6, ['비밀번호는 앱이 못 봐요', 'the app never sees the password'], 'mox-xs', 2);
+  ar(S, 'm2', [16.9, 10.8], [5.1, 10.8], 'ok', 3, { h: .12 });
+  T(S, 'm2l', 5.6, 9.8, ['앱 링크로 복귀 · code=Splx…', 'back via App Link · code=Splx…'], 'mox-xs mox-g', 3);
+  T(S, 'atk', 19.4, 10.0, ['😈 code를 가로챈 앱도 verifier가 없으면 못 써요', '😈 a stolen code is useless without the verifier'], 'mox-xs mox-r', 3, { w: 11.4 });
+  ar(S, 'm3', [5.1, 12.8], [16.9, 12.8], 'accent', 4, { h: .12 });
+  T(S, 'm3l', 5.6, 11.8, 'POST /token · code + verifier', 'cz-mono mox-xs mox-a', 4);
+  T(S, 'chk', 19.4, 12.4, 'SHA256(verifier) = challenge ✓', 'cz-mono mox-xs mox-g', 4);
+  ar(S, 'm4', [16.9, 14.6], [5.1, 14.6], 'ok', 4, { h: .12 });
+  T(S, 'm4l', 5.6, 13.6, ['access 토큰 + refresh 토큰', 'access + refresh tokens'], 'mox-xs mox-g', 4);
+  T(S, 's1', 19.4, 13.6, ['access: 메모리에 · 짧게 만료 (예: 15분)', 'access: in memory · short-lived (e.g. 15 min)'], 'mox-xs', 5);
+  T(S, 's2', 19.4, 14.6, ['refresh: Keychain·Keystore에 암호화', 'refresh: encrypted in Keychain / Keystore'], 'mox-xs', 5);
+  stepT(S, 'k', 1, 16.0, [['앱이 무작위 비밀 verifier를 만들고, 그 해시 challenge를 준비해요', 'the app makes a random secret (verifier) and its hash (challenge)'], ['시스템 브라우저로 로그인 페이지를 열고 challenge만 보내요 · 로그인은 인증 서버가 받아요', 'it opens the sign-in page in the system browser and sends only the challenge'], ['로그인이 끝나면 일회용 code를 들고 앱으로 돌아와요', 'after sign-in, a one-time code comes back to the app'], ['code와 verifier를 함께 내면, 서버가 해시를 맞춰 보고 토큰을 줘요', 'the app trades code + verifier; the server checks the hash and returns tokens']]);
+  fin(S, 'z', 16.0, [['OAuth 2.0 + PKCE: 비밀 키를 숨길 수 없는 모바일 앱을 위한 로그인 흐름', 'OAuth 2.0 + PKCE: the sign-in flow for apps that cannot hide a secret', 'mox-xs mox-a'], ['API 요청엔 Authorization: Bearer <access> · 만료되면 refresh 토큰으로 새로 받아요', 'API calls carry Authorization: Bearer <access> · renew it with the refresh token'], ['앱 안 WebView 로그인은 피해요 · 앱이 비밀번호를 볼 수 있어서 구글 등이 막아요', 'avoid in-app WebView sign-in · the app could read the password, so Google blocks it']]);
+  S.cap(1, 'verifier와 challenge', 'Verifier and challenge').cap(2, '브라우저에서 로그인', 'Sign in in the browser').cap(3, 'code를 들고 복귀', 'Back with a code').cap(4, 'code를 토큰으로', 'Trade the code for tokens').cap(5, '모바일 로그인 (OAuth + PKCE)', 'Mobile sign-in (OAuth + PKCE)');
+  return S;
+}
+
+/* ================= performance & release ================= */
+function sCrash() {
+  const S = scene({ id: 'mo-crash', steps: 5, per: 1.6 });
+  phone(S, 'ph', 1, 1.2, 7.4, 11.6, 0);
+  rect(S, 'ab', 1.5, 2.0, 6.4, 1.5, 'accent', 18, 0, { r: .3 }); T(S, 'abl', 1.9, 2.3, ['장바구니', 'Cart'], 'mox-xs', 0);
+  [4.0, 5.6, 7.2].forEach((y, i) => rect(S, 'it' + i, 1.5, y, 6.4, 1.3, 'line', 50, 0, { r: .3 }));
+  rect(S, 'co', 1.5, 9.4, 6.4, 1.5, 'accent', 45, 0, { r: .4 }); T(S, 'col', 1.5, 9.75, ['결제하기', 'Checkout'], 'cz-tc mox-xs', 0, { w: 6.4 });
+  ring(S, 'tap', 4.7, 10.15, .8, 'ok', 1, { w: .16, off: 2 });
+  fixed(S, 'dim', 1.15, 1.35, 7.1, 11.3, 'rgba(0,0,0,.28)', 1, { r: .85, off: 2 });
+  rect(S, 'dlg', 1.7, 4.4, 6.0, 3.8, 'ui', 0, 1, { r: .5, off: 2, css: 'border:.1em solid var(--line);box-shadow:0 .3em 1em rgba(0,0,0,.25)' });
+  T(S, 'dl1', 2.1, 4.75, ['Shop이 계속 중지됨', 'Shop keeps stopping'], 'mox-xs', 1, { off: 2, w: 5.4 });
+  T(S, 'dl2', 2.1, 6.95, ['앱 닫기', 'Close app'], 'mox-xs mox-a', 1, { off: 2 });
+  T(S, 'rep', 1, 13.1, '💾 crash_0412.txt', 'cz-tc cz-mono mox-xs', 1, { w: 7.4, off: 3 });
+  ar(S, 'up', [8.6, 3.3], [10.2, 3.3], 'accent', 2, { h: .12 });
+  T(S, 'obt', 10.4, .2, ['다음 실행 때 서버로 올라온 스택', 'uploaded on the next launch'], 'mox-xs mox-a', 2);
+  code(S, 'ob', 10.4, 1.2, 10.3, ['java.lang.NullPointerException', '  at a.b.c(SourceFile:3)', '  at a.b.d(SourceFile:1)'], [], { st: 2, lh: 1.2 });
+  T(S, 'obr', 10.4, 5.7, ['이름이 줄여져 있어 읽을 수 없어요 ✗', 'obfuscated names, unreadable ✗'], 'mox-xs mox-r', 2);
+  T(S, 'mpt', 22.2, .2, 'mapping.txt', 'cz-mono mox-xs mox-a', 3);
+  code(S, 'mp', 22.2, 1.2, 8.8, ['CartViewModel -> a.b:', '  int total() -> c', '  void checkout() -> d'], [], { st: 3, lh: 1.2 });
+  T(S, 'mps', 22.2, 5.7, ['빌드할 때 함께 업로드', 'uploaded with each build'], 'mox-xs', 3);
+  ar(S, 'm1', [20.8, 3.3], [22.1, 3.3], 'ink-3', 3, { h: .1 });
+  ar(S, 'd1', [15.5, 6.8], [15.5, 8.4], 'ok', 3, { h: .12 }); ar(S, 'd2', [26.6, 6.8], [26.6, 8.4], 'ok', 3, { h: .12 });
+  code(S, 'rd', 10.4, 8.6, 20.6, ['java.lang.NullPointerException', '  at CartViewModel.total(CartViewModel.kt:87)', '  at CartViewModel.checkout(CartViewModel.kt:42)'], [[1, 3]], { st: 3, lh: 1.2 });
+  box2(S, 'is', 10.4, 13.4, 10.3, 1.7, ['이슈 #1 · 3,410번 · 사용자 1,240명', 'issue #1 · 3,410× · 1,240 users'], 'danger', 4, { pct: 20 });
+  box2(S, 'cf', 21.4, 13.4, 9.6, 1.7, ['크래시 없는 사용자 99.2%', 'crash-free users 99.2%'], 'ok', 4, { pct: 20 });
+  stepT(S, 'k', 1, 15.8, [['앱이 죽는 순간, 크래시 핸들러가 스택 트레이스와 기기 정보를 파일로 남겨요', 'as the app dies, a crash handler writes the stack trace and device info to a file'], ['다음에 앱을 켜면 그 보고서를 크래시 수집 서버로 올려요', 'on the next launch the report is uploaded to the crash service'], ['릴리스 빌드는 이름이 줄여져 있어, 빌드 때 올린 매핑으로 원래 이름과 줄 번호를 되찾아요', 'release builds are obfuscated; the mapping uploaded at build time restores names and lines'], ['같은 스택은 한 이슈로 묶고, 몇 명이 겪는지 세어 우선순위를 정해요', 'identical stacks group into one issue, ranked by how many users hit it']]);
+  fin(S, 'z', 15.8, [['크래시 리포팅: 사용자 기기에서 죽은 순간을 모아 읽을 수 있게 되돌려요', 'crash reporting gathers failures from users’ devices and makes them readable', 'mox-xs mox-a'], ['iOS·네이티브 코드는 dSYM 같은 심볼 파일로 주소를 함수 이름으로 바꿔요(심볼리케이션)', 'iOS and native code map addresses to names with symbol files such as dSYMs (symbolication)'], ['ANR(앱 응답 없음)도 함께 봐요 · Firebase Crashlytics, Sentry, Play Console', 'ANRs (app not responding) are tracked too · Firebase Crashlytics, Sentry, Play Console']]);
+  S.cap(1, '앱이 죽는 순간', 'The moment of the crash').cap(2, '다음 실행 때 업로드', 'Uploaded on the next launch').cap(3, '매핑으로 이름 되찾기', 'Restore names with the mapping').cap(4, '이슈로 묶고 세기', 'Group and count').cap(5, '크래시 리포트', 'Crash reports');
+  return S;
+}
+
+return { css: CSSX + `
+.mox-ph .in{color:#1f2328!important;text-shadow:none!important}
+.mox-low .in{color:#aaaaaa!important;text-shadow:none!important}
+.mox-dk .in{color:#767676!important;text-shadow:none!important}
+.mox-wt .in{color:#fff!important;text-shadow:none!important}`, secs: [], add: {
+  'mo-plat': [
+    item('mo-startup', '앱 시작 시간', 'App startup time', '아이콘을 누른 뒤 첫 화면이 뜨기까지의 시간이에요. 프로세스부터 새로 만드는 콜드 스타트가 가장 느려요.', '콜드 스타트는 프로세스를 만들고(Android는 Zygote에서 포크), Application을 초기화하고, 첫 화면(Activity)을 만들어 그려요. 웜 스타트는 프로세스는 살아 있고 화면만 다시 만들며, 핫 스타트는 메모리에 남은 화면을 앞으로 가져오기만 해요. 시작이 느린 가장 흔한 원인은 분석·광고·DB 같은 SDK를 Application.onCreate에서 한꺼번에 초기화하는 거예요. 급하지 않은 초기화는 처음 쓸 때로 미루거나(지연 초기화) 백그라운드 스레드로 옮기고, 첫 화면에 꼭 필요한 일만 메인 스레드에서 해요. 첫 프레임까지(TTID)와 내용이 다 그려질 때까지(TTFD)를 재고, Android는 기준 프로필(Baseline Profile)로 시작 경로 코드를 미리 컴파일해 둘 수 있어요. Android vitals는 콜드 스타트 5초, 웜 2초, 핫 1.5초 이상을 과도하다고 봐요.', 'The time from tapping the icon to the first screen. A cold start, which builds the process from scratch, is the slowest.', 'A cold start creates the process (forked from Zygote on Android), initializes the Application and then builds and draws the first screen (Activity). A warm start finds the process alive and only rebuilds the screen; a hot start just brings a screen that is still in memory to the front. The most common cause of slow starts is initializing analytics, ads and database SDKs all at once in Application.onCreate. Defer what is not urgent until first use (lazy initialization) or move it to a background thread, and keep only what the first screen needs on the main thread. Measure time to initial display (TTID) and time to full display (TTFD); on Android, Baseline Profiles precompile the startup path. Android vitals treats cold starts of 5 s or more, warm starts of 2 s and hot starts of 1.5 s as excessive.', sStartup())
+  ],
+  'mo-ui': [
+    item('mo-a11y', '모바일 접근성', 'Mobile accessibility', '장애가 있거나 상황이 불편해도 앱을 쓸 수 있게 만드는 일이에요. 화면을 읽어 주는 스크린 리더, 넉넉한 터치 영역, 충분한 색 대비가 기본이에요.', '시각 장애인은 TalkBack(Android)이나 VoiceOver(iOS) 같은 스크린 리더로 화면을 들으며 써요. 글자 없는 아이콘 버튼은 그냥 “버튼”으로 읽히므로 contentDescription이나 accessibilityLabel로 이름을 붙여야 해요(장식용 이미지는 읽지 않게 빼요). 손가락은 아이콘보다 커서, 아이콘이 24dp라도 누르는 영역은 48dp(iOS 44pt) 이상으로 잡아요. 흐린 회색 글씨는 저시력 사용자나 햇빛 아래에서 읽히지 않으니, 본문 글자와 배경의 대비를 4.5 : 1 이상(WCAG AA)으로 맞춰요. 시스템 글자 크기를 키워도(Android는 최대 200%) 레이아웃이 깨지지 않게 고정 높이를 피하고, 색만으로 의미를 전하지 않아요. Accessibility Scanner나 Xcode Accessibility Inspector로 점검하고, 직접 스크린 리더를 켜고 써 보는 게 가장 확실해요.', 'Making apps usable with a disability or in awkward situations. Screen-reader labels, generous touch targets and enough color contrast are the basics.', 'Blind users hear the screen through a screen reader such as TalkBack (Android) or VoiceOver (iOS). An icon button with no text is read as just “button”, so give it a name with contentDescription or accessibilityLabel (and hide purely decorative images). Fingers are bigger than icons: even a 24dp icon needs a hit area of at least 48dp (44pt on iOS). Pale grey text disappears for low-vision users and in sunlight, so keep body text at a contrast ratio of at least 4.5 : 1 against its background (WCAG AA). Layouts should survive large system font sizes (up to 200% on Android) without fixed heights, and color should never be the only way meaning is conveyed. Check with Accessibility Scanner or Xcode’s Accessibility Inspector, and best of all, turn on the screen reader and use the app yourself.', sA11y())
+  ],
+  'mo-arch': [
+    item('mo-deeplink', '딥 링크와 앱 링크', 'Deep links and App Links', '링크 하나로 앱의 특정 화면을 바로 여는 방법이에요. 도메인이 앱을 보증하는 검증된 링크(앱 링크·유니버설 링크)를 써요.', 'https://shop.example.com/item/42 같은 링크를 누르면, OS는 이 도메인을 맡겠다고 등록한 앱이 있는지 찾아요. 아무 앱이나 도메인을 가로채지 못하게, 앱을 설치할 때 OS가 그 도메인의 /.well-known/assetlinks.json(Android)이나 apple-app-site-association(iOS) 파일을 받아 앱의 패키지 이름·서명과 맞는지 확인해 둬요. 검증된 앱은 링크의 경로(/item/{id})를 해석해 상품 화면을 바로 열고, 뒤로 가기를 누르면 홈으로 가도록 백 스택도 만들어 줘요. 앱이 없으면 같은 주소가 웹 페이지로 열리고, 설치 뒤 첫 실행에 그 화면으로 이어 주는 것을 디퍼드 딥 링크라고 해요. myapp:// 같은 사용자 정의 스킴은 검증이 없어 다른 앱이 같은 스킴을 등록해 가로챌 수 있어요. 푸시 알림, 이메일, 광고, QR 코드에서 앱의 정확한 화면으로 보낼 때 써요.', 'A link that opens a specific screen inside an app. Verified links (App Links, Universal Links) let the domain vouch for the app.', 'Tap a link such as https://shop.example.com/item/42 and the OS looks for an app that has registered for that domain. So that no app can hijack a domain, at install time the OS fetches /.well-known/assetlinks.json (Android) or apple-app-site-association (iOS) from the domain and checks it against the app’s package name and signing certificate. The verified app parses the path (/item/{id}), opens the product screen directly and builds a back stack so that Back leads Home. Without the app, the same URL opens as a web page; carrying the user to that screen on the first launch after install is called a deferred deep link. Custom schemes such as myapp:// are not verified, so another app can register the same scheme and intercept them. Deep links take users from push notifications, emails, ads and QR codes to exactly the right screen.', sDeepLink())
+  ],
+  'mo-data': [
+    item('mo-auth', '모바일 로그인: OAuth와 PKCE', 'Mobile sign-in: OAuth and PKCE', '앱은 비밀 키를 안전하게 숨길 수 없어서, 로그인할 때마다 일회용 비밀(verifier)을 만들어 code를 가로채도 쓸 수 없게 해요.', '앱 파일은 누구나 내려받아 뜯어볼 수 있으니 클라이언트 비밀 키를 넣어 둘 수 없어요. PKCE(Proof Key for Code Exchange)는 로그인할 때마다 앱이 무작위 문자열 verifier를 만들고, 그 SHA-256 해시인 challenge만 인증 요청에 실어 보내요. 로그인은 앱 안의 WebView가 아니라 시스템 브라우저(Custom Tabs, ASWebAuthenticationSession)에서 하므로 앱은 비밀번호를 볼 수 없어요. 로그인이 끝나면 일회용 authorization code가 리디렉트로 앱에 돌아오고, 앱은 code와 verifier를 함께 /token에 보내요. 서버는 SHA256(verifier)가 처음 받은 challenge와 같은지 확인한 뒤 짧게 사는 access 토큰과 refresh 토큰을 줘요. 그래서 다른 앱이 리디렉트를 가로채 code를 얻어도 verifier가 없어 토큰으로 바꿀 수 없어요. access 토큰은 메모리에 두고 API 요청의 Authorization: Bearer 헤더에 실으며, refresh 토큰은 Keychain이나 Android Keystore로 암호화해 보관해요.', 'Apps cannot hide a client secret, so each sign-in creates a one-time secret (the verifier) that makes an intercepted code useless.', 'Anyone can download and unpack an app, so it cannot hold a client secret. With PKCE (Proof Key for Code Exchange) the app creates a random string, the verifier, for every sign-in and sends only its SHA-256 hash, the challenge, with the authorization request. Sign-in happens in the system browser (Custom Tabs, ASWebAuthenticationSession) rather than an in-app WebView, so the app never sees the password. Afterwards a one-time authorization code returns to the app by redirect, and the app sends the code together with the verifier to /token. The server checks that SHA256(verifier) matches the challenge it saw earlier, then returns a short-lived access token and a refresh token. An app that intercepts the redirect gets the code but not the verifier, so it cannot redeem it. Keep the access token in memory and send it as Authorization: Bearer on API calls; store the refresh token encrypted in the Keychain or Android Keystore.', sAuth())
+  ],
+  'mo-ops': [
+    item('mo-crash', '크래시 리포트와 심볼리케이션', 'Crash reporting and symbolication', '사용자 기기에서 앱이 죽은 순간의 스택 트레이스를 모아, 빌드 때 남긴 매핑으로 원래 함수 이름과 줄 번호를 되찾아 보여 줘요.', '앱이 예외로 죽는 순간, 크래시 리포팅 SDK의 핸들러가 스택 트레이스와 기기·OS·앱 버전 정보를 파일로 남기고, 다음에 앱을 켤 때 서버로 올려요. 릴리스 빌드는 R8·ProGuard가 클래스와 메서드 이름을 a.b.c처럼 줄이고(난독화), iOS와 네이티브 코드는 메모리 주소만 남아서 그대로는 읽을 수 없어요. 그래서 빌드할 때 매핑 파일(mapping.txt)이나 디버그 심볼(dSYM)을 함께 올려 두고, 서버가 이것으로 원래 이름과 소스 줄 번호를 되찾아요(리트레이스·심볼리케이션). 같은 스택의 크래시는 하나의 이슈로 묶고, 몇 번·몇 명에게 일어났는지 세어 우선순위를 정해요. 크래시 없는 사용자 비율과 ANR(앱 응답 없음) 비율을 버전별로 보고, 새 버전에서 급증하면 단계적 출시를 멈춰요. Firebase Crashlytics, Sentry, Play Console·App Store Connect가 이 일을 해요.', 'Collecting stack traces from the moment an app dies on users’ devices, then restoring real function names and line numbers with the mapping saved at build time.', 'When an app dies from an exception, the crash SDK’s handler writes the stack trace plus device, OS and app version to a file and uploads it on the next launch. Release builds are shrunk by R8 or ProGuard, so classes and methods appear as a.b.c, and iOS and native code leave only memory addresses, which are unreadable as they are. The build therefore uploads its mapping file (mapping.txt) or debug symbols (dSYM), and the service uses them to restore original names and source lines (retracing, symbolication). Crashes with the same stack are grouped into one issue and counted by occurrences and users affected to set priorities. Crash-free users and ANR (app not responding) rates are tracked per version, and a spike in a new version halts the staged rollout. Firebase Crashlytics, Sentry, Play Console and App Store Connect do this work.', sCrash())
+  ]
+} };
+})();
+
 window.UX = page([
   sec('mo-plat', '플랫폼과 구조', 'Platforms', '플랫폼과 앱 구조', 'Platforms and app structure',
     '앱이 어떻게 만들어지고, 실행되고, 서로 격리되는지예요.', 'How apps are built, run and kept apart.', [
@@ -741,7 +1036,7 @@ window.UX = page([
     item('mo-sandbox', '샌드박스와 권한', 'Sandboxing and permissions', '모바일 앱은 저마다 격리된 상자(샌드박스) 안에서 돌고, 카메라·위치 같은 민감한 기능은 사용자가 허락해야 쓸 수 있어요.', 'Android는 앱마다 다른 리눅스 사용자 ID와 전용 폴더를 주고, iOS도 앱 컨테이너 밖을 읽지 못하게 막아요. 권한은 Manifest나 Info.plist에 선언한 뒤 실행 중에 물어봐요(런타임 권한). 위치는 대략·정확, 사진은 고른 것만, “이번만 허용”처럼 범위를 좁힐 수 있고 사용자는 언제든 철회할 수 있어요. 다른 앱과의 공유는 공유 시트, 콘텐츠 제공자, 인텐트 같은 OS 통로로만 해요.', 'Every mobile app runs in an isolated sandbox, and sensitive features such as the camera or location need the user’s permission.', 'Android gives each app its own Linux user ID and private folder; iOS likewise blocks reads outside the app’s container. Permissions are declared in the Manifest or Info.plist and then requested at runtime. Scope can be narrowed (approximate location, selected photos, allow once) and the user can revoke access at any time. Sharing with other apps goes only through OS channels such as the share sheet, content providers and intents.', sSandbox()),
     item('mo-build', '빌드·서명·배포', 'Build, sign and ship', '소스 코드를 기기용으로 컴파일해 패키지(AAB, IPA)로 묶고, 개발자 키로 서명한 뒤 스토어 심사를 거쳐 배포해요.', 'Android는 Kotlin을 DEX 바이트코드로, iOS는 Swift를 ARM64 기계어로 컴파일해요. 서명은 누가 만들었는지와 변조되지 않았음을 증명해서 한 바이트만 바뀌어도 설치가 거부돼요. 업데이트는 같은 키로 서명하고 버전 번호를 올려야 하며, Play 앱 서명이나 Apple 인증서·프로비저닝 프로파일이 키를 관리해요. Fastlane, Xcode Cloud, GitHub Actions 같은 CI로 이 과정을 자동화해요.', 'Source is compiled for the device, bundled into a package (AAB, IPA), signed with the developer’s key and released through store review.', 'Android compiles Kotlin to DEX bytecode; iOS compiles Swift to ARM64 machine code. The signature proves who built the app and that it hasn’t been altered: change one byte and installation is refused. Updates must carry the same key and a higher version number, with Play App Signing or Apple certificates and provisioning profiles managing the keys. CI tools such as Fastlane, Xcode Cloud and GitHub Actions automate the pipeline.', sBuild()),
     item('mo-main', '메인 스레드와 프레임', 'Main thread and frames', '화면은 메인(UI) 스레드 하나가 그려요. 60Hz 화면이면 16.7ms 안에 한 프레임을 끝내야 버벅이지 않아요.', '네트워크, 디스크, 이미지 디코딩, 큰 JSON 파싱을 메인에서 하면 프레임을 놓쳐 화면이 멈칫해요(jank). 입력에 5초 넘게 응답하지 않으면 Android는 ANR 창을 띄우고, iOS는 오래 멈춘 앱을 워치독이 종료해요. 무거운 일은 백그라운드 스레드나 코루틴에서 하고 결과만 메인으로 보내 UI를 고쳐요. 120Hz 화면에서는 예산이 8.3ms로 줄어요.', 'A single main (UI) thread draws the screen; on a 60 Hz display each frame must finish within 16.7 ms to stay smooth.', 'Doing network, disk, image decoding or big JSON parsing on the main thread drops frames and causes visible stutter (jank). If input goes unanswered for five seconds Android shows an ANR dialog, and iOS’s watchdog terminates apps that hang too long. Heavy work belongs on background threads or coroutines, with only the result posted back to update the UI. At 120 Hz the budget shrinks to 8.3 ms.', sMain())
-  ]),
+  ].concat(XT.add['mo-plat'] || [])),
   sec('mo-ui', '화면 그리기', 'Drawing the UI', '화면 그리기', 'Drawing the UI',
     '레이아웃부터 터치와 애니메이션까지, 화면이 만들어지는 과정이에요.', 'From layout to touch and animation: how a screen comes together.', [
     item('mo-layout', '레이아웃: 측정과 배치', 'Layout: measure and place', 'UI 트리는 부모가 제약을 내려보내고, 자식이 크기를 정해 올리고, 부모가 위치를 정한 뒤에야 그려져요.', 'Android View는 measure → layout → draw 순서로, Flutter는 “제약은 내려가고 크기는 올라오고 위치는 부모가 정한다”는 규칙으로, Compose는 자식을 한 번만 측정한다는 규칙으로 동작해요. 트리가 깊거나 자식을 여러 번 측정하면(중첩된 가중치, 내재 크기 계산) 프레임 시간이 늘어요. 그래서 평평한 레이아웃(ConstraintLayout)과 고정 크기 지정이 성능에 도움이 돼요. iOS는 Auto Layout이 제약식을 풀어 위치를 계산해요.', 'A UI tree is drawn only after parents pass constraints down, children report sizes up and parents assign positions.', 'Android Views go measure → layout → draw; Flutter’s rule is “constraints go down, sizes go up, parents set position”; Compose measures each child only once. Deep trees and repeated measuring (nested weights, intrinsic sizes) inflate frame time, so flat layouts such as ConstraintLayout and fixed sizes help performance. On iOS, Auto Layout solves a system of constraints to place views.', sLayout()),
@@ -750,7 +1045,7 @@ window.UX = page([
     item('mo-density', '화면 밀도와 단위', 'Screen density and units', '화면마다 1인치에 든 픽셀 수(dpi)가 달라서, 크기는 픽셀 대신 밀도와 무관한 단위(dp, pt)로 정해요.', 'px = dp × (dpi ÷ 160). 48dp 버튼은 1x 화면에서 48px, 3x 화면에서 144px이지만 실제 크기는 같아요. 이미지는 1x·2x·3x 여러 벌이나 벡터로 넣고, 글자는 sp(Android)나 Dynamic Type(iOS)으로 사용자 글꼴 크기 설정을 따라요. 터치 영역은 최소 48dp(Android), 44pt(iOS)를 권장해요.', 'Screens pack different numbers of pixels per inch, so sizes are given in density-independent units (dp, pt) rather than pixels.', 'px = dp × (dpi ÷ 160): a 48 dp button is 48 px on a 1x screen and 144 px on a 3x screen, yet the same physical size. Images ship in 1x/2x/3x sets or as vectors, and text uses sp (Android) or Dynamic Type (iOS) to honor the user’s font size. Touch targets should be at least 48 dp on Android and 44 pt on iOS.', sDensity()),
     item('mo-gesture', '터치와 제스처', 'Touch and gestures', '손가락이 닿으면 히트 테스트로 그 아래의 뷰를 찾고, 움직임을 보고 탭인지 스크롤인지 판정해요.', '터치는 DOWN → MOVE → UP 이벤트로 오고, 터치 슬롭(약 8dp)보다 적게 움직이면 아직 탭 후보예요. 그 이상 움직이면 스크롤하는 부모가 이벤트를 가로채고(intercept) 버튼에는 CANCEL이 가요. 손을 뗄 때의 속도로 플링 애니메이션이 이어져요. GestureDetector, UIGestureRecognizer가 탭·길게 누르기·스와이프·핀치를 구분해 줘요.', 'When a finger lands, hit testing finds the view underneath, and the movement decides whether it is a tap or a scroll.', 'Touches arrive as DOWN, MOVE and UP events; moving less than the touch slop (about 8 dp) keeps it a possible tap. Beyond that, a scrolling parent intercepts the stream and the button receives CANCEL. The release velocity carries into a fling animation. GestureDetector and UIGestureRecognizer tell taps, long presses, swipes and pinches apart.', sGesture()),
     item('mo-anim', '애니메이션과 이징', 'Animation and easing', '애니메이션은 시간에 따른 값의 곡선이에요. 매 프레임 곡선에서 값을 읽어 위치·크기·투명도를 바꿔요.', 'linear는 기계적으로 보여서 보통 ease-out(들어올 때), ease-in(나갈 때), 스프링을 써요. 스프링은 시간이 아니라 강성·감쇠로 정의돼 손가락을 따라가다 놓았을 때 자연스럽고 도중에 끊겨도 이어져요. 레이아웃을 다시 계산하는 속성보다 transform과 opacity를 움직이면 GPU 합성만으로 처리돼 부드러워요. Compose의 animate*AsState, SwiftUI의 withAnimation, Lottie가 대표 도구예요.', 'An animation is a curve of values over time; each frame samples the curve to set position, size or opacity.', 'Linear motion looks mechanical, so interfaces favor ease-out for entering, ease-in for leaving, and springs. Springs are defined by stiffness and damping rather than duration, so they feel natural after a drag and stay smooth when interrupted. Animating transform and opacity lets the GPU compositor do the work instead of re-running layout. Compose’s animate*AsState, SwiftUI’s withAnimation and Lottie are common tools.', sAnim())
-  ]),
+  ].concat(XT.add['mo-ui'] || [])),
   sec('mo-arch', '상태와 구조', 'State & architecture', '상태와 아키텍처', 'State and architecture',
     '데이터가 화면까지 흐르는 길을 정리하는 방법이에요.', 'Ways to organize how data reaches the screen.', [
     item('mo-state', '단방향 데이터 흐름', 'Unidirectional data flow', '상태는 한곳에서만 바꾸고, UI는 그 상태를 그리기만 하며 사용자 동작은 이벤트로 올려 보내요.', 'View → 이벤트 → ViewModel → 새 상태 → View로 데이터가 한 방향으로만 흘러 “누가 화면을 바꿨지?”를 쉽게 추적해요. 로딩·데이터·오류를 UiState 하나로 묶으면 화면이 불가능한 조합에 빠지지 않아요. 여러 위젯이 공유하는 상태는 공통 부모로 끌어올리고(state hoisting), 위젯은 상태를 받고 콜백을 내보내는 형태로 만들어요. Redux, MVI, TCA(The Composable Architecture)가 같은 생각이에요.', 'State changes in exactly one place, the UI only renders it, and user actions travel up as events.', 'Data flows one way (View → event → ViewModel → new state → View), so “who changed the screen?” is easy to answer. Bundling loading, data and error into a single UiState keeps the screen out of impossible combinations. State shared by several widgets is hoisted to a common parent, and widgets take state in and send callbacks out. Redux, MVI and The Composable Architecture share the same idea.', sState()),
@@ -758,7 +1053,7 @@ window.UX = page([
     item('mo-nav', '내비게이션과 백 스택', 'Navigation and the back stack', '화면을 열면 스택에 쌓고(push), 뒤로 가면 맨 위를 꺼내요(pop). 딥 링크로 열어도 자연스러운 스택을 만들어 줘요.', '“상품 목록 → 상세”처럼 쌓인 순서대로 뒤로 가기가 동작해요. 알림이나 링크(shop://product/42, 유니버설 링크·앱 링크)로 상세 화면을 바로 열면 그 밑에 홈을 깔아 뒤로 가기가 앱 밖으로 튀지 않게 해요. 하단 탭마다 별도 스택을 두고, 화면 사이엔 객체 대신 ID 같은 작은 값만 넘겨요. Android Navigation, iOS NavigationStack, Flutter go_router가 이 일을 해요.', 'Opening a screen pushes it onto a stack and back pops the top; deep links get a sensible stack built for them.', 'Back follows the order screens were stacked, such as list → detail. When a notification or link (shop://product/42, universal or app links) opens a detail screen directly, a home screen is placed beneath it so back doesn’t drop out of the app. Each bottom tab keeps its own stack, and screens pass small values such as IDs rather than whole objects. Android Navigation, iOS NavigationStack and Flutter’s go_router handle this.', sNav()),
     item('mo-async', '코루틴과 async/await', 'Coroutines and async/await', '기다리는 동안 스레드를 붙잡지 않고 잠시 멈췄다가, 결과가 오면 멈춘 곳부터 이어서 실행하는 비동기 코드예요.', 'suspend 함수나 await은 네트워크 응답을 기다리는 동안 메인 스레드를 비켜 줘서 화면은 계속 그려져요. 코드가 위에서 아래로 읽혀 콜백이 안쪽으로 파고드는 “콜백 지옥”이 없어요. 구조적 동시성 덕분에 화면이 닫히면 viewModelScope나 Task가 진행 중인 작업을 함께 취소해요. Dispatchers.IO 같은 디스패처로 어느 스레드에서 실행할지 정해요.', 'Async code that pauses without holding a thread while it waits, then resumes right where it left off when the result arrives.', 'A suspend function or await steps off the main thread while the network responds, so the screen keeps drawing. The code reads top to bottom, with no callbacks nesting ever deeper (“callback hell”). Structured concurrency lets viewModelScope or a Task cancel in-flight work when the screen closes. Dispatchers such as Dispatchers.IO choose which threads the work runs on.', sAsync()),
     item('mo-reactive', '반응형 스트림', 'Reactive streams', '시간에 따라 오는 값의 흐름(스트림)을 연산자로 거르고 바꾸고 합쳐서 처리해요.', '검색창 입력에 debounce(300ms)를 걸면 타이핑이 멈췄을 때만 요청하고, switchMap(flatMapLatest)은 새 입력이 오면 이전 요청을 취소해 늦게 온 옛 결과가 화면을 덮지 않게 해요. combine으로 여러 스트림을 합치고, distinctUntilChanged로 같은 값을 거를 수 있어요. Kotlin Flow, Swift Combine, RxJava·RxSwift, Dart Stream이 대표적이에요. 구독을 해제하지 않으면 누수가 생겨요.', 'Streams of values arriving over time are filtered, transformed and combined with operators.', 'Applying debounce(300 ms) to a search box fires a request only when typing pauses, and switchMap (flatMapLatest) cancels the previous request when new input arrives, so stale results never overwrite fresh ones. combine merges several streams and distinctUntilChanged drops repeats. Kotlin Flow, Swift Combine, RxJava/RxSwift and Dart Streams are the main libraries. Forgetting to unsubscribe causes leaks.', sReactive())
-  ]),
+  ].concat(XT.add['mo-arch'] || [])),
   sec('mo-data', '데이터와 네트워크', 'Data & network', '데이터와 네트워크', 'Data and network',
     '기기 안에 저장하고, 불안정한 망에서 주고받는 법이에요.', 'Storing on the device and talking over unreliable networks.', [
     item('mo-storage', '로컬 저장소', 'Local storage', '저장할 데이터의 크기와 성격에 따라 키-값 저장소, 데이터베이스, 파일, 보안 저장소 중에서 골라요.', '작은 설정값은 DataStore·UserDefaults, 많고 검색해야 하는 데이터는 SQLite(Room, Core Data, SwiftData), 사진·동영상 같은 큰 파일은 앱 전용 폴더나 캐시 폴더에 둬요. 비밀번호와 토큰은 Android Keystore의 키로 암호화하거나 iOS Keychain에 넣어요. 캐시 폴더는 공간이 부족하면 OS가 지울 수 있고 앱을 지우면 모두 사라지니, 중요한 데이터는 서버에도 백업해요.', 'Depending on size and kind, data goes in a key–value store, a database, files or secure storage.', 'Small settings belong in DataStore or UserDefaults, large queryable data in SQLite (Room, Core Data, SwiftData), and big files such as photos and video in the app’s files or cache directory. Passwords and tokens are encrypted with an Android Keystore key or kept in the iOS Keychain. The OS may clear the cache directory when space runs low and uninstalling wipes everything, so important data should also live on a server.', sStorage()),
@@ -766,15 +1061,16 @@ window.UX = page([
     item('mo-net', '네트워크 요청과 재시도', 'Requests and retries', '모바일 망은 자주 느려지고 끊겨요. 타임아웃, 간격을 늘려 가는 재시도, HTTP 캐시로 버텨요.', '실패하면 1초, 2초, 4초처럼 간격을 두 배씩 늘려 재시도하고(지수 백오프), 무작위 지터를 더해 수많은 기기가 한꺼번에 몰리지 않게 해요. 자동 재시도는 GET처럼 여러 번 보내도 안전한(멱등) 요청에만 해요. ETag와 If-None-Match로 바뀌지 않은 응답은 본문 없는 304로 받아 데이터와 배터리를 아껴요. gzip 압축, 페이지 나누기, 필요한 필드만 받기도 중요해요.', 'Mobile networks slow down and drop often; timeouts, retries with growing gaps and HTTP caching keep apps working.', 'Failed requests retry after 1, 2, 4 seconds and so on (exponential backoff), with random jitter so millions of devices don’t retry in lockstep. Only idempotent requests such as GET are retried automatically. ETag and If-None-Match turn unchanged responses into a bodiless 304, saving data and battery. gzip compression, pagination and fetching only the needed fields matter as well.', sNet()),
     item('mo-image', '이미지 로딩과 캐시', 'Image loading and caching', '사진은 보일 크기에 맞춰 줄여서 디코딩하고, 메모리 → 디스크 → 네트워크 순서로 찾아 다시 받지 않아요.', '4000×3000 사진을 그대로 풀면 픽셀당 4바이트로 48MB예요. 400×300 뷰에 맞춰 1/8로 줄여 디코딩하면 1MB도 안 돼요. 메모리 캐시는 LRU로 오래 안 쓴 것부터 버리고, 디스크 캐시는 앱을 다시 켜도 남아요. 리스트가 재활용되면 이전 요청을 취소해야 엉뚱한 사진이 뜨지 않아요. Glide, Coil, Kingfisher, SDWebImage가 이 일을 대신해요.', 'Photos are decoded at the size they will be shown and looked up in memory, then disk, then the network, so they aren’t downloaded twice.', 'A 4000×3000 photo decoded at full size takes 48 MB at 4 bytes per pixel; downsampled by 8 for a 400×300 view it is under 1 MB. The memory cache evicts least recently used images, while the disk cache survives restarts. When a list row is recycled, its old request must be cancelled or the wrong photo appears. Glide, Coil, Kingfisher and SDWebImage handle all of this.', sImage()),
     item('mo-push', '푸시 알림', 'Push notifications', '서버가 보낸 메시지를 애플(APNs)·구글(FCM)의 푸시 서버가 기기까지 전달해, 앱이 꺼져 있어도 알림이 떠요.', '앱은 OS에 등록해 기기 토큰을 받고, 그 토큰을 우리 서버에 보내 사용자와 묶어 둬요. 보낼 일이 생기면 서버가 토큰과 내용을 APNs·FCM에 보내고, 푸시 서버는 기기가 유지하는 상시 연결 하나로 전달해요. 앱마다 연결을 따로 열지 않으니 배터리가 절약돼요. 알림 권한이 필요하고, 토큰은 바뀔 수 있어 갱신되면 서버에 다시 알려야 해요.', 'Apple’s (APNs) and Google’s (FCM) push services deliver a server’s message to the device, so notifications appear even when the app is closed.', 'The app registers with the OS to get a device token and sends it to our server, tied to the user. When something happens, the server sends the token and message to APNs or FCM, which delivers it over the single always-on connection the device keeps. Because apps don’t each hold a connection open, battery is saved. Notification permission is required, and tokens can change, so refreshed tokens must be re-sent.', sPush())
-  ]),
+  ].concat(XT.add['mo-data'] || [])),
   sec('mo-ops', '성능과 출시', 'Performance & release', '성능·품질·출시', 'Performance, quality and release',
     '배터리와 메모리를 아끼고, 테스트하고, 안전하게 내보내는 법이에요.', 'Saving battery and memory, then testing and shipping safely.', [
     item('mo-battery', '배터리와 백그라운드 작업', 'Battery and background work', '셀룰러 무선은 전송 후에도 몇 초간 고전력으로 남아서, 요청을 흩어 보내면 배터리가 빨리 닳아요.', '작은 요청을 자주 보내면 무선이 잠들 틈이 없어요. 요청을 모아 한 번에 보내고, 급하지 않은 일은 WorkManager(Android)나 BGTaskScheduler(iOS)에 맡기면 충전 중이나 와이파이일 때 실행돼요. Android 잠자기(Doze)와 iOS 백그라운드 제한은 깨움을 정해진 창으로 모아요. 화면, GPS, 무선이 가장 큰 소비원이라 위치는 필요한 정확도만 요청해요.', 'The cellular radio stays in high power for seconds after each transfer, so scattered requests drain the battery quickly.', 'Small, frequent requests never let the radio sleep. Batch requests together, and hand deferrable work to WorkManager (Android) or BGTaskScheduler (iOS) so it runs while charging or on Wi-Fi. Android’s Doze and iOS background limits fold wake-ups into maintenance windows. The screen, GPS and radios are the biggest consumers, so request only the location accuracy you need.', sBattery()),
     item('mo-memory', '모바일 메모리 관리', 'Mobile memory management', '메모리가 모자라면 OS가 우선순위가 낮은 백그라운드 앱부터 정리해요. 앱은 누수 없이 가볍게 써야 해요.', '보이는 앱 > 서비스 > 캐시된 앱 순으로 우선순위가 높고, 메모리가 부족하면 가장 오래 안 쓴 캐시 앱부터 Android lmkd나 iOS jetsam이 정리해요. 정리돼도 사용자가 눈치채지 못하게 상태를 저장·복원해요. 닫힌 화면을 정적 필드나 리스너가 붙잡으면 GC가 치우지 못하는 누수가 생겨요. Android는 GC, iOS(Swift)는 ARC 참조 카운트라서 순환 참조는 weak로 끊어요.', 'When memory runs short the OS kills low-priority background apps first, so apps must stay lean and leak-free.', 'Visible apps outrank services, which outrank cached apps; under pressure Android’s lmkd or iOS’s jetsam reclaims the least recently used cached app first. Save and restore state so a kill goes unnoticed. A closed screen held by a static field or listener can’t be collected: a leak. Android relies on garbage collection while Swift on iOS uses ARC reference counting, so cycles must be broken with weak references.', sMemory()),
     item('mo-test', '모바일 테스트', 'Mobile testing', '빠른 단위 테스트를 많이, 통합 테스트를 적당히, 느린 UI 테스트는 핵심 흐름만 두는 피라미드로 쌓아요.', '단위 테스트는 ViewModel과 로직을 기기 없이 몇 초 만에 돌리고, UI 테스트(Espresso, XCUITest, Compose 테스트)는 실제 화면을 탭해 확인하지만 느리고 잘 깨져요. 화면 크기, 폴더블, OS 버전 조합이 수백 가지라 Firebase Test Lab 같은 클라우드 기기 팜에서 병렬로 돌려요. 스크린샷 테스트로 UI 회귀를 잡고, TestFlight나 내부 테스트 트랙으로 실제 사용을 검증해요.', 'A pyramid: many fast unit tests, a moderate layer of integration tests and only a few slow UI tests for key flows.', 'Unit tests run ViewModels and logic in seconds without a device; UI tests (Espresso, XCUITest, Compose testing) tap the real screen but are slow and flaky. With hundreds of combinations of screen sizes, foldables and OS versions, teams run tests in parallel on cloud device farms such as Firebase Test Lab. Screenshot tests catch UI regressions, and TestFlight or internal testing tracks verify real-world use.', sTest()),
     item('mo-release', '단계적 출시와 모니터링', 'Staged rollout and monitoring', '새 버전을 일부 사용자에게만 먼저 내보내고, 크래시 지표를 보며 조금씩 넓혀요. 문제가 보이면 멈춰요.', '앱은 웹처럼 즉시 롤백할 수 없어서 1% → 5% → 20% → 100%로 넓혀 가며 크래시 없는 사용자 비율을 지켜봐요. Crashlytics, Sentry가 스택 트레이스를 기기·OS·버전별로 모아 원인을 찾게 해 줘요. 원격 기능 플래그로 문제 기능만 끄면 새 빌드 없이 바로 회복할 수 있어요. 고친 버전도 다시 단계적으로 배포해요.', 'New versions go to a small share of users first and widen as crash metrics stay healthy; trouble halts the rollout.', 'Apps can’t roll back instantly like the web, so releases widen from 1% to 5%, 20% and 100% while the crash-free rate is watched. Crashlytics and Sentry group stack traces by device, OS and version to pinpoint causes. A remote feature flag can switch off just the faulty feature for an instant recovery without a new build. The fix is then rolled out gradually as well.', sRelease())
-  ])
-]);
+  ].concat(XT.add['mo-ops'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
 window.UX[0].css += `
 .mo-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .mo-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}

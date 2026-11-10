@@ -36,7 +36,7 @@ function scene(o) {
   const n = o.steps;
   const S = {
     n, id: o.id,
-    el(key, p) { const e = Object.assign({ key, x: 0, y: 0, cls: '', html: '', s: {}, st: {} }, p); e.html = bi(e.html); if (!/\bcz-/.test(e.cls) && /border:/.test(e.css || '')) e.cls = (e.cls + ' cz-bd').trim(); els.push(e); by[key] = e; return S; },
+    el(key, p) { const e = Object.assign({ key, x: 0, y: 0, cls: '', html: '', s: {}, st: {} }, p); e.html = bi(e.html); if (!/\bcz-/.test(e.cls) && /border:/.test(e.css || '') && (+e.w || 0) * (+e.h || 0) <= 36) e.cls = (e.cls + ' cz-bd').trim(); els.push(e); by[key] = e; return S; },
     set(key, step, st) { const e = by[key]; if (!e) throw new Error('no el ' + key + ' in ' + o.id); e.st[step] = Object.assign(e.st[step] || {}, st); return S; },
     move(key, step, x, y, extra) { const e = by[key]; return S.set(key, step, Object.assign({ transform: `translate(${R(x - e.x)}em,${R(y - e.y)}em)` }, extra || {})); },
     has: key => !!by[key],
