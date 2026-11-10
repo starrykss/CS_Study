@@ -258,7 +258,7 @@ function sFixed() {
   const S = scene({ id: 'nu-fixed', steps: 5, per: 1.4 });
   const F = fr(0, 1.6, 0, 1.3, 2, 18, 2.6, 15.6), xs = [.2]; for (let i = 0; i < 10; i++) xs.push(Math.cos(xs[i]));
   ax2(S, 'ga', F, 'x', 'y'); mplot(S, 'c', F, x => [x, Math.cos(x)], 0, 1.6, { n: 40, color: 'accent', h: .2 }); mline(S, 'id', F, [0, 0], [1.3, 1.3], { color: 'ink-3', h: .12 });
-  T(S, 'lc', F.X(1.25), F.Y(Math.cos(1.25)) + .2, 'y = cos x', 'cz-mono nu-xs nu-a'); T(S, 'li', F.X(1.05), F.Y(1.25) - .4, 'y = x', 'cz-mono nu-xs');
+  T(S, 'lc', F.X(1.3) + .3, F.Y(Math.cos(1.3)) - 1.1, 'y = cos x', 'cz-mono nu-xs nu-a'); T(S, 'li', F.X(1.05), F.Y(1.25) - .4, 'y = x', 'cz-mono nu-xs');
   mpt(S, 'p0', F, [xs[0], 0], 0, C.warn, .26);
   for (let n = 0; n < 9; n++) { const x = xs[n], y = xs[n + 1], st = n < 2 ? 2 : 3;
     mline(S, 'u' + n, F, [x, n ? x : 0], [x, y], { st, color: 'warn', h: .1 }); mline(S, 'w' + n, F, [x, y], [y, y], { st, color: 'warn', h: .1 }); }
@@ -1084,6 +1084,7 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 window.UX[0].css += `
 .nu-b .in{font-weight:800;color:var(--ink)}
 .nu-l .in{font-size:.86em;color:var(--ink);font-weight:700}

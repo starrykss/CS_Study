@@ -620,7 +620,7 @@ function sCharpoly() {
   T(S, 'gxl', F.R - .8, F.Y(0) + .2, 'λ', 'cz-mono'); T(S, 'gyl', F.X(0) + .3, F.T - .4, 'p(λ)', 'cz-mono');
   mplot(S, 'c', F, t => [t, t * t - 4 * t + 3], -.5, 4.5, { st: 2, n: 40, h: .2 });
   mpt(S, 'r1', F, [1, 0], 3, C.okf, .45); mpt(S, 'r3', F, [3, 0], 3, C.okf, .45);
-  mT(S, 'tr1', F, [1, 0], -.9, .5, 'λ = 1', 'cz-mono la-s la-g', 3); mT(S, 'tr3', F, [3, 0], -.9, .5, 'λ = 3', 'cz-mono la-s la-g', 3);
+  mT(S, 'tr1', F, [1, 0], -2.2, .45, 'λ = 1', 'cz-mono la-s la-g', 3); mT(S, 'tr3', F, [3, 0], .35, .45, 'λ = 3', 'cz-mono la-s la-g', 3);
   S.cap(1, 'Av = λv ⟺ (A − λI)v = 0에 0 아닌 해가 있다는 뜻이라', 'Av = λv means (A − λI)v = 0 has a nonzero solution')
     .cap(2, 'det(A − λI) = 0이어야 해요 · 특성다항식', 'so det(A − λI) must vanish: the characteristic polynomial')
     .cap(3, '근이 고윳값이에요', 'Its roots are the eigenvalues')
@@ -1195,6 +1195,7 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 window.UX[0].css += `
 .la-b .in{font-weight:800;color:var(--ink)}
 .la-l .in{font-size:.86em;color:var(--ink);font-weight:700}

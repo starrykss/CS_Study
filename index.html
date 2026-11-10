@@ -9,7 +9,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/ux.css">
 <style>
 .hub-c{text-decoration:none;color:inherit}
@@ -52,6 +52,14 @@
 .cz-act .in{font-size:.72em;font-weight:700;text-align:center;line-height:1.25}
 .cz-ll{border-left:.12em dashed var(--line)}
 .cz-mono .in{font-family:var(--f-mono)}
+.cz .cz-math .in,body[data-page=calc] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=linalg] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=prob] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=numer] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=phys] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=info] .cz :is(.cz-mono,.cz-c,.cz-b) .in{font-family:"CZ Serif","CZ Symbols",var(--f-txt,"Noto Sans KR"),serif;letter-spacing:0;font-kerning:normal}
+.cz .mi{font-style:italic;padding-right:.03em}
+.cz .in.m-grid{font-family:var(--f-mono)!important}
+.cz .mi,.cz .m-up,.cz .m-dn{font-family:"CZ Serif","CZ Symbols",var(--f-txt,"Noto Sans KR"),serif}
+.cz .m-in .mi,.cz .m-in .m-up,.cz .m-in .m-dn{font-size-adjust:.53}
+.cz .m-up,.cz .m-dn{position:relative;font-size:.68em;line-height:0}
+.cz .m-up{top:-.52em}
+.cz .m-dn{top:.24em}
 .cz-bx{display:grid!important;place-items:center;text-align:center}
 .cz-bx .in{font-size:.72em;font-weight:700;line-height:1.25}
 .cz-dot{border-radius:50%;display:grid!important;place-items:center;z-index:4;border:.12em solid transparent}

@@ -905,7 +905,7 @@ function sTmux() {
   frame(S, 'sb', 8.2, 5.5, 23.0, 2.4, 'ink-3', 2, { w: .08, off: 4 });
   row('b', 6.0, [[1, 5.0, ['노트북', 'laptop'], 'line'], [9.0, 3.2, 'sshd', 'line'], [13.4, 4.4, 'tmux client', 'line'], [19.0, 4.6, 'tmux server', 'ok'], [25.0, 5.6, 'bash → job', 'accent']], 2, 4);
   xm(S, 'bx', 7.5, 5.8, 2, { off: 4 }); tsets(S, 'b1', [[2, 'line', 6]]); tsets(S, 'b2', [[2, 'line', 6]]);
-  T(S, 'bn', 13.4, 8.1, ['클라이언트만 끝나고 서버와 작업은 계속 ✓', 'only the client exits; the server and job live on ✓'], 'lxx-xs lxx-g', 2, { off: 4 });
+  T(S, 'bn', 8.4, 8.2, ['클라이언트만 끝나고 서버와 작업은 계속 ✓', 'only the client exits; the server and job live on ✓'], 'lxx-xs lxx-g', 2, { off: 4 });
   row('c', 10.2, [[1, 5.0, ['다른 PC', 'another PC'], 'line'], [9.0, 3.2, 'sshd', 'line'], [13.4, 4.4, 'tmux attach', 'accent']], 3, 4);
   ar(S, 'cu', [17.8, 10.9], [21.3, 7.5], 'ok', 3, { h: .12, off: 4 });
   T(S, 'cn', 19.0, 11.4, 'tmux attach -t work', 'cz-mono lxx-xs lxx-a', 3, { off: 4 });
@@ -992,6 +992,7 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 window.UX[0].css += `
 .lx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .lx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}

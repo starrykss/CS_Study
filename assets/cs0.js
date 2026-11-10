@@ -251,6 +251,14 @@ window.CZ_CSS = `
 .cz-act .in{font-size:.72em;font-weight:700;text-align:center;line-height:1.25}
 .cz-ll{border-left:.12em dashed var(--line)}
 .cz-mono .in{font-family:var(--f-mono)}
+.cz .cz-math .in,body[data-page=calc] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=linalg] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=prob] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=numer] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=phys] .cz :is(.cz-mono,.cz-c,.cz-b) .in,body[data-page=info] .cz :is(.cz-mono,.cz-c,.cz-b) .in{font-family:"CZ Serif","CZ Symbols",var(--f-txt,"Noto Sans KR"),serif;letter-spacing:0;font-kerning:normal}
+.cz .mi{font-style:italic;padding-right:.03em}
+.cz .in.m-grid{font-family:var(--f-mono)!important}
+.cz .mi,.cz .m-up,.cz .m-dn{font-family:"CZ Serif","CZ Symbols",var(--f-txt,"Noto Sans KR"),serif}
+.cz .m-in .mi,.cz .m-in .m-up,.cz .m-in .m-dn{font-size-adjust:.53}
+.cz .m-up,.cz .m-dn{position:relative;font-size:.68em;line-height:0}
+.cz .m-up{top:-.52em}
+.cz .m-dn{top:.24em}
 .cz-bx{display:grid!important;place-items:center;text-align:center}
 .cz-bx .in{font-size:.72em;font-weight:700;line-height:1.25}
 .cz-dot{border-radius:50%;display:grid!important;place-items:center;z-index:4;border:.12em solid transparent}
@@ -261,13 +269,130 @@ html[lang=en] .cz .zk,html:not([lang=en]) .cz .ze{display:none}
 `;
 })();
 
+/* runtime math typesetting. Formula text (math pages' .cz-mono, or .cz-math anywhere) is set in a serif face with italic
+   variables, upright function names, units and acronyms, and real raised/lowered scripts for Unicode super/subscripts.
+   Other labels on math pages keep their sans face; only the variables and scripts inside them get the math style. */
+(function () {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+  const PAGES = ['calc', 'linalg', 'prob', 'numer', 'phys', 'info'];
+  const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱʲˣˢᵀᵇᵉᵏᵐᵖᶜᴺʰᵃᵈᶠᵍˡᵒʳᵗᵘᵛʷʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴼᴾᴿᵁⱽᵂ', SUPB = '0123456789+−=()nijxsTbekmpcNhadfglortuvwyzABDEGHIJKLMOPRUVW';
+  const SUB = '₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₒₓₕₖₗₘₙₚₛₜᵢᵣᵤᵥⱼᵦᵧᵨᵩᵪ', SUBB = '0123456789+−=()aeoxhklmnpstiruvjβyρφχ';
+  const set = s => new Set(s.split(' '));
+  const FN = set('sin cos tan cot sec csc arcsin arccos arctan sinh cosh tanh sech csch coth log ln lg exp lim max min sup inf arg argmax argmin rms det dim rank nullity span diag tr Tr ker Im Re Col Row Nul Var Cov Corr Cor gcd lcm mod deg sgn sign erf proj adj softmax');
+  const UNIT = set('m s g kg N J W V A K C Hz kHz MHz GHz Pa kPa mol L h min km cm mm nm μm ms μs ns ps kWh Wh eV keV MeV T Wb F H rad sr dB lx lm cd Sv Gy Bq mA kV mV kW MW kN mF μF nF pF kΩ MΩ B KB MB GB TB bps kbps Mbps Gbps bit bits kbit Mbit Gbit byte bytes px AU au yr ly atm bar');
+  const ACR = set('LU QR SVD PCA RK RK4 ODE ODEs PDE PDF PDFs CDF PMF MLE MAP FFT DFT IV CLT LLN MSE RMSE MAE KL IQR SD SE CI NP SNR DC AC RC RL RLC LC EMF CPU GPU NaN ULP IEEE FP OK OR AND XOR NOT IID iid SST SSE SSR IG IQ II III VI UV PC IP ID AI TV CD DVD CRC DCT SNR RGB DNA QAM PSK FSK USB');
+  const EN2 = set('to of in is on at by as if or an be it we no so up do am my ok vs go me us he wi fi');
+  const CHEM = set('He Li Be Ne Na Mg Al Si Cl Ar Ca Fe Cu Zn Ag Au Hg Pb Sn Ni Co Mn Cr Ti');
+  const NOVOW = set('why try fly dry sky shy spy cry gym nth myth rhythm lynx');
+  const MARK = /[̀-ͯ]/g, OP = /[+−\-=×·\/<>≤≥≈]/;
+  const vowel = w => /[aeiou]/.test(w.toLowerCase());
+  const isWord = w => w.length > 2 && /^[A-Z]?[a-z]+$/.test(w) && (vowel(w) || (w.length > 3 && /y/.test(w))) && !FN.has(w);
+  const greekLow = c => /[α-ωϑϕϵϱϖ]/.test(c), digit = c => /[0-9]/.test(c);
+  // ctx: p1/p2 = previous two chars, unit = a unit chain is open, full = formula text, prose = the text reads as words
+  function fmt(t, frag, ctx) {
+    let buf = '';
+    const flush = () => { if (buf) { frag.appendChild(document.createTextNode(buf)); buf = ''; } };
+    const it = s => { flush(); const e = document.createElement('i'); e.className = 'mi'; e.textContent = s; frag.appendChild(e); };
+    const step = c => { ctx.p2 = ctx.p1; ctx.p1 = c; };
+    for (let i = 0; i < t.length;) {
+      const c = t[i], m = /^(?:[A-Za-z][̀-ͯ]*)+/.exec(t.slice(i));
+      if (m) {
+        const raw = m[0], w = raw.replace(MARK, ''), p1 = ctx.p1, p2 = ctx.p2, nx = t.slice(i + raw.length);
+        const marked = raw !== w;
+        const afterNum = (p1 === ' ' && (digit(p2) || p2 === '°')) || p1 === '°' || (digit(p1) && w.length > 1) || p1 === 'μ';
+        const chained = ctx.unit && /[\/·⋅]/.test(p1);
+        const inParens = p1 === '(' && p2 === ' ' && /^[\/·⋅)]/.test(nx);
+        const nextWord = (nx.match(/^ ([a-z]+)/) || [])[1] || '';
+        let up = false, unit = false;
+        if (marked) up = false;
+        else if (ctx.label && w.length > 1) up = true;
+        else if ((afterNum || chained || inParens) && UNIT.has(w)) up = unit = true;
+        else if (digit(p1) && /^(st|nd|rd|th)$/.test(w)) up = true;
+        else if (digit(p1) && /^[23]D$/.test(p1 + w)) up = true;
+        else if (/['’]/.test(p1) || (p1 === '.' && /[A-Za-z]/.test(p2)) || (w.length === 1 && /^\.[a-z]\./.test(nx)) || (w.length === 1 && p1 === '.' && /[a-z]/.test(p2) && nx[0] === '.')) up = true;
+        else if (FN.has(w) || ACR.has(w) || CHEM.has(w) || (w.length > 3 && w === w.toUpperCase())) up = true;
+        else if (!ctx.full && digit(p1) && /^[2-6]G$/.test(w)) up = true;
+        else if (!ctx.full && /^[A-Z]+$/.test(w) && (/^[0-9]/.test(nx) || /^(-ray|선)/.test(nx))) up = true;
+        else if (w === 'e' && /^-[a-z]{2,}/.test(nx)) up = true;
+        else if (!ctx.full && /^[A-Z]{2,}s?$/.test(w) && (w.length > 2 || /s$/.test(w)) && !digit(p1) && !(nx === '' && ctx.script)) up = true;
+        else if (w.length > 1 && UNIT.has(w) && (!ctx.full || !/^[a-z]{2}$/.test(w))) up = true;
+        else if (isWord(w) || /^[A-Z][a-z]+[A-Z][a-z]+$/.test(w)) up = true;
+        else if (EN2.has(w.toLowerCase()) && (!ctx.full || ctx.prose || /^ [A-Za-z가-힣]/.test(nx) || (p1 === ' ' && nx[0] === ' ' && !OP.test(p2) && !OP.test(nx[1] || '')))) up = true;
+        else if (!ctx.full && NOVOW.has(w.toLowerCase())) up = true;
+        else if ((w === 'a' || (w === 'A' && (!p1 || /[.:!?] ?$/.test(p2 + p1)))) && nextWord.length > 1 && (isWord(nextWord) || EN2.has(nextWord))) up = true;
+        else if (!ctx.full && w === 'a' && (!p1 || p1 === ' ') && /^ [A-Za-z]/.test(nx) && !FN.has((nx.match(/^ ([A-Za-z]+)/) || [])[1])) up = true;
+        else if (w === 'd' && (greekLow(nx[0] || '') || /^\/d/.test(nx))) up = true;
+        else if (/^d[A-Za-z]$/.test(w)) { buf += 'd'; it(w[1]); for (const ch of w) step(ch); i += 2; ctx.unit = false; continue; }
+        if (up) buf += raw; else it(raw);
+        for (const ch of w) step(ch);
+        i += raw.length; ctx.unit = unit; continue;
+      }
+      if (greekLow(c)) {
+        const unitPfx = c === 'μ' && ((ctx.p1 === ' ' && digit(ctx.p2)) || digit(ctx.p1)) && /^[A-Za-zΩ]/.test(t.slice(i + 1));
+        let j = i + 1; while (j < t.length && /[̀-ͯ]/.test(t[j])) j++;
+        if (unitPfx) buf += t.slice(i, j); else it(t.slice(i, j));
+        step(c); i = j; if (!unitPfx) ctx.unit = false; continue;
+      }
+      buf += c; step(c); i++;
+      if (c === 'Ω') ctx.unit = digit(ctx.p2) || ctx.p2 === ' ';
+      else if (!/[\/·⋅0-9]/.test(c)) ctx.unit = false;
+    }
+    flush();
+  }
+  const isScript = c => SUP.includes(c) || SUB.includes(c);
+  function typeset(tn, full) {
+    const t = tn.nodeValue;
+    if (!/[A-Za-zα-ωϑϕϵϱϖ]/.test(t) && ![...t].some(isScript)) return;
+    const words = (t.match(/[A-Za-z]{3,}/g) || []).filter(w => isWord(w));
+    const frag = document.createDocumentFragment(), ctx = { p1: '', p2: '', unit: false, full, prose: /[가-힣]/.test(t) || words.length > 0 };
+    const us = new Map(); for (const m of t.matchAll(/(^|[^A-Za-z0-9_.])([A-Za-zα-ω]{1,2}[′″⁰¹²³⁴⁵⁶⁷⁸⁹]?)_([A-Za-z0-9]{1,4})(?![A-Za-z0-9_])/g)) us.set(m.index + m[1].length + m[2].length, m[3]);
+    let i = 0;
+    while (i < t.length) {
+      if (us.has(i)) {
+        const s = us.get(i), span = document.createElement('span'); span.className = 'm-dn';
+        fmt(s, span, { p1: '', p2: '', unit: false, full: true, prose: false, label: true });
+        frag.appendChild(span); ctx.p2 = ctx.p1; ctx.p1 = s[s.length - 1]; i += s.length + 1; continue;
+      }
+      if (isScript(t[i])) {
+        const kind = SUP.includes(t[i]) ? 'up' : 'dn', K = kind === 'up' ? SUP : SUB, B = kind === 'up' ? SUPB : SUBB;
+        let j = i, s = '';
+        while (j < t.length && K.includes(t[j])) { s += B[K.indexOf(t[j])]; j++; }
+        const span = document.createElement('span'); span.className = 'm-' + kind;
+        if (kind === 'up' && s === 'T') span.textContent = 'T';
+        else fmt(s, span, { p1: '', p2: '', unit: ctx.unit, full: true, prose: false });
+        frag.appendChild(span); ctx.p2 = ctx.p1; ctx.p1 = s[s.length - 1]; i = j; continue;
+      }
+      let j = i; while (j < t.length && !isScript(t[j]) && !us.has(j)) j++;
+      ctx.script = j < t.length && !us.has(j); fmt(t.slice(i, j), frag, ctx); i = j;
+    }
+    tn.parentNode.replaceChild(frag, tn);
+  }
+  const FULL = '.cz .cz-math .in', MATHP = () => PAGES.includes(document.body.dataset.page);
+  function run(n) {
+    if (n.dataset.mt) return; n.dataset.mt = 1;
+    const full = n.closest('.cz-math') || (MATHP() && n.closest('.cz-mono,.cz-c,.cz-b'));
+    if (full && /^\s*([A-Za-z0-9]{1,2} ){3,}[A-Za-z0-9]{1,2}\s*$/.test(n.textContent)) { n.classList.add('m-grid'); return; }
+    if (n.closest('.cz-c,.cz-b') && /^\s*[A-Z]\s*$/.test(n.textContent)) return;
+    if (!full) n.classList.add('m-in');
+    const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentElement.closest('.mi,.m-up,.m-dn') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const list = []; while (w.nextNode()) list.push(w.currentNode);
+    list.forEach(x => typeset(x, !!full));
+  }
+  function scan(root) { const S = MATHP() ? '.cz .e > .in' : FULL; if (root.matches && root.matches(S)) run(root); if (root.querySelectorAll) root.querySelectorAll(S).forEach(run); }
+  const start = () => {
+    new MutationObserver(rs => rs.forEach(r => r.addedNodes.forEach(x => { if (x.nodeType === 1) scan(x); }))).observe(document.body, { childList: true, subtree: true });
+    scan(document.body);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
 /* runtime auto-fit: shrink box labels that don't fit their box and texts that run past the stage edge (layout sizes, ignoring transforms) */
 (function () {
   if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
   const BOX = '.cz-c,.cz-n,.cz-pill,.cz-bx,.cz-act,.cz-dot';
   const lang = () => document.documentElement.lang === 'en' ? 'en' : 'ko';
   const target = n => { const zk = n.querySelector(':scope > .zk'); if (!zk) return n; return lang() === 'en' ? n.querySelector(':scope > .ze') : zk; };
-  const scale = (t, f) => { const cur = parseFloat(getComputedStyle(t).fontSize), base = parseFloat(getComputedStyle(t.parentElement).fontSize); t.style.setProperty('font-size', (cur / base * f).toFixed(3) + 'em', 'important'); };
+  const scale = (t, f) => { const cur = parseFloat(getComputedStyle(t).fontSize), base = parseFloat(getComputedStyle(t.parentElement).fontSize); t.style.setProperty('font-size', (cur / base * f).toFixed(3) + 'em', 'important'); t.dataset.fz = 1; };
   const left = (t, el) => t === el ? 0 : (t.offsetParent === el ? t.offsetLeft : t.offsetLeft + (t.offsetParent && t.offsetParent !== el ? left(t.offsetParent, el) : 0));
   function fit(root) {
     const L = lang(), todo = [];
@@ -291,6 +416,130 @@ html[lang=en] .cz .zk,html:not([lang=en]) .cz .ze{display:none}
     });
   }
   let q = 0; const run = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; fit(document); }); };
-  const start = () => { new MutationObserver(run).observe(document.body, { childList: true, subtree: true }); new MutationObserver(run).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] }); run(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { document.querySelectorAll('.cz .e[data-fitko],.cz .e[data-fiten]').forEach(e => { delete e.dataset.fitko; delete e.dataset.fiten; }); run(); }); };
+  const start = () => { new MutationObserver(run).observe(document.body, { childList: true, subtree: true }); new MutationObserver(run).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] }); run(); const refit = () => { document.querySelectorAll('[data-fz]').forEach(t => { t.style.removeProperty('font-size'); delete t.dataset.fz; }); document.querySelectorAll('.cz .e[data-fitko],.cz .e[data-fiten]').forEach(e => { delete e.dataset.fitko; delete e.dataset.fiten; }); run(); };
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(refit); let ft = 0; document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', () => { clearTimeout(ft); ft = setTimeout(refit, 60); }); } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+/* runtime player: a play/pause button and a scrubbable progress bar on every animated stage */
+(function () {
+  if (typeof document === 'undefined' || typeof IntersectionObserver === 'undefined' || typeof Element === 'undefined' || !Element.prototype.getAnimations) return;
+  const TX = { ko: { play: '재생', pause: '일시정지' }, en: { play: 'Play', pause: 'Pause' } };
+  const tx = () => TX[document.documentElement.lang === 'en' ? 'en' : 'ko'];
+  const ICON = { play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>', pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>' };
+  const CSS = '.stage .pl{position:absolute;left:0;right:0;bottom:0;height:clamp(22px,6.4cqw,44px);z-index:30;display:flex;align-items:center;gap:clamp(5px,1.4cqw,10px);padding:0 clamp(5px,1.3cqw,10px) 0 clamp(8px,2cqw,16px);opacity:.55;transition:opacity .2s;pointer-events:none}' +
+    '.stage:hover .pl,.stage .pl:focus-within,.stage .pl.drag{opacity:1}@media (hover:none){.stage .pl{opacity:.9}}' +
+    '.pl-bar{position:relative;flex:1;align-self:stretch;cursor:pointer;pointer-events:auto;touch-action:none}' +
+    '.pl-tr{position:absolute;left:0;right:0;top:calc(50% - 2px);height:4px;border-radius:4px;background:color-mix(in srgb,var(--ink) 18%,transparent);overflow:hidden;transition:top .12s,height .12s}' +
+    '.pl-bar:hover .pl-tr,.pl.drag .pl-tr{top:calc(50% - 3px);height:6px}' +
+    '.pl-fi{position:absolute;inset:0;background:var(--accent);transform-origin:0 50%;transform:scaleX(0)}' +
+    '.pl-tk{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--surface)}' +
+    '.pl-th{position:absolute;top:calc(50% - 6px);left:0;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface);transform:scale(0);transition:transform .12s}' +
+    '.pl-bar:hover .pl-th,.pl.drag .pl-th{transform:scale(1)}' +
+    '.pl-bt{flex:none;width:clamp(20px,4.8cqw,34px);height:clamp(20px,4.8cqw,34px);margin:0;border:0;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer;pointer-events:auto}' +
+    '.pl-bt svg{width:48%;height:48%;fill:currentColor}.pl-bt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}';
+  const S = new Map(), vis = new Set();
+  const czOf = s => s.el.querySelector('.cz');
+  function anims(s) {
+    const cz = czOf(s);
+    if (!cz) return [];
+    if (s.cz !== cz) { s.cz = cz; s.list = null; s.user = null; s.api = false; s.off = false; ticks(s); }
+    if (!s.list || !s.list.length) s.list = cz.getAnimations({ subtree: true });
+    return s.list;
+  }
+  function ticks(s) {
+    const n = s.cz.querySelectorAll('.cz-cap').length, seg = .86 / Math.max(n, 1);
+    s.tks.innerHTML = n > 1 ? Array.from({ length: n - 1 }, (_, k) => `<i class="pl-tk" style="left:${((.05 + (k + 1) * seg) * 100).toFixed(2)}%"></i>`).join('') : '';
+  }
+  const dur = a => { const d = a.effect && a.effect.getTiming().duration; return typeof d === 'number' && d > 0 ? d : 0; };
+  function frac(a) { const d = dur(a), t = a.currentTime; return d && t != null ? (((t % d) + d) % d) / d : 0; }
+  function show(s, f) { s.fi.style.transform = `scaleX(${f})`; s.th.style.left = `${f * 100}%`; }
+  function icon(s, running) {
+    const L = tx(), key = running + document.documentElement.lang;
+    if (s.shown === key) return;
+    s.shown = key;
+    s.bt.innerHTML = running ? ICON.pause : ICON.play;
+    s.bt.setAttribute('aria-label', running ? L.pause : L.play);
+    s.bt.title = running ? L.pause : L.play;
+  }
+  function seek(s, f) {
+    const list = anims(s);
+    if (!list.length) return;
+    const t = Math.min(Math.max(f, 0), .999) * dur(list[0]);
+    list.forEach(a => { a.currentTime = t; });
+    show(s, t / dur(list[0]));
+  }
+  function toggle(s) {
+    const list = anims(s);
+    if (!list.length) return;
+    const run = list[0].playState === 'running';
+    list.forEach(a => run ? a.pause() : a.play());
+    s.user = run ? 'pause' : 'play'; s.api = true; s.off = false;
+    icon(s, !run);
+  }
+  function attach(el) {
+    if (!el.querySelector('.cz') || el.querySelector(':scope > .pl')) return;
+    const ui = document.createElement('div');
+    ui.className = 'pl';
+    ui.innerHTML = '<div class="pl-bar" aria-hidden="true"><div class="pl-tr"><div class="pl-fi"></div><div class="pl-tks"></div></div><div class="pl-th"></div></div><button class="pl-bt" type="button"></button>';
+    el.appendChild(ui);
+    const s = { el, ui, bar: ui.firstChild, fi: ui.querySelector('.pl-fi'), tks: ui.querySelector('.pl-tks'), th: ui.querySelector('.pl-th'), bt: ui.querySelector('.pl-bt') };
+    if (!el.closest('.d-st')) s.bt.tabIndex = -1;
+    S.set(el, s);
+    ['click', 'dblclick', 'mousedown', 'touchstart'].forEach(ev => ui.addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+    ui.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') e.stopPropagation(); });
+    s.bt.addEventListener('click', () => toggle(s));
+    const at = e => { const r = s.bar.getBoundingClientRect(); return (e.clientX - r.left) / r.width; };
+    s.bar.addEventListener('pointerdown', e => {
+      const list = anims(s);
+      if (!list.length) return;
+      e.preventDefault(); e.stopPropagation();
+      s.bar.setPointerCapture(e.pointerId);
+      s.drag = true; s.was = list[0].playState === 'running'; s.api = true; s.off = false;
+      ui.classList.add('drag');
+      list.forEach(a => a.pause());
+      seek(s, at(e));
+    });
+    s.bar.addEventListener('pointermove', e => { if (s.drag) seek(s, at(e)); });
+    const end = () => {
+      if (!s.drag) return;
+      s.drag = false; ui.classList.remove('drag');
+      if (s.was) anims(s).forEach(a => a.play());
+    };
+    s.bar.addEventListener('pointerup', end); s.bar.addEventListener('pointercancel', end);
+    io.observe(el);
+    anims(s); icon(s, true);
+  }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const s = S.get(e.target);
+    if (!s) return;
+    if (e.isIntersecting) vis.add(s); else vis.delete(s);
+    if (s.api && s.user !== 'pause') {
+      const list = anims(s);
+      if (!e.isIntersecting && list.length && list[0].playState === 'running') { list.forEach(a => a.pause()); s.off = true; }
+      else if (e.isIntersecting && s.off) { list.forEach(a => a.play()); s.off = false; }
+    }
+    loop();
+  }), { rootMargin: '120px 0px' });
+  let raf = 0;
+  function frame() {
+    raf = 0;
+    vis.forEach(s => {
+      if (!s.el.isConnected) { vis.delete(s); return; }
+      const list = anims(s);
+      if (!list.length) return;
+      if (!s.drag) show(s, frac(list[0]));
+      icon(s, s.drag ? s.was : list[0].playState === 'running');
+    });
+    if (vis.size) raf = requestAnimationFrame(frame);
+  }
+  function loop() { if (!raf && vis.size) raf = requestAnimationFrame(frame); }
+  function scan() { document.querySelectorAll('.stage').forEach(attach); }
+  let q = 0;
+  const start = () => {
+    const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
+    scan();
+    new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; scan(); loop(); }); }).observe(document.body, { childList: true, subtree: true });
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

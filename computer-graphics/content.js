@@ -160,7 +160,7 @@ function sPersp() {
     const top = [x, G - 4], bot = [x, G], yt = E[1] + (top[1] - E[1]) * (NX - E[0]) / (x - E[0]), yb = E[1] + (bot[1] - E[1]) * (NX - E[0]) / (x - E[0]);
     seg(S, 'r' + i + 't', E, top, 2, c, .06); seg(S, 'r' + i + 'b', E, bot, 2, c, .06); px(S, 'pj' + i, NX - .3 + (i ? .45 : -.45), yt, .6, yb - yt, `var(--${c})`, 3, { r: .1 });
     T(S, 'ph' + i, NX + (i ? 1 : -4), i ? (yt + yb) / 2 - .5 : yb + .3, (4 * (NX - E[0]) / (x - E[0])).toFixed(2), 'cz-mono gx-xs ' + (i ? 'gx-g' : 'gx-w'), 3); T(S, 'z' + i, x - 1, G + .3, 'z = ' + (x - E[0]), 'cz-tc cz-mono gx-xs', 1, { w: 2.4 }); });
-  T(S, 'f', 18, 2, "y' = y · n / z", 'cz-mono gx-l', 3); T(S, 'f2', 18, 3.6, ['두 배 멀면 절반 크기', 'twice as far → half the size'], 'gx-xs', 3);
+  T(S, 'f', 15, 2, "y' = y · n / z", 'cz-mono gx-l', 3); T(S, 'f2', 15, 3.6, ['두 배 멀면 절반 크기', 'twice as far → half the size'], 'gx-xs', 3);
   seg(S, 'fu', E, [31, E[1] - 9], 4, 'ink-3', .08, { dash: 1 }); seg(S, 'fd', E, [31, E[1] + 7], 4, 'ink-3', .08, { dash: 1 }); vl(S, 'fp', 30.6, E[1] - 8.7, E[1] + 6.8, 'danger', 4, { w: .12 });
   T(S, 'fpl', 24.4, 16.2, ['far 평면', 'far plane'], 'gx-xs gx-r', 4); T(S, 'fpl2', 20.4, 17.4, ['사이가 시야 절두체', 'in between: the view frustum'], 'gx-xs gx-r', 4);
   T(S, 'n5', 1, 17.4, ['GPU는 투영 행렬로 w = z를 만들고 x/w, y/w로 나눠요', 'the GPU sets w = z via the projection matrix and divides x/w, y/w'], 'gx-xs', 5);
@@ -1029,6 +1029,7 @@ window.UX = page([
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
 if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
+if (XT.order) { const base = window.UX[0].css; window.UX[0].css = ''; const pos = s => { const i = XT.order.indexOf(s.id); return i < 0 ? 1000 : i; }; const idx = new Map(window.UX.map((s, i) => [s, i])); window.UX.sort((a, b) => pos(a) - pos(b) || idx.get(a) - idx.get(b)); window.UX[0].css = base + '\n' + window.UX[0].css; }
 window.UX[0].css += `
 .gx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .gx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
