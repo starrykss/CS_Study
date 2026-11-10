@@ -262,7 +262,7 @@ function sSinus() {
 }
 
 function sEnergy() {
-  const X = 18.7, P1 = PF(19.3, .9, 12.0, 3.2, -1, 7, -1.2, 1.2), P2 = PF(19.3, 5.0, 12.0, 3.2, 0, 4, -1.2, 1.2);
+  const X = 18.7, P1 = PF(19.3, .9, 12.0, 3.2, -1, 7, -1.2, 1.2), P2 = PF(19.3, 5.0, 8.4, 3.2, 0, 4, -1.2, 1.2);
   return CW('sg-energy', {
     code: [['E = np.sum(np.abs(x) ** 2)   # 에너지: 유한', 'E = np.sum(np.abs(x) ** 2)   # energy: finite'], ['P = np.mean(np.abs(x) ** 2)  # 전력: 평균', 'P = np.mean(np.abs(x) ** 2)  # power: average'], ['rms = np.sqrt(P)             # 사인파 A/√2', 'rms = np.sqrt(P)             # sine: A/√2'], ['dB = 10 * np.log10(P2 / P1)  # 2배 = +3 dB', 'dB = 10 * np.log10(P2 / P1)  # 2× = +3 dB']],
     hl: [[0, 1], [1, 1, 'warn'], [2, 1, 'ok'], [3, 1, 'accent']],
@@ -270,7 +270,7 @@ function sEnergy() {
       axes(S, 'a1', P1, 1); stems(S, 'p', P1, [0, 1, .8, .6, .4, .2, 0, 0], -1, 1);
       F(S, 'e1', X, 4.3, 'E = 1 + 0.64 + 0.36 + 0.16 + 0.04 = 2.2', 'a', 1);
       axes(S, 'a2', P2, 2); curve(S, 's', P2, t => Math.sin(2 * Math.PI * t), 2, { color: 'warn' });
-      hl(S, 'rm', P2.x0, P2.x0 + P2.w, P2.Y(.707), 'ok', 3, { w: .06, dash: 1 }); lbl(S, 'rml', P2.x0 + 9.0, P2.Y(.707) - .8, 'RMS = 0.707', 'm g', 3);
+      hl(S, 'rm', P2.x0, P2.x0 + P2.w, P2.Y(.707), 'ok', 3, { w: .06, dash: 1 }); lbl(S, 'rml', P2.x0 + P2.w + .25, P2.Y(.707) - .38, 'RMS = 0.707', 'm g', 3);
       lbl(S, 'n2', X, 8.6, ['끝없이 이어지는 주기 신호는 에너지가 무한 → 평균 전력으로 봐요', 'endless periodic signals have infinite energy, so use average power'], 'w', 2, { off: 3, w: 12.7 });
       lbl(S, 'n3', X, 8.6, ['가정용 220 V는 RMS 값 · 최댓값은 220 × √2 ≈ 311 V', 'mains 220 V is an RMS value; the peak is 220 × √2 ≈ 311 V'], 'g', 3, { off: 4, w: 12.7 });
       lines(S, 'n4', X, 8.6, [[['데시벨: 비율을 로그로', 'decibels: ratios on a log scale'], 'a'], [['×2 전력 = +3 dB', '×2 power = +3 dB'], 'f'], [['×10 전력 = +10 dB', '×10 power = +10 dB'], 'f'], [['진폭은 20 log₁₀: ×10 진폭 = +20 dB', 'amplitude uses 20 log₁₀: ×10 = +20 dB'], 'sgx-wr']], 4, 0, { w: 12.7 });
@@ -462,7 +462,7 @@ function sFt() {
       curve(S, 'r1', Pt, t => Math.abs(t) < .5 ? 1 : 0, 1, { color: 'accent', n: 200, off: 3 });
       curve(S, 's1', Pf, f => sinc(f), 1, { color: 'accent', n: 120, off: 3 });
       lbl(S, 'n1', X, 6.0, ['폭 T = 1인 펄스의 스펙트럼은 sinc 모양', 'a pulse of width T = 1 has a sinc-shaped spectrum'], 'a', 1, { off: 2, w: 12.7 });
-      [-2, -1, 1, 2].forEach((f, i) => T(S, 'zt' + i, Pf.X(f) - .5, Pf.Y(0) + .15, String(f), 'cz-math cz-tc sgx-tiny', 2, { w: 1, off: 3 }));
+      [-2, -1, 1, 2].forEach((f, i) => T(S, 'zt' + i, Pf.X(f) - .5, Pf.y0 + Pf.h + .1, String(f), 'cz-math cz-tc sgx-tiny', 2, { w: 1, off: 3 }));
       lbl(S, 'n2', X, 6.0, ['첫 0점이 ±1/T = ±1 · 대부분의 에너지는 그 안에', 'first zeros at ±1/T = ±1, with most energy inside'], 'w', 2, { off: 3, w: 12.7 });
       curve(S, 'r2', Pt, t => Math.abs(t) < .25 ? 1 : 0, 3, { color: 'ok', n: 200 });
       curve(S, 's2', Pf, f => sinc(f / 2), 3, { color: 'ok', n: 120 });
