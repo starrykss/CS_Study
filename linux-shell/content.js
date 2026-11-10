@@ -780,6 +780,150 @@ function sFirewall() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'lxx-xs', i + 1, { off: i + 2 }));
+const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono lxx-code ' + (o.cls || ''), st, { off }));
+function sCgroup() {
+  const S = scene({ id: 'lx-cgroup', steps: 5, per: 1.7 });
+  box2(S, 'root', 11.4, .5, 9.2, 1.1, '/sys/fs/cgroup', 'line', 0, { pct: 18 });
+  vl(S, 'tv', 16, 1.6, 2.1, 'ink-3', 0, { w: .08 }); hl(S, 'th', 5.4, 26.6, 2.1, 'ink-3', 0, { w: .08 });
+  [['system.slice', 1.0], ['user.slice', 11.6], ['docker/a1b2…', 22.2]].forEach(([t, x], i) => { vl(S, 'tv' + i, x + 4.4, 2.1, 2.6, 'ink-3', 0, { w: .08 }); box2(S, 'g' + i, x, 2.6, 8.8, 1.1, t, i === 2 ? 'accent' : 'line', 0, { pct: i === 2 ? 26 : 16 }); });
+  ['nginx.service', 'sshd.service'].forEach((t, i) => cell(S, 's' + i, 1.6, 4.1 + i * 1.25, 8.2, 1.0, t, 'line', 10, 0));
+  cell(S, 'u0', 12.2, 4.1, 8.2, 1.0, 'user-1000.slice', 'line', 10, 0);
+  rect(S, 'fbox', 22.2, 4.0, 8.8, 3.6, 'accent', 8, 1, { r: .3 });
+  codeLines(S, 'f', 22.6, 4.25, ['cpu.max     50000 100000', 'memory.max  512M', 'pids.max    100'], 1, 0);
+  T(S, 'n1', 1, 8.2, ['폴더 하나 = 프로세스 묶음 하나 · 안의 파일에 한도를 써요', 'one directory = one group of processes · limits are files inside it'], 'lxx-xs', 1, { off: 2 });
+  T(S, 'n1b', 1, 9.3, 'echo 4321 > /sys/fs/cgroup/docker/a1b2…/cgroup.procs', 'cz-mono lxx-xs lxx-a', 1, { off: 2 });
+  T(S, 'c0', 1, 8.0, ['cpu.max = 50000 100000 → 100 ms마다 50 ms만 실행 = 0.5코어', 'cpu.max = 50000 100000 → 50 ms of every 100 ms = half a core'], 'cz-mono lxx-xs lxx-a', 2, { off: 3 });
+  const X0 = 4.0, PW = 8.4;
+  T(S, 'cl', 1, 9.4, 'CPU', 'cz-mono lxx-s', 2, { off: 3 });
+  for (let p = 0; p < 3; p++) { cell(S, 'run' + p, X0 + p * PW + .03, 9.2, PW / 2 - .06, 1.3, ['실행', 'run'], 'accent', 34, 2, { off: 3 }); cell(S, 'thr' + p, X0 + p * PW + PW / 2 + .03, 9.2, PW / 2 - .06, 1.3, ['스로틀', 'throttled'], 'line', 12, 2, { off: 3 }); }
+  [0, 100, 200, 300].forEach((v, i) => T(S, 'ct' + i, X0 + i * PW - 1.5, 10.7, v + ' ms', 'cz-tc cz-mono lxx-xs', 2, { w: 3, off: 3 }));
+  T(S, 'c2', 1, 12.2, ['할당량을 다 쓰면 다음 주기까지 멈춰요 · 지연이 튀는 흔한 원인', 'once the quota is spent it waits for the next period · a common cause of latency spikes'], 'lxx-xs lxx-w', 2, { off: 3 });
+  const F = fr(0, 10, 0, 640, 4.2, 18.6, 8.0, 13.4), U = t => (t < 4.6 ? 100 + t * 80 : t < 8 ? 468 - 6 * Math.sin((t - 4.6) * 3) : 468 + (t - 8) * 110);
+  hl(S, 'mx', F.L, F.R, F.B, 'ink-3', 3, { w: .08, off: 4 }); vl(S, 'my', F.L, F.T, F.B, 'ink-3', 3, { w: .08, off: 4 });
+  mline(S, 'mh', F, [0, 448], [10, 448], { st: 3, color: 'warn', h: .08, dash: 1, off: 4 }); mline(S, 'mm', F, [0, 512], [10, 512], { st: 3, color: 'danger', h: .1, dash: 1, off: 4 });
+  mplot(S, 'mu', F, t => [t, Math.min(512, U(t))], 0, 8.4, { st: 3, color: 'accent', h: .12, n: 40, off: 4 });
+  mline(S, 'md', F, [8.4, 512], [8.4, 0], { st: 3, color: 'danger', h: .1, off: 4 });
+  T(S, 'mox', F.X(8.4) - .4, F.Y(512) - 1.4, '✗', 'lxx-s lxx-r', 3, { off: 4 });
+  T(S, 'ml', 1, 8.6, ['메모리', 'memory'], 'lxx-xs', 3, { off: 4 });
+  T(S, 'mr1', 19.6, 8.2, ['memory.high 448M', 'memory.high 448M'], 'cz-mono lxx-xs lxx-w', 3, { off: 4 }); T(S, 'mr2', 19.6, 9.2, ['넘으면 회수하며 느려져요', 'above it: reclaim and slow down'], 'lxx-xs', 3, { off: 4 });
+  T(S, 'mr3', 19.6, 10.8, ['memory.max 512M', 'memory.max 512M'], 'cz-mono lxx-xs lxx-r', 3, { off: 4 }); T(S, 'mr4', 19.6, 11.8, ['못 줄이면 OOM 킬러가 종료', 'cannot reclaim → OOM kill'], 'lxx-xs lxx-r', 3, { off: 4 });
+  [['docker', 'docker run --cpus=0.5 --memory=512m'], ['systemd', 'CPUQuota=50%  MemoryMax=512M'], ['k8s', 'limits: { cpu: 500m, memory: 512Mi }']].forEach(([a, b], i) => { T(S, 'ma' + i, 1, 8.2 + i * 1.3, a, 'cz-mono lxx-xs lxx-a', 4); T(S, 'mb' + i, 5.2, 8.2 + i * 1.3, b, 'cz-mono lxx-xs', 4); });
+  T(S, 'mc', 1, 12.4, ['→ 모두 결국 위의 cgroup 파일에 값을 써요', '→ all of them end up writing those same cgroup files'], 'lxx-xs lxx-g', 4);
+  notesSplit(S, 'k', 15.6, [['cgroup은 프로세스를 묶는 폴더 트리 · 각 폴더의 파일에 CPU·메모리·프로세스 수 한도를 적어요', 'cgroups form a tree of directories grouping processes · files in each set CPU, memory and process limits'], ['CPU 한도는 주기당 할당량 · 다 쓰면 다음 주기까지 강제로 쉬어요(스로틀)', 'a CPU limit is a quota per period · once used up, the group is throttled until the next period'], ['메모리는 high를 넘으면 회수하며 느려지고, max를 넘겨 못 줄이면 OOM 킬러가 끝내요', 'past memory.high the kernel reclaims and slows the group; past memory.max it is OOM-killed'], ['docker, systemd, 쿠버네티스의 자원 한도는 모두 같은 cgroup 파일로 이어져요', 'resource limits in docker, systemd and Kubernetes all become the same cgroup files']]);
+  fin(S, 'z', 15.6, [['cgroup v2: 프로세스 묶음마다 CPU·메모리·I/O·PID 한도를 거는 커널 기능', 'cgroup v2 is the kernel feature that limits CPU, memory, I/O and PIDs per group of processes', 'lxx-xs lxx-a'], ['systemd-cgtop으로 그룹별 사용량을, cpu.stat의 nr_throttled로 스로틀 횟수를 봐요', 'systemd-cgtop shows usage per group; nr_throttled in cpu.stat counts throttling'], ['네임스페이스가 “무엇이 보이나”라면 cgroup은 “얼마나 쓰나”예요', 'namespaces decide what a process sees; cgroups decide how much it may use']]);
+  S.cap(1, '폴더 트리와 한도 파일', 'A tree of groups and limit files').cap(2, 'CPU 할당량과 스로틀', 'CPU quota and throttling').cap(3, '메모리 한도와 OOM', 'Memory limits and OOM').cap(4, '도구들이 쓰는 같은 파일', 'The files every tool writes').cap(5, 'cgroup', 'cgroups');
+  return S;
+}
+
+function sFind() {
+  const S = scene({ id: 'lx-find', steps: 5, per: 1.7 });
+  const L = ['.', '├── app.log         12M   1d', '├── src/', '│   ├── main.js      4K   0d', '│   └── util.js      2K   3d', '├── node_modules/', '│   └── lib.js      90K  40d', '├── old.log         40M   9d', '└── logs/', '    ├── api.log     25M   0d', '    └── err.log      2K   0d'];
+  const Y = i => .7 + i * 1.12;
+  codeLines(S, 'l', 1.2, .7, L, 0, 0, { lh: 1.12 });
+  const hi = (k, rows, c, st, off) => rows.forEach(r => rect(S, k + r, .8, Y(r) - .1, 12.4, 1.05, c, 28, st, { r: .2, off }));
+  hi('h1', [1, 7, 9, 10], 'accent', 1, 2); hi('h2', [1, 9], 'ok', 2, 4); hi('h2x', [7, 10], 'danger', 2, 3); hi('h4', [3, 4], 'ok', 4, 0); hi('h4x', [5, 6], 'danger', 4, 0);
+  T(S, 'x7', 13.4, Y(7), ['9일 전 ✗', '9 days ✗'], 'lxx-xs lxx-r', 2, { off: 3 }); T(S, 'x10', 13.4, Y(10), ['2K ✗', '2K ✗'], 'lxx-xs lxx-r', 2, { off: 3 });
+  T(S, 'x5', 13.4, Y(5), ['통째로 건너뜀', 'skipped whole'], 'lxx-xs lxx-r', 4);
+  const CX = 18.0;
+  rect(S, 'cbg', CX - .4, .5, 13.6, 5.6, 'ink', 6, 1, { r: .4 });
+  codeLines(S, 'c1', CX, .8, ['find . -name "*.log"'], 1, 2);
+  T(S, 'c1n', CX, 7.0, ['모든 항목을 깊이 우선으로 방문하며 조건을 검사', 'visits every entry depth-first and tests it'], 'lxx-xs', 1, { off: 2, w: 13.2 });
+  codeLines(S, 'c2', CX, .8, ['find . -type f -name "*.log" \\', '       -size +10M -mtime -2'], 2, 3);
+  T(S, 'c2n', CX, 7.0, ['조건은 왼쪽부터 AND · 하나라도 틀리면 다음 항목', 'tests are ANDed left to right · first failure moves on'], 'lxx-xs', 2, { off: 3, w: 13.2 });
+  codeLines(S, 'c3', CX, .8, ['… -exec gzip {} \\;', '→ gzip app.log', '→ gzip logs/api.log', '', '… -exec gzip {} +', '→ gzip app.log logs/api.log'], 3, 4, { lh: .82 });
+  T(S, 'c3n', CX, 7.0, ['\\; 는 파일마다 프로세스 하나, + 는 한 번에 모아서', '\\; runs one process per file; + batches them'], 'lxx-xs lxx-w', 3, { off: 4, w: 13.2 });
+  codeLines(S, 'c4', CX, .8, ['find . -name node_modules -prune \\', '       -o -name "*.js" -print'], 4, 0);
+  T(S, 'c4n', CX, 7.0, ['-prune은 그 아래로 내려가지 않게 해요', '-prune stops the descent into that directory'], 'lxx-xs', 4, { w: 13.2 });
+  T(S, 'c4m', CX, 8.1, ['-a가 -o보다 먼저 묶여요 · 헷갈리면 \\( \\)', '-a binds tighter than -o · use \\( \\) when unsure'], 'lxx-xs lxx-w', 4, { w: 13.2 });
+  notesSplit(S, 'k', 15.6, [['find는 시작 폴더 아래의 모든 항목을 깊이 우선으로 돌며, 항목마다 조건식을 검사해요', 'find walks every entry under the start directory depth-first and evaluates its expression for each one'], ['-type, -name, -size, -mtime 같은 조건은 AND로 이어져요 · -mtime -2는 “2일 이내에 수정”', '-type, -name, -size and -mtime are ANDed · -mtime -2 means modified within two days'], ['-exec로 찾은 파일에 명령을 실행 · + 로 끝내면 인자를 모아 한 번에 실행해서 빨라요', '-exec runs a command on each match · ending with + batches the arguments into one run'], ['-prune으로 node_modules 같은 큰 폴더를 통째로 건너뛰고, -o로 다른 조건을 이어요', '-prune skips big trees such as node_modules entirely, and -o continues with another test']]);
+  fin(S, 'z', 15.6, [['find = 디렉터리 트리 순회 + 항목마다 평가하는 조건식 + 행동(-print, -exec, -delete)', 'find = a directory walk + an expression per entry + actions (-print, -exec, -delete)', 'lxx-xs lxx-a'], ['공백이 든 이름은 -print0 | xargs -0 · 지우기 전에 -delete 대신 -print로 먼저 확인', 'use -print0 | xargs -0 for names with spaces, and run -print before -delete'], ['더 빠른 대안: fd(무시 파일 존중), locate(미리 만든 색인)', 'faster alternatives: fd (respects ignore files) and locate (a prebuilt index)']]);
+  S.cap(1, '트리를 돌며 검사', 'Walk and test').cap(2, '조건 이어 붙이기', 'Combine tests').cap(3, '-exec로 실행', 'Act with -exec').cap(4, '-prune으로 건너뛰기', 'Skip with -prune').cap(5, 'find', 'find');
+  return S;
+}
+
+function sAwk() {
+  const S = scene({ id: 'lx-awk', steps: 5, per: 1.7 });
+  const D = [['GET', '/api/users', 200, 12], ['POST', '/api/login', 500, 340], ['GET', '/index', 200, 8], ['GET', '/api/users', 404, 5], ['GET', '/api/orders', 500, 290], ['GET', '/index', 200, 9]];
+  const CXs = [3.0, 6.2, 11.4, 14.0], Y = i => 1.7 + i * 1.12, HC = ['lxx-a', 'lxx-g', 'lxx-w', 'lxx-r'];
+  T(S, 'hn', .8, .5, 'NR', 'cz-mono lxx-xs', 1); ['$1', '$2', '$3', '$4'].forEach((h, j) => T(S, 'h' + j, CXs[j], .5, h, 'cz-mono lxx-xs ' + HC[j], 1));
+  D.forEach((r, i) => { T(S, 'nr' + i, .8, Y(i), String(i + 1), 'cz-mono lxx-xs', 1); r.forEach((v, j) => T(S, `d${i}${j}`, CXs[j], Y(i), String(v), 'cz-mono lxx-code', 0)); });
+  [1, 4].forEach(i => rect(S, 'r5' + i, .6, Y(i) - .12, 15.8, 1.05, 'danger', 22, 2, { r: .2, off: 3 }));
+  rect(S, 'col3', CXs[2] - .3, 1.5, 2.4, 6.8, 'warn', 22, 3, { r: .3, off: 4 }); rect(S, 'col4', CXs[3] - .3, 1.5, 2.2, 6.8, 'danger', 18, 4, { r: .3 });
+  const CX = 18.4;
+  rect(S, 'cbg', CX - .4, .4, 13.0, 3.0, 'ink', 6, 1, { r: .4 });
+  codeLines(S, 'c1', CX, .7, ['awk \'{print NR, $2}\''], 1, 2);
+  T(S, 'o1', CX, 4.0, ['공백으로 나눈 열이 $1 $2 …', 'whitespace-split fields $1 $2 …'], 'lxx-xs', 1, { off: 2 }); T(S, 'o1b', CX, 5.0, ['줄 번호 NR, 열 개수 NF = 4', 'line number NR, field count NF = 4'], 'lxx-xs', 1, { off: 2 });
+  codeLines(S, 'c2', CX, .7, ['awk \'$3 >= 500 {print $2}\''], 2, 3);
+  T(S, 'o2a', CX, 4.0, ['패턴 {동작}: 맞는 줄에만 실행', 'pattern {action}: run on matching lines'], 'lxx-xs lxx-a', 2, { off: 3 }); codeLines(S, 'o2', CX, 5.2, ['/api/login', '/api/orders'], 2, 3, { cls: 'lxx-r' });
+  codeLines(S, 'c3', CX, .7, ['awk \'{c[$3]++}', '     END {for (s in c) print s, c[s]}\''], 3, 4);
+  T(S, 'o3a', CX, 4.0, ['연관 배열로 상태 코드별 개수', 'count per status with an associative array'], 'lxx-xs lxx-a', 3, { off: 4 }); codeLines(S, 'o3', CX, 5.2, ['200 3', '404 1', '500 2'], 3, 4, { cls: 'lxx-w' });
+  codeLines(S, 'c4', CX, .7, ['awk \'{s += $4}', '     END {printf "%.1f\\n", s/NR}\''], 4, 0);
+  T(S, 'o4a', CX, 4.0, ['END는 모든 줄을 읽은 뒤 한 번', 'END runs once after the last line'], 'lxx-xs lxx-a', 4); codeLines(S, 'o4', CX, 5.2, ['110.7'], 4, 0, { cls: 'lxx-r' });
+  T(S, 'o4b', CX, 6.6, ['CSV는 -F, 로 구분자를 바꿔요', 'use -F, to split CSV on commas'], 'lxx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['awk는 입력을 한 줄씩 읽어 공백으로 나누고, 열을 $1, $2 …, 줄 번호를 NR로 불러요', 'awk reads input line by line, splits on whitespace and names the fields $1, $2 …, with NR as the line number'], ['프로그램은 “패턴 {동작}”의 목록 · 상태 코드가 500 이상인 줄의 경로만 출력해요', 'a program is a list of “pattern {action}” rules · here, print the path of lines with status ≥ 500'], ['c[$3]++처럼 문자열을 키로 쓰는 배열로 묶어서 세고, END에서 결과를 출력해요', 'arrays keyed by strings, like c[$3]++, group and count, and END prints the totals'], ['합계와 평균도 한 줄 · 모든 줄을 읽은 뒤 END에서 s/NR을 계산해요', 'sums and averages take one line · END computes s/NR after the last line']]);
+  fin(S, 'z', 15.6, [['awk: 줄을 열로 나눠 패턴에 맞는 줄에 동작을 실행하는 작은 언어', 'awk is a small language that splits lines into fields and runs actions on lines matching patterns', 'lxx-xs lxx-a'], ['sort | uniq -c 를 한 번에, 열 합계·평균·조건 집계를 파이프라인 안에서 바로', 'it replaces sort | uniq -c and does column sums, averages and conditional counts inside a pipeline'], ['따옴표 안 쉼표가 있는 CSV나 JSON은 csvkit, jq, 파이썬으로 넘어가요', 'quoted CSV and JSON are better handled by csvkit, jq or Python']]);
+  S.cap(1, '줄과 열', 'Lines and fields').cap(2, '패턴과 동작', 'Patterns and actions').cap(3, '연관 배열로 세기', 'Counting with arrays').cap(4, 'END에서 집계', 'Totals in END').cap(5, 'awk', 'awk');
+  return S;
+}
+
+function sCmdSub() {
+  const S = scene({ id: 'lx-cmdsub', steps: 5, per: 1.7 });
+  T(S, 'cmd', 1, .5, ['$ echo "오늘은 $(date +%F)"', '$ echo "today is $(date +%F)"'], 'cz-mono lxx-s', 0);
+  box2(S, 'sub', 1, 2.9, 8.6, 1.5, ['서브셸: date +%F', 'subshell: date +%F'], 'accent', 1, { pct: 22 });
+  ar(S, 'a1', [9.6, 3.65], [11.4, 3.65], 'ink-2', 1, { h: .1 }); box2(S, 'out', 11.4, 2.9, 8.2, 1.5, '2026-11-10⏎', 'ok', 1, { pct: 22 });
+  ar(S, 'a2', [19.6, 3.65], [21.4, 3.65], 'ink-2', 1, { h: .1 }); box2(S, 'res', 21.4, 2.9, 9.6, 1.5, ['echo "오늘은 2026-11-10"', 'echo "today is 2026-11-10"'], 'line', 1, { pct: 16 });
+  T(S, 'nl', 11.4, 4.6, ['끝 줄바꿈은 지워져요', 'trailing newlines are dropped'], 'lxx-xs lxx-w', 2);
+  T(S, 'sl', 1, 6.2, ['변수에 담기', 'into a variable'], 'lxx-xs lxx-a', 2, { off: 3 });
+  codeLines(S, 'v', 1, 7.3, ['today=$(date +%F)', 'n=$(wc -l < access.log)    # n=1042', 'if out=$(make 2>&1); then …   # 종료 코드도 그대로'].map((t, i) => i === 2 ? [t, 'if out=$(make 2>&1); then …   # exit status kept'] : t), 2, 3);
+  T(S, 'ql', 1, 6.2, ['name.txt 안의 내용: my report.pdf', 'name.txt contains: my report.pdf'], 'cz-mono lxx-xs', 3, { off: 4 });
+  codeLines(S, 'q1', 1, 7.4, ['open $(cat name.txt)'], 3, 4); codeLines(S, 'q2', 1, 9.6, ['open "$(cat name.txt)"'], 3, 4);
+  [['my', 'report.pdf']].forEach(a => a.forEach((t, j) => cell(S, 'qa' + j, 14 + j * 4.2, 7.2, 3.8, 1.0, t, 'danger', 26, 3, { off: 4 })));
+  T(S, 'qax', 22.6, 7.3, ['인자 2개 ✗', '2 arguments ✗'], 'lxx-xs lxx-r', 3, { off: 4 });
+  cell(S, 'qb', 14, 9.4, 8.0, 1.0, 'my report.pdf', 'ok', 26, 3, { off: 4 }); T(S, 'qbx', 22.6, 9.5, ['인자 1개 ✓', '1 argument ✓'], 'lxx-xs lxx-g', 3, { off: 4 });
+  T(S, 'qn', 1, 11.4, ['따옴표가 없으면 결과가 공백으로 쪼개지고 *도 펼쳐져요', 'unquoted, the result is split on spaces and globbed'], 'lxx-xs lxx-w', 3, { off: 4 });
+  T(S, 'nl4', 1, 6.2, ['중첩은 $( ) 그대로 · 백틱은 \\로 이스케이프해야 해요', 'nesting just works with $( ); backticks need escaping'], 'lxx-xs lxx-a', 4);
+  codeLines(S, 'n4', 1, 7.3, ['dir=$(dirname "$(readlink -f "$0")")', 'dir=`dirname \\`readlink -f "$0"\\``'], 4, 0);
+  T(S, 'ps', 1, 10.0, ['비슷한 친구, 프로세스 치환: 출력을 파일처럼 넘겨요', 'its cousin, process substitution, passes output as a file'], 'lxx-xs lxx-a', 4);
+  codeLines(S, 'p4', 1, 11.1, ['diff <(sort a.txt) <(sort b.txt)   # → /dev/fd/63 /dev/fd/62'], 4, 0);
+  notesSplit(S, 'k', 15.6, [['$( ) 안의 명령은 서브셸에서 먼저 실행되고, 그 출력이 그 자리에 끼워져요', 'the command inside $( ) runs first in a subshell and its output is pasted in place'], ['끝의 줄바꿈은 지워져서 변수에 담기 좋아요 · if out=$(…)는 종료 코드도 그대로 써요', 'trailing newlines are stripped, which suits variables · if out=$(…) also keeps the exit status'], ['따옴표 없이 쓰면 결과가 공백에서 쪼개져요 · 거의 언제나 "$( )"로 감싸요', 'unquoted, the result splits on whitespace · almost always wrap it as "$( )"'], ['$( )는 중첩이 쉬워 옛 백틱보다 나아요 · <( )는 출력을 임시 파일 경로로 넘겨요', '$( ) nests cleanly, unlike old backticks · <( ) passes output as a temporary file path']]);
+  fin(S, 'z', 15.6, [['명령 치환 $(cmd): 명령의 표준 출력을 문자열로 받아 명령줄에 끼워 넣기', 'command substitution $(cmd) captures a command’s output and splices it into the command line', 'lxx-xs lxx-a'], ['매번 서브셸을 띄우니 큰 반복문 안에서는 느려요 · 가능하면 셸 내장 기능으로', 'each one forks a subshell, so it is slow inside big loops · prefer shell built-ins'], ['출력이 여러 줄이고 인자로 나눠야 하면 xargs나 mapfile(readarray)을 써요', 'for multi-line output that must become separate arguments, use xargs or mapfile']]);
+  S.cap(1, '안쪽 명령을 먼저', 'Run the inner command first').cap(2, '변수에 담기', 'Into a variable').cap(3, '따옴표로 감싸기', 'Quote the result').cap(4, '중첩과 프로세스 치환', 'Nesting and process substitution').cap(5, '명령 치환', 'Command substitution');
+  return S;
+}
+
+function sTmux() {
+  const S = scene({ id: 'lx-tmux', steps: 5, per: 1.7 });
+  const row = (k, y, items, st, off) => items.forEach(([x, w, l, c], i) => { box2(S, k + i, x, y, w, 1.4, l, c, st, { pct: 22, off }); if (i && items[i - 1]) { const p = items[i - 1]; ar(S, k + 'a' + i, [p[0] + p[1], y + .7], [x, y + .7], 'ink-2', st, { h: .1, off }); } });
+  T(S, 'ah', 1, .1, ['tmux 없이', 'without tmux'], 'lxx-xs lxx-a', 0, { off: 4 });
+  frame(S, 'sa', 8.2, .9, 23.0, 2.4, 'ink-3', 0, { w: .08, off: 4 }); T(S, 'sal', 8.4, .0, ['서버', 'server'], 'lxx-xs', 0, { off: 4 });
+  row('a', 1.4, [[1, 5.0, ['노트북', 'laptop'], 'line'], [9.0, 4.0, 'sshd', 'line'], [15.0, 4.0, 'bash', 'line'], [21.0, 9.6, 'python train.py', 'accent']], 0, 4);
+  xm(S, 'ax', 7.5, 1.2, 1, { off: 4 }); tsets(S, 'a3', [[1, 'danger', 30]]);
+  T(S, 'an', 9.0, 3.5, ['SSH가 끊기면 SIGHUP → 작업도 종료 ✗', 'SSH drops → SIGHUP → the job dies ✗'], 'lxx-xs lxx-r', 1, { off: 4 });
+  T(S, 'bh', 1, 4.7, ['tmux 안에서', 'inside tmux'], 'lxx-xs lxx-g', 2, { off: 4 });
+  frame(S, 'sb', 8.2, 5.5, 23.0, 2.4, 'ink-3', 2, { w: .08, off: 4 });
+  row('b', 6.0, [[1, 5.0, ['노트북', 'laptop'], 'line'], [9.0, 3.2, 'sshd', 'line'], [13.4, 4.4, 'tmux client', 'line'], [19.0, 4.6, 'tmux server', 'ok'], [25.0, 5.6, 'bash → job', 'accent']], 2, 4);
+  xm(S, 'bx', 7.5, 5.8, 2, { off: 4 }); tsets(S, 'b1', [[2, 'line', 6]]); tsets(S, 'b2', [[2, 'line', 6]]);
+  T(S, 'bn', 13.4, 8.1, ['클라이언트만 끝나고 서버와 작업은 계속 ✓', 'only the client exits; the server and job live on ✓'], 'lxx-xs lxx-g', 2, { off: 4 });
+  row('c', 10.2, [[1, 5.0, ['다른 PC', 'another PC'], 'line'], [9.0, 3.2, 'sshd', 'line'], [13.4, 4.4, 'tmux attach', 'accent']], 3, 4);
+  ar(S, 'cu', [17.8, 10.9], [21.3, 7.5], 'ok', 3, { h: .12, off: 4 });
+  T(S, 'cn', 19.0, 11.4, 'tmux attach -t work', 'cz-mono lxx-xs lxx-a', 3, { off: 4 });
+  frame(S, 'scr', 1, .6, 19.4, 12.0, 'ink-3', 4, { w: .12, r: .3 });
+  rect(S, 'p1', 1.3, .9, 9.4, 10.3, 'accent', 8, 4, { r: .2 }); rect(S, 'p2', 11.0, .9, 9.1, 5.0, 'ok', 8, 4, { r: .2 }); rect(S, 'p3', 11.0, 6.2, 9.1, 5.0, 'warn', 8, 4, { r: .2 });
+  codeLines(S, 'pc1', 1.6, 1.2, ['vim app.py', '', 'def train():', '    for ep in range(9):', '        step(ep)'], 4, 0, { lh: .95 });
+  codeLines(S, 'pc2', 11.3, 1.2, ['tail -f train.log', 'epoch 3  loss 0.41', 'epoch 4  loss 0.37'], 4, 0, { lh: .95 });
+  codeLines(S, 'pc3', 11.3, 6.5, ['htop', 'CPU ████████░░ 81%', 'MEM █████░░░░░ 52%'], 4, 0, { lh: .95 });
+  rect(S, 'bar', 1.3, 11.4, 18.8, .9, 'ok', 40, 4, { r: .15 }); T(S, 'bart', 1.6, 11.35, '[work] 0:edit*  1:logs                 12:04', 'cz-mono lxx-code', 4);
+  const R = 21.4;
+  T(S, 'k0', R, .6, ['세션 > 창 > 판', 'session > window > pane'], 'lxx-s lxx-a', 4);
+  [['Ctrl-b d', ['분리', 'detach']], ['Ctrl-b c', ['새 창', 'new window']], ['Ctrl-b %', ['좌우 분할', 'split left/right']], ['Ctrl-b "', ['위아래 분할', 'split top/bottom']], ['tmux ls', ['세션 목록', 'list sessions']]].forEach(([a, b], i) => { T(S, 'ka' + i, R, 2.2 + i * 1.15, a, 'cz-mono lxx-xs lxx-a', 4); T(S, 'kb' + i, R + 4.6, 2.2 + i * 1.15, b, 'lxx-xs', 4); });
+  notesSplit(S, 'k', 15.6, [['그냥 SSH에서 돌린 작업은 연결이 끊기면 SIGHUP을 받아 함께 종료돼요', 'a job started over plain SSH receives SIGHUP and dies when the connection drops'], ['tmux는 터미널을 쥐고 있는 서버 프로세스를 따로 둬요 · 연결이 끊겨도 클라이언트만 사라져요', 'tmux keeps a separate server process that owns the terminal · a drop only kills the client'], ['다시 접속해 tmux attach를 하면 화면과 작업이 그대로 돌아와요 · 다른 PC에서도', 'reconnect and run tmux attach to get the screen and job back, even from another machine'], ['하나의 세션 안에 창을 여러 개, 창 안을 판으로 나눠 여러 터미널을 한 화면에 써요', 'a session holds several windows, and windows split into panes, so many terminals share one screen']]);
+  fin(S, 'z', 15.6, [['tmux: 터미널 세션을 서버 쪽에 살려 두는 터미널 멀티플렉서', 'tmux is a terminal multiplexer that keeps terminal sessions alive on the server', 'lxx-xs lxx-a'], ['오래 걸리는 학습·빌드·마이그레이션을 SSH 끊김 걱정 없이 돌려요 · 같은 세션을 함께 보며 페어 작업도', 'run long training, builds or migrations without fearing a dropped SSH link, and share a session to pair'], ['재부팅 뒤에도 돌아야 하는 서비스는 tmux가 아니라 systemd 유닛으로 만들어요', 'services that must survive reboots belong in a systemd unit, not tmux']]);
+  S.cap(1, '끊기면 함께 죽는 작업', 'A job that dies with SSH').cap(2, 'tmux 서버가 붙잡아 둠', 'The tmux server holds on').cap(3, '다시 붙기', 'Attach again').cap(4, '세션, 창, 판', 'Sessions, windows, panes').cap(5, 'tmux', 'tmux');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'lx-fs': [
     item('lx-users', '사용자·그룹·sudo', 'Users, groups and sudo', '리눅스의 사용자는 /etc/passwd에 한 줄씩 있고, 커널은 이름이 아니라 UID·GID 숫자로 권한을 판단해요. sudo는 필요한 명령만 잠깐 root로 실행해요.', '/etc/passwd의 kim:x:1001:1001:Kim:/home/kim:/bin/bash는 이름, 비밀번호 자리(실제 해시는 root만 읽는 /etc/shadow), UID, GID, 설명, 홈 디렉터리, 로그인 셸이에요. id kim으로 속한 그룹을 볼 수 있고, 파일 접근은 소유자 → 그룹 → 기타 순으로 확인돼요. UID 0인 root는 권한 검사를 건너뛰기 때문에 평소엔 일반 계정을 쓰고, sudo가 /etc/sudoers 규칙과 본인 비밀번호를 확인한 뒤 해당 명령만 root로 실행하고 기록을 남겨요. 서비스는 www-data 같은 전용 계정과 nologin 셸로 돌리고, docker·sudo 그룹은 사실상 root라 신중하게 추가해요.', 'Linux users are lines in /etc/passwd, and the kernel checks permissions by UID and GID numbers, not names; sudo runs just the needed command as root.', 'The line kim:x:1001:1001:Kim:/home/kim:/bin/bash holds the name, a password placeholder (the real hash is in root-only /etc/shadow), UID, GID, comment, home directory and login shell. id kim lists the groups, and file access is checked as owner → group → others. Root, UID 0, skips permission checks, so day-to-day work uses normal accounts; sudo checks /etc/sudoers and your own password, runs only that command as root and logs it. Services run under dedicated accounts such as www-data with a nologin shell, and membership in docker or sudo is effectively root, so grant it carefully.', sUsers())
@@ -794,6 +938,13 @@ return { css: CSSX, secs: [], add: {
   'lx-remote': [
     item('lx-firewall', '방화벽 규칙', 'Firewall rules', '방화벽은 들어오는 패킷마다 규칙 목록을 위에서부터 맞춰 보고 허용하거나 버려요. 처음 맞는 규칙이 결정하고, 아무것도 안 맞으면 기본 정책을 따라요.', 'nftables(또는 iptables)의 INPUT 체인을 “기본 정책 drop”으로 두고, 필요한 것만 accept 규칙으로 열어요. 443번 포트의 새 연결은 4번 규칙에서 허용되고, 허용 목록에 없는 IP의 SSH나 외부에서 온 DB 포트 접속은 어떤 규칙에도 맞지 않아 차단돼요. 내가 보낸 요청의 응답은 연결 추적(conntrack)의 established 상태 덕분에 첫 규칙에서 허용되는데, 이것이 상태 기반 방화벽이에요. ufw allow 443/tcp나 firewalld가 이런 규칙을 만들어 주고, 클라우드 보안 그룹도 같은 원리예요.', 'A firewall checks each incoming packet against an ordered list of rules to accept or drop it; the first match decides, and the default policy applies when nothing matches.', 'An nftables (or iptables) INPUT chain is set to a default policy of drop, with accept rules opening only what is needed. A new connection to port 443 is accepted by rule 4, while SSH from an unlisted IP or the database port reached from outside matches nothing and is dropped. Replies to your own requests pass the first rule thanks to connection tracking’s established state, which is what makes the firewall stateful. ufw allow 443/tcp and firewalld generate such rules, and cloud security groups work the same way.', sFirewall())
   ]
+},
+after: {
+  'lx-ns': [item('lx-cgroup', 'cgroup', 'cgroups', '프로세스를 묶어 CPU·메모리·I/O·프로세스 수를 제한하는 커널 기능이에요. 묶음 하나가 /sys/fs/cgroup 아래 폴더 하나예요.', 'cgroup v2에서는 /sys/fs/cgroup 아래 폴더 트리가 곧 프로세스 묶음이에요. 폴더의 cgroup.procs에 PID를 쓰면 그 프로세스가 들어가고, 같은 폴더의 파일에 한도를 적어요. cpu.max = "50000 100000"은 100 ms 주기마다 50 ms만 실행한다는 뜻, 즉 0.5코어예요. 할당량을 다 쓰면 다음 주기까지 강제로 쉬는데(스로틀), 평균 CPU 사용률은 낮아 보여도 응답 지연이 튀는 흔한 원인이에요(cpu.stat의 nr_throttled로 확인). 메모리는 memory.high를 넘으면 커널이 페이지를 회수하며 그룹을 느리게 만들고, memory.max를 넘었는데 줄일 수 없으면 OOM 킬러가 그룹 안의 프로세스를 끝내요. pids.max는 포크 폭탄을, io.max는 디스크 대역폭을 막아요. systemd는 서비스마다 cgroup을 만들고(MemoryMax=, CPUQuota=), docker run --cpus --memory와 쿠버네티스의 resources.limits도 결국 이 파일에 값을 써요. 네임스페이스가 “무엇이 보이나”를 정한다면 cgroup은 “얼마나 쓰나”를 정해요.', 'A kernel feature that groups processes and limits their CPU, memory, I/O and process count. Each group is a directory under /sys/fs/cgroup.', 'In cgroup v2 the directory tree under /sys/fs/cgroup is the set of process groups: writing a PID to a directory’s cgroup.procs moves the process in, and files in the same directory hold the limits. cpu.max = "50000 100000" means 50 ms of CPU in every 100 ms period, half a core. Once the quota is spent, the group is throttled until the next period, a common cause of latency spikes even when average CPU looks low (nr_throttled in cpu.stat shows it). Above memory.high the kernel reclaims pages and slows the group; above memory.max, if nothing can be reclaimed, the OOM killer ends a process in the group. pids.max stops fork bombs and io.max caps disk bandwidth. systemd creates a cgroup per service (MemoryMax=, CPUQuota=), and docker run --cpus --memory and Kubernetes resources.limits end up writing these same files. Namespaces decide what a process sees; cgroups decide how much it may use.', sCgroup())],
+  'lx-glob': [item('lx-find', 'find', 'find', '시작 폴더 아래 모든 항목을 돌며 조건식에 맞는 파일을 찾고, 찾은 파일에 명령을 실행해요.', 'find는 시작 폴더 아래를 깊이 우선으로 돌며 항목마다 조건식을 평가해요. -name "*.log"(이름), -type f(파일만), -size +10M(10 MB 초과), -mtime -2(2일 이내 수정) 같은 조건은 기본적으로 AND로 이어지고 왼쪽부터 검사하다 하나라도 틀리면 다음 항목으로 넘어가요. 찾은 뒤의 행동으로 -print(기본), -delete, -exec가 있어요. -exec gzip {} \\;는 파일마다 프로세스를 하나씩 띄우고, -exec gzip {} +는 인자를 모아 한 번에 실행해서 훨씬 빨라요. -prune은 node_modules나 .git 같은 폴더 안으로 아예 내려가지 않게 하고, -o로 다른 조건을 이어요. 이때 -a(AND)가 -o(OR)보다 먼저 묶이므로 헷갈리면 \\( \\)로 묶어요. 공백이 든 파일 이름은 -print0 | xargs -0으로 넘기고, -delete를 쓰기 전에는 같은 조건으로 -print를 먼저 돌려 확인해요. -maxdepth로 깊이를, -newer로 다른 파일보다 새로운 것만 고를 수 있어요. 더 빠른 대안으로 .gitignore를 존중하는 fd와, 미리 만든 색인을 검색하는 locate가 있어요.', 'Walks every entry under a starting directory, picks the files that match an expression and can run a command on them.', 'find walks the tree under its starting directory depth-first and evaluates an expression for each entry. Tests such as -name "*.log" (name), -type f (regular files), -size +10M (over 10 MB) and -mtime -2 (modified within two days) are ANDed by default and checked left to right, moving to the next entry at the first failure. Actions include -print (the default), -delete and -exec. -exec gzip {} \\; starts one process per file, while -exec gzip {} + batches the arguments into a single run and is much faster. -prune stops find from descending into directories such as node_modules or .git, and -o continues with another test; since -a (AND) binds tighter than -o (OR), group with \\( \\) when in doubt. Pass names containing spaces with -print0 | xargs -0, and run the same expression with -print before trusting -delete. -maxdepth limits depth and -newer selects files newer than another. Faster alternatives include fd, which respects .gitignore, and locate, which searches a prebuilt index.', sFind())],
+  'lx-sedawk': [item('lx-awk', 'awk', 'awk', '줄을 열로 나눠, 패턴에 맞는 줄에 동작을 실행하는 작은 텍스트 처리 언어예요. 열 합계·평균·그룹별 개수를 한 줄로 구해요.', 'awk는 입력을 한 줄씩 읽어 공백(또는 -F로 정한 구분자)으로 나누고, 열을 $1, $2, …, 줄 전체를 $0, 줄 번호를 NR, 열 개수를 NF라고 불러요. 프로그램은 “패턴 {동작}” 규칙의 목록이라 awk \'$3 >= 500 {print $2}\'는 상태 코드가 500 이상인 줄의 경로만 출력해요. 패턴을 빼면 모든 줄에, 동작을 빼면 줄을 그대로 출력해요. BEGIN은 첫 줄 전에, END는 마지막 줄 뒤에 한 번 실행돼요. 문자열을 키로 쓰는 연관 배열 덕분에 awk \'{c[$3]++} END {for (s in c) print s, c[s]}\'로 상태 코드별 개수를(sort | uniq -c를 한 번에), awk \'{s += $4} END {print s/NR}\'로 평균 응답 시간을 구해요. 예시 로그 6줄이면 200이 3번, 500이 2번, 404가 1번이고 평균은 110.7 ms예요. printf로 형식을 맞추고, 변수는 선언 없이 0이나 빈 문자열로 시작해요. 따옴표 안에 쉼표가 있는 CSV나 JSON처럼 구조가 복잡해지면 csvkit, jq, 파이썬이 더 안전해요.', 'A small text-processing language that splits lines into fields and runs actions on lines matching patterns. Column sums, averages and group counts take one line.', 'awk reads input line by line, splits it on whitespace (or the separator given with -F) and names the fields $1, $2, …, the whole line $0, the line number NR and the field count NF. A program is a list of “pattern {action}” rules, so awk \'$3 >= 500 {print $2}\' prints the path of every line whose status is 500 or more. Without a pattern the action runs on every line; without an action the line is printed. BEGIN runs once before the first line and END once after the last. Arrays keyed by strings make grouping easy: awk \'{c[$3]++} END {for (s in c) print s, c[s]}\' counts lines per status (sort | uniq -c in one step), and awk \'{s += $4} END {print s/NR}\' averages a column. For the six sample lines that gives three 200s, two 500s and one 404, with a mean of 110.7 ms. printf formats output, and variables need no declaration, starting as 0 or the empty string. For quoted CSV or JSON, csvkit, jq or Python are safer.', sAwk())],
+  'lx-xargs': [item('lx-cmdsub', '명령 치환', 'Command substitution', '$(명령)은 안쪽 명령을 먼저 실행해 그 출력을 명령줄의 그 자리에 끼워 넣어요. 결과는 거의 언제나 따옴표로 감싸요.', '셸은 명령줄을 실행하기 전에 $( ) 안의 명령을 서브셸에서 먼저 돌리고, 그 표준 출력을 문자열로 받아 그 자리에 넣어요. echo "오늘은 $(date +%F)"는 echo "오늘은 2026-11-10"이 되어 실행돼요. 출력 끝의 줄바꿈은 모두 지워지므로 today=$(date +%F), n=$(wc -l < access.log)처럼 변수에 담기 좋고, if out=$(make 2>&1); then …은 출력과 종료 코드를 함께 써요. 따옴표 없이 쓰면 결과가 공백·탭·줄바꿈에서 쪼개지고 *도 파일 이름으로 펼쳐져서, 내용이 my report.pdf일 때 open $(cat name.txt)는 인자 2개(my, report.pdf)가 돼요. "$(cat name.txt)"로 감싸면 인자 하나예요. 옛 백틱 `cmd`도 같은 일을 하지만 중첩하려면 \\로 이스케이프해야 해서, dir=$(dirname "$(readlink -f "$0")")처럼 $( )가 훨씬 읽기 쉬워요. 비슷한 프로세스 치환 <(cmd)는 출력을 문자열이 아니라 /dev/fd/63 같은 파일 경로로 넘겨서 diff <(sort a) <(sort b)처럼 파일을 받는 명령에 써요. 매번 서브셸을 띄우니 큰 반복문 안에서는 느리고, 여러 줄을 인자로 나눠야 할 때는 xargs나 mapfile을 써요.', '$(command) runs the inner command first and splices its output into the command line. Almost always wrap the result in quotes.', 'Before running a command line, the shell runs the command inside $( ) in a subshell, captures its standard output as a string and puts it in place: echo "today is $(date +%F)" runs as echo "today is 2026-11-10". Trailing newlines are stripped, which suits variables such as today=$(date +%F) or n=$(wc -l < access.log), and if out=$(make 2>&1); then … uses both the output and the exit status. Unquoted, the result is split on spaces, tabs and newlines and * is expanded, so when name.txt holds my report.pdf, open $(cat name.txt) receives two arguments (my and report.pdf); "$(cat name.txt)" passes one. Old backticks `cmd` do the same but need backslash escapes to nest, so dir=$(dirname "$(readlink -f "$0")") is far easier to read with $( ). Its cousin, process substitution <(cmd), passes output as a file path such as /dev/fd/63 rather than as text, for commands that want files, as in diff <(sort a) <(sort b). Each substitution forks a subshell, so it is slow in big loops, and multi-line output that must become separate arguments belongs to xargs or mapfile.', sCmdSub())],
+  'lx-jobs': [item('lx-tmux', 'tmux', 'tmux', '터미널 세션을 서버 쪽 프로세스가 붙잡아 두는 터미널 멀티플렉서예요. SSH가 끊겨도 작업이 계속 돌고, 다시 붙으면 화면이 그대로 돌아와요.', 'SSH로 접속해 그냥 실행한 작업은 연결이 끊기면 셸과 함께 SIGHUP을 받아 종료돼요. tmux는 터미널(의사 터미널)을 쥐고 있는 tmux 서버 프로세스를 따로 띄우고, 우리가 보는 화면은 그 서버에 붙은 클라이언트일 뿐이에요. 그래서 연결이 끊기면 클라이언트만 사라지고 서버와 그 안의 셸, 작업은 계속 돌아요. 다시 접속해 tmux attach -t work를 하면 화면과 출력이 그대로 돌아오고, 다른 PC에서 붙어도 돼요. 구조는 세션 > 창(window) > 판(pane)이에요. Ctrl-b d로 분리(detach), Ctrl-b c로 새 창, Ctrl-b %와 Ctrl-b "로 좌우·위아래 분할, tmux ls로 세션 목록을 봐요. 한 화면에 에디터, 로그, htop을 나란히 띄워 쓰고, 같은 세션에 두 사람이 붙어 함께 작업할 수도 있어요. 설정은 ~/.tmux.conf에 두고, 비슷한 옛 도구로 screen이 있어요. 재부팅 뒤에도 돌아야 하는 서비스는 tmux가 아니라 systemd 유닛으로 만들어요.', 'A terminal multiplexer whose server process holds terminal sessions open. Jobs keep running when SSH drops, and reattaching brings the screen back.', 'A job started directly over SSH receives SIGHUP along with its shell and dies when the connection drops. tmux starts a separate tmux server process that owns the (pseudo-)terminal, and what you see is just a client attached to it. When the connection drops, only the client goes away; the server, its shells and their jobs keep running. Reconnect and run tmux attach -t work to get the screen and output back, even from another machine. The structure is session > window > pane: Ctrl-b d detaches, Ctrl-b c opens a window, Ctrl-b % and Ctrl-b " split side by side or top and bottom, and tmux ls lists sessions. One screen can hold an editor, a log and htop together, and two people can attach to the same session to pair. Settings live in ~/.tmux.conf, and screen is the older tool in the same family. Services that must survive reboots belong in a systemd unit, not in tmux.', sTmux())]
 } };
 })();
 
@@ -840,6 +991,7 @@ window.UX = page([
   ].concat(XT.add['lx-remote'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .lx-l .in{font-size:.86em;color:var(--ink);font-weight:700}
 .lx-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
