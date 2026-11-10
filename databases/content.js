@@ -699,6 +699,62 @@ function sFts() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'dbx-xs', i + 1, { off: i + 2 }));
+const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono dbx-code ' + (o.cls || ''), st, { off }));
+function sRecursive() {
+  const S = scene({ id: 'db-recursive', steps: 5, per: 1.7 });
+  const N = { S: [2.4, 2.0, 'Seoul'], B: [2.4, 6.4, 'Beijing'], T: [7.6, 4.2, 'Tokyo'], L: [12.4, 2.0, 'LA'], Y: [12.4, 6.4, 'NY'] };
+  const E = [['S', 'T'], ['S', 'B'], ['B', 'T'], ['T', 'L'], ['L', 'Y'], ['T', 'S']];
+  E.forEach(([a, b], i) => { const p = N[a], q = N[b], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, sh = a === 'T' && b === 'S' ? .45 : (a === 'S' && b === 'T' ? -.45 : 0), nx = -uy * sh, ny = ux * sh;
+    ar(S, 'e' + i, [p[0] + ux * 1.15 + nx, p[1] + uy * 1.15 + ny], [q[0] - ux * 1.15 + nx, q[1] - uy * 1.15 + ny], a === 'T' && b === 'S' ? 'danger' : 'ink-3', 0, { h: .08 }); });
+  Object.entries(N).forEach(([k, [x, y, l]]) => stt(S, 'n' + k, x, y, l, 'line', 0, { r: 1.1, pct: 14 }));
+  tsets(S, 'nS', [[1, 'accent', 34]]); tsets(S, 'nT', [[2, 'ok', 30]]); tsets(S, 'nB', [[2, 'ok', 30]]); tsets(S, 'nL', [[3, 'warn', 34]]); tsets(S, 'nY', [[3, 'warn', 34]]);
+  const CX = 15.4;
+  rect(S, 'cbg', CX - .4, .4, 16.4, 7.6, 'ink', 6, 0, { r: .4 });
+  codeLines(S, 'c', CX, .6, ['WITH RECURSIVE r(city, path, hops) AS (', '  SELECT \'Seoul\', ARRAY[\'Seoul\'], 0', '  UNION ALL', '  SELECT f.dst, r.path || f.dst, r.hops + 1', '  FROM r JOIN flights f ON f.src = r.city', '  WHERE f.dst <> ALL(r.path)', '    AND r.hops < 3', ')', 'SELECT * FROM r;'], 0, 0, { lh: .8 });
+  const hl = (k, from, n, st, off, c) => rect(S, k, CX - .2, .5 + from * .8, 16.0, n * .8, c || 'accent', 24, st, { r: .15, off });
+  hl('h1', 1, 1, 1, 2); hl('h2', 3, 2, 2, 3, 'ok'); hl('h3', 5, 2, 3, 4, 'warn');
+  const RW = [['Seoul', '{Seoul}', 0, 1], ['Tokyo', '{Seoul,Tokyo}', 1, 2], ['Beijing', '{Seoul,Beijing}', 1, 2], ['LA', '{Seoul,Tokyo,LA}', 2, 3], ['Tokyo', '{Seoul,Beijing,Tokyo}', 2, 3], ['NY', '{Seoul,Tokyo,LA,NY}', 3, 3], ['LA', '{…,Beijing,Tokyo,LA}', 3, 3]];
+  RW.forEach(([c, p, h, st], i) => { const y = 8.7 + i * .86; T(S, 'ra' + i, 1, y, c, 'cz-mono dbx-code', st); T(S, 'rb' + i, 5.4, y, p, 'cz-mono dbx-code', st); T(S, 'rc' + i, 13.0, y, String(h), 'cz-mono dbx-code', st); });
+  T(S, 'cyt', CX, 8.6, ['Tokyo → Seoul은 path에 이미 있어 건너뜀 ✗', 'Tokyo → Seoul is already in path, skipped ✗'], 'dbx-xs dbx-r', 3, { off: 4 });
+  T(S, 'cyt2', CX, 9.7, ['hops < 3에서 새 행이 없으면 멈춰요', 'it stops when no new rows appear (hops < 3)'], 'dbx-xs', 3, { off: 4 });
+  T(S, 'g1', CX, 8.6, ['path 검사가 없으면 Seoul ↔ Tokyo를 끝없이', 'without the path check, Seoul ↔ Tokyo loops forever'], 'dbx-xs dbx-r', 4);
+  T(S, 'g2', CX, 9.7, ['PostgreSQL 14+: CYCLE city SET is_cycle USING path', 'PostgreSQL 14+: CYCLE city SET is_cycle USING path'], 'cz-mono dbx-xs', 4);
+  T(S, 'g3', CX, 10.8, ['SEARCH BREADTH FIRST BY city SET ord', 'SEARCH BREADTH FIRST BY city SET ord'], 'cz-mono dbx-xs', 4);
+  T(S, 'g4', CX, 11.9, ['UNION(ALL 없이)은 같은 행을 버려 반복을 줄여요', 'plain UNION drops duplicate rows'], 'dbx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['재귀 쿼리는 시작 행(앵커) 하나로 출발해요 · 서울에서 0번 갈아탄 상태', 'a recursive query starts from an anchor row: Seoul, with zero hops'], ['직전 단계의 행과 flights를 조인해 한 홉 더 간 행을 만들어요 · 도쿄와 베이징', 'each round joins the previous rows with flights to go one hop further: Tokyo and Beijing'], ['새 행이 안 나올 때까지 반복 · path에 이미 있는 도시는 건너뛰어 순환을 막아요', 'it repeats until no new rows appear, skipping cities already on the path to avoid cycles'], ['그래프에 사이클이 있으면 경로 기록이나 깊이 제한, CYCLE 절로 무한 반복을 막아야 해요', 'with cycles in the graph, a path array, a depth limit or the CYCLE clause stops infinite recursion']]);
+  fin(S, 'z', 15.6, [['재귀 쿼리: 앵커 + 직전 결과를 이용한 반복 단계를 새 행이 없을 때까지 실행', 'a recursive query runs an anchor plus a step over the previous result until no new rows appear', 'dbx-xs dbx-a'], ['조직도·카테고리 트리, 그래프 도달 가능성, 부품 전개(BOM), 날짜 시퀀스 생성에 써요', 'used for org charts and category trees, graph reachability, bills of materials and generating date series'], ['큰 그래프 탐색은 느릴 수 있어 깊이 제한과 인덱스(f.src)가 중요해요', 'large graph walks can be slow, so depth limits and an index on f.src matter']]);
+  S.cap(1, '앵커에서 시작', 'Start from the anchor').cap(2, '한 홉씩 넓히기', 'Expand one hop').cap(3, '새 행이 없을 때까지', 'Until nothing is new').cap(4, '순환 막기', 'Stopping cycles').cap(5, '재귀 쿼리', 'Recursive queries');
+  return S;
+}
+
+function sFk() {
+  const S = scene({ id: 'db-fk', steps: 5, per: 1.7 });
+  const tbl = (k, x, y, title, cols, rows, cw, st) => { T(S, k + 't', x, y, title, 'cz-mono dbx-xs dbx-a', st); cols.forEach((c, j) => cell(S, `${k}h${j}`, x + cw.slice(0, j).reduce((a, b) => a + b, 0), y + 1.0, cw[j] - .06, 1.0, c, 'accent', 24, st)); rows.forEach((r, i) => r.forEach((v, j) => cell(S, `${k}${i}${j}`, x + cw.slice(0, j).reduce((a, b) => a + b, 0), y + 2.06 + i * 1.06, cw[j] - .06, 1.0, String(v), 'line', 8, st))); };
+  tbl('u', 1, .4, 'users', ['id', 'name'], [[1, 'Kim'], [2, 'Lee']], [2.4, 4.0], 0);
+  tbl('o', 10.4, .4, 'orders', ['id', 'user_id', 'total'], [[10, 1, 30], [11, 1, 12], [12, 2, 50]], [2.4, 3.6, 3.0], 0);
+  elb(S, 'fk', [[14.6, 5.66], [14.6, 6.1], [2.2, 6.1], [2.2, 4.62]], 'accent', 0, { h: .1 });
+  T(S, 'fkl', 4.4, 6.3, 'orders.user_id REFERENCES users(id)', 'cz-mono dbx-xs dbx-a', 0);
+  T(S, 'ins', 1, 7.8, 'INSERT INTO orders VALUES (13, 99, 20);', 'cz-mono dbx-xs', 1, { off: 2 });
+  T(S, 'insr', 1, 8.9, ['✗ 오류: user_id 99인 사용자가 없어요 (외래 키 위반)', '✗ error: no user with id 99 (foreign key violation)'], 'dbx-xs dbx-r', 1, { off: 2 });
+  T(S, 'del', 1, 7.8, 'DELETE FROM users WHERE id = 1;', 'cz-mono dbx-xs', 2, { off: 4 });
+  tsets(S, 'u00', [[2, 'danger', 30], [4, 'line', 8]]); tsets(S, 'u01', [[2, 'danger', 30], [4, 'line', 8]]);
+  const OPT = [['ON DELETE RESTRICT', ['삭제 거부 (기본)', 'refuse (default)'], 'danger'], ['ON DELETE CASCADE', ['주문 10, 11도 삭제', 'delete orders 10 and 11 too'], 'warn'], ['ON DELETE SET NULL', ['user_id를 NULL로', 'set user_id to NULL'], 'line']];
+  OPT.forEach(([a, b, c], i) => { cell(S, 'op' + i, 1 + i * 10.2, 9.0, 9.8, 1.1, a, c, 24, 2, { off: 3 }); T(S, 'opl' + i, 1 + i * 10.2, 10.3, b, 'cz-tc dbx-xs', 2, { w: 9.8, off: 3 }); });
+  T(S, 'ix0', 1, 9.0, ['부모를 지우면 DB가 자식을 찾아야 해요', 'deleting a parent makes the DB look for children'], 'dbx-xs dbx-a', 3, { off: 4 });
+  T(S, 'ix1', 1, 10.1, 'CREATE INDEX ON orders(user_id);', 'cz-mono dbx-xs dbx-g', 3, { off: 4 });
+  T(S, 'ix2', 1, 11.2, ['인덱스가 없으면 삭제마다 orders 전체를 훑고 잠금도 오래 잡아요', 'without it, every delete scans all of orders and holds locks longer'], 'dbx-xs', 3, { off: 4 });
+  T(S, 'ix3', 1, 12.3, ['PostgreSQL은 외래 키 열에 인덱스를 자동으로 만들지 않아요 (InnoDB는 만듦)', 'PostgreSQL does not index FK columns automatically (InnoDB does)'], 'dbx-xs dbx-w', 3, { off: 4 });
+  T(S, 'sh0', 1, 9.0, ['외래 키를 못 쓰는 경우', 'when foreign keys cannot be used'], 'dbx-xs dbx-a', 4);
+  T(S, 'sh1', 1, 10.1, ['users와 orders가 다른 샤드나 다른 서비스의 DB에 있을 때', 'users and orders live on different shards or in different services’ databases'], 'dbx-xs', 4);
+  T(S, 'sh2', 1, 11.2, ['→ 앱에서 존재를 확인하고, 고아 행은 배치 작업으로 정리', '→ check existence in the app and clean orphans with batch jobs'], 'dbx-xs dbx-w', 4);
+  notesSplit(S, 'k', 15.6, [['외래 키는 orders.user_id가 반드시 실제 users.id를 가리키게 해요 · 없는 사용자를 넣으면 DB가 거부해요', 'a foreign key forces orders.user_id to point at a real users.id · the DB rejects references to missing users'], ['참조되는 사용자를 지울 때는 정책을 골라요: 거부, 함께 삭제, NULL로 바꾸기', 'when a referenced user is deleted, choose a policy: refuse, cascade, or set to NULL'], ['부모를 지우거나 키를 바꿀 때 자식을 찾아야 하니, 외래 키 열에는 인덱스를 두세요', 'deleting or changing a parent means finding its children, so index the foreign-key column'], ['샤드나 서비스가 갈라지면 DB가 지켜 줄 수 없어 앱과 배치 작업이 대신 맡아요', 'across shards or services the database cannot enforce it, so the application and batch jobs take over']]);
+  fin(S, 'z', 15.6, [['외래 키: 다른 테이블의 기본 키를 가리키는 열 + 그 참조가 항상 유효하다는 제약(참조 무결성)', 'a foreign key is a column referencing another table’s key, constrained so the reference always holds (referential integrity)', 'dbx-xs dbx-a'], ['CASCADE는 편하지만 한 번의 삭제가 연쇄적으로 많은 행을 지울 수 있어 신중히', 'CASCADE is convenient, but one delete can ripple through many rows, so use it deliberately'], ['데이터를 대량으로 옮길 땐 제약을 잠시 미루거나(DEFERRABLE) 순서를 맞춰 넣어요', 'for bulk loads, defer constraints (DEFERRABLE) or insert parents before children']]);
+  S.cap(1, '없는 사용자는 거부', 'Missing parents are rejected').cap(2, '부모를 지울 때', 'Deleting a parent').cap(3, '외래 키 열에 인덱스', 'Index the foreign key').cap(4, '외래 키를 못 쓸 때', 'When FKs are not possible').cap(5, '외래 키와 참조 무결성', 'Foreign keys and referential integrity');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'db-model': [
     item('db-relalg', '관계 대수', 'Relational algebra', '테이블을 받아 테이블을 돌려주는 연산(σ 선택, π 투영, ⋈ 조인 등)의 체계예요. SQL은 이 연산의 식으로 바뀌어 실행·최적화돼요.', 'σ dept = dev(emp)는 조건에 맞는 행만, π name은 원하는 열만 남기고, emp ⋈ dept는 dept 값이 같은 행끼리 이어 붙여요. 결과도 테이블이라 연산을 자유롭게 조합할 수 있고, SELECT name FROM emp WHERE dept = \'dev\'는 π name(σ dept=\'dev\'(emp))와 같아요. 옵티마이저는 이 식을 결과가 같은 더 싼 식으로 바꿔요(예: 선택을 조인 아래로 밀어 내리기).', 'A set of operators that take tables and return tables (σ select, π project, ⋈ join, …). SQL is compiled into expressions of these operators and optimized.', 'σ dept = dev(emp) keeps matching rows, π name keeps chosen columns, and emp ⋈ dept glues rows with equal dept values. Results are tables too, so operators compose freely: SELECT name FROM emp WHERE dept = \'dev\' equals π name(σ dept=\'dev\'(emp)). The optimizer rewrites such expressions into cheaper equivalents, for example pushing selections below joins.', sRelalg()),
@@ -723,6 +779,10 @@ return { css: CSSX, secs: [], add: {
   'db-scale': [
     item('db-fts', '전문 검색과 역색인', 'Full-text search and inverted indexes', '단어마다 그 단어가 나오는 문서 목록을 저장한 역색인으로, 문장 속 단어를 빠르게 찾고 관련도 순으로 정렬해요.', '문서를 토큰으로 쪼개 db → [d1, d2], lock → [d2, d3]처럼 기록하면, “fast AND lock”은 두 목록의 교집합 [d3]으로 바로 답이 나와요. 분석기가 소문자화, 어간 추출, 불용어 제거를 하고, TF-IDF나 BM25로 순위를 매겨요. LIKE \'%lock%\'은 B+트리 인덱스를 못 써서 전체를 훑어요. Lucene·Elasticsearch, PostgreSQL tsvector + GIN, MySQL FULLTEXT가 이 구조이고, 한국어는 형태소 분석기나 n-gram으로 토큰을 나눠요.', 'An inverted index stores, for each term, the documents containing it, so words inside text are found fast and ranked by relevance.', 'Tokenize documents and record postings such as db → [d1, d2] and lock → [d2, d3]; then “fast AND lock” is just the intersection of two lists, [d3]. Analyzers lowercase, stem and drop stop words, and TF-IDF or BM25 ranks the results. LIKE \'%lock%\' can’t use a B+ tree index and scans everything. Lucene/Elasticsearch, PostgreSQL tsvector + GIN and MySQL FULLTEXT use this structure; Korean needs a morphological analyzer or n-grams.', sFts())
   ]
+},
+after: {
+  'db-cte': [item('db-recursive', '재귀 쿼리', 'Recursive queries', '앵커 행에서 출발해 직전 결과와 테이블을 조인하는 단계를 새 행이 없을 때까지 반복해요. 그래프에 순환이 있으면 경로 기록이나 깊이 제한으로 멈춰요.', 'WITH RECURSIVE r AS (앵커 UNION ALL 반복 단계)는 먼저 앵커를 실행해 첫 행을 만들고, 반복 단계가 바로 직전에 생긴 행만 가지고 다음 행을 만드는 일을 새 행이 하나도 나오지 않을 때까지 되풀이해요. 항공편 테이블에서 서울을 앵커(hops 0)로 두면 1단계에 도쿄·베이징, 2단계에 LA와 베이징 경유 도쿄, 3단계에 뉴욕과 LA가 나와요. 그래프에는 도쿄 → 서울 같은 순환이 있어서 그대로 두면 서울 ↔ 도쿄를 끝없이 돌아요. 그래서 지나온 도시를 배열(path)에 쌓고 f.dst <> ALL(r.path)로 이미 방문한 도시를 건너뛰거나, r.hops < 3 같은 깊이 제한을 둬요. PostgreSQL 14부터는 CYCLE city SET is_cycle USING path 절이 이 일을 대신하고, SEARCH BREADTH FIRST BY로 결과 순서를 너비 우선이나 깊이 우선으로 정할 수 있어요. UNION ALL 대신 UNION을 쓰면 완전히 같은 행은 버려서 반복이 줄어요. 조직도·카테고리 트리, 그래프 도달 가능성, 부품 전개(BOM), 날짜 시퀀스 생성에 쓰고, 큰 그래프에서는 조인 열(f.src)의 인덱스와 깊이 제한이 성능을 좌우해요.', 'Starting from an anchor row, the step that joins the previous result with a table repeats until no new rows appear; cycles are stopped with a path record or a depth limit.', 'WITH RECURSIVE r AS (anchor UNION ALL step) first runs the anchor, then repeatedly runs the step using only the rows produced in the previous round, until a round yields nothing new. With Seoul as the anchor (hops 0) over a flights table, round one finds Tokyo and Beijing, round two LA and Tokyo via Beijing, and round three New York and LA. The graph contains a cycle (Tokyo → Seoul), so left alone the query would bounce between Seoul and Tokyo forever; accumulating visited cities in a path array and filtering with f.dst <> ALL(r.path), or adding a depth limit such as r.hops < 3, stops it. Since PostgreSQL 14 the CYCLE city SET is_cycle USING path clause does this for you, and SEARCH BREADTH FIRST BY orders results breadth- or depth-first. Using UNION instead of UNION ALL discards identical rows and cuts repetition. Recursive queries serve org charts and category trees, graph reachability, bills of materials and date-series generation, and on large graphs an index on the join column (f.src) plus a depth limit decide performance.', sRecursive())],
+  'db-table': [item('db-fk', '외래 키와 참조 무결성', 'Foreign keys and referential integrity', '외래 키는 한 테이블의 열이 다른 테이블의 실제 행을 가리키도록 DB가 보장하는 제약이에요. 부모를 지울 때의 동작과 인덱스가 중요해요.', 'orders.user_id REFERENCES users(id)를 걸면 존재하지 않는 사용자(예: 99)를 가리키는 주문을 넣는 순간 DB가 외래 키 위반으로 거부해요. 반대로 주문이 있는 사용자를 지우려 할 때는 정책을 골라요. RESTRICT(기본, NO ACTION)는 삭제를 거부하고, CASCADE는 그 사용자의 주문까지 함께 지우고, SET NULL은 주문의 user_id를 NULL로 바꿔요. CASCADE는 편하지만 삭제 하나가 연쇄적으로 많은 행을 지울 수 있어 신중해야 해요. 부모 행을 지우거나 키를 바꿀 때 DB는 자식 행을 찾아야 하므로 외래 키 열에 인덱스가 없으면 삭제마다 orders 전체를 훑고 잠금도 오래 잡아요. PostgreSQL은 외래 키 열에 인덱스를 자동으로 만들지 않으니(MySQL InnoDB는 만듦) CREATE INDEX ON orders(user_id)를 직접 추가해요. 대량 적재 때는 부모를 먼저 넣거나 DEFERRABLE 제약으로 커밋 시점까지 검사를 미뤄요. users와 orders가 서로 다른 샤드나 다른 서비스의 DB에 있으면 DB가 참조를 지켜 줄 수 없으므로, 앱에서 존재를 확인하고 고아 행은 배치 작업으로 정리해요.', 'A constraint by which the database guarantees that a column points at a real row in another table. Delete behaviour and indexing are what matter in practice.', 'With orders.user_id REFERENCES users(id), inserting an order for a non-existent user (say 99) is rejected as a foreign-key violation. Deleting a user who still has orders requires a policy: RESTRICT (the default, NO ACTION) refuses, CASCADE deletes the user’s orders too, and SET NULL clears their user_id. CASCADE is convenient but one delete can ripple through many rows, so use it deliberately. Deleting a parent or changing its key forces the database to find the children, so without an index on the foreign-key column every delete scans the whole orders table and holds locks longer. PostgreSQL does not create that index automatically (MySQL InnoDB does), so add CREATE INDEX ON orders(user_id) yourself. For bulk loads, insert parents first or make the constraint DEFERRABLE so it is checked at commit. When users and orders live on different shards or in different services’ databases, the database cannot enforce the reference, so the application checks existence and batch jobs clean up orphans.', sFk())]
 } };
 })();
 
@@ -762,6 +822,7 @@ window.UX = page([
   ].concat(XT.add['db-scale'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .os-lg .in{font-size:.9em;font-weight:700;color:var(--ink)}
 .db-t .in{font-size:.66em;font-weight:600}
