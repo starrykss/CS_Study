@@ -570,6 +570,95 @@ function sResult() {
   S.cap(1, '예외는 어디서 튈지 몰라요', 'Exceptions can fly from anywhere').cap(2, '실패를 값으로 돌려줘요', 'Return failure as a value').cap(3, '?로 간단히 전파', 'Propagate with ?').cap(4, 'Go의 오류 값', 'Go’s error values').cap(5, '예외 vs 결과 타입', 'Exceptions vs result types');
   return S;
 }
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'plx-xs', i + 1, { off: i + 2 }));
+const codeLines = (S, k, x, y, lines, st, off, o = {}) => lines.forEach((t, i) => T(S, k + i, x, y + i * (o.lh || 1.1), t, 'cz-mono plx-code ' + (o.cls || ''), st, { off }));
+function sSubtyping() {
+  const S = scene({ id: 'pl-subtyping', steps: 5, per: 1.7 });
+  const N = { Any: [7.6, 1.0], Num: [2.0, 4.2], Str: [7.6, 4.2], Ani: [13.2, 4.2], Int: [.6, 7.6], Dbl: [4.6, 7.6], Dog: [10.4, 7.6], Cat: [14.8, 7.6], Not: [7.6, 11.0] };
+  const W = 3.6, H = 1.3, c = k => [N[k][0] + W / 2, N[k][1]], b = k => [N[k][0] + W / 2, N[k][1] + H];
+  const L = { Any: 'Any', Num: 'Number', Str: 'String', Ani: 'Animal', Int: 'Int', Dbl: 'Double', Dog: 'Dog', Cat: 'Cat', Not: 'Nothing' };
+  const E = [['Num', 'Any'], ['Str', 'Any'], ['Ani', 'Any'], ['Int', 'Num'], ['Dbl', 'Num'], ['Dog', 'Ani'], ['Cat', 'Ani']];
+  E.forEach(([a, p], i) => ar(S, 'e' + i, c(a), b(p), 'ink-3', ['Ani', 'Dog', 'Cat'].includes(a) && p !== 'Any' ? 0 : 3, { h: .08 }));
+  Object.entries(N).forEach(([k, [x, y]]) => box2(S, 'n' + k, x, y, W, H, L[k], k === 'Dog' || k === 'Ani' ? 'accent' : k === 'Any' || k === 'Not' ? 'warn' : 'line', ['Any', 'Num', 'Str', 'Int', 'Dbl', 'Not'].includes(k) ? 3 : 0, { pct: 22 }));
+  ['Int', 'Dbl', 'Dog', 'Cat'].forEach((k, i) => seg(S, 'nb' + i, [N.Not[0] + W / 2, N.Not[1]], [N[k][0] + W / 2, N[k][1] + H], 3, 'warn', .06, { dash: 1 }));
+  T(S, 'sub', 13.2, 10.0, 'Dog <: Animal', 'cz-mono plx-s plx-a', 0, { off: 3 });
+  const CX = 20.0;
+  rect(S, 'cbg', CX - .4, .5, 11.8, 4.8, 'ink', 6, 1, { r: .4 });
+  codeLines(S, 'c1', CX, .8, ['fun feed(a: Animal) { … }', 'feed(Dog())   // OK', 'feed(Cat())   // OK'], 1, 2);
+  T(S, 'n1', CX - .4, 5.8, ['Animal이 필요한 곳에 Dog를 넣어도 돼요', 'a Dog works wherever an Animal is expected'], 'plx-xs plx-a', 1, { off: 2, w: 11.8 });
+  codeLines(S, 'c2', CX, .8, ['val a: Animal = Dog()  // 업캐스트', 'a as Dog   // 검사 후 OK', 'a as Cat   // 실행 중 오류', 'if (a is Dog) a.bark()'].map((t, i) => [t, ['val a: Animal = Dog()  // upcast', 'a as Dog   // checked: OK', 'a as Cat   // runtime error', 'if (a is Dog) a.bark()'][i]]), 2, 3);
+  T(S, 'n2', CX - .4, 5.8, ['위로 가는 변환은 자동, 아래로는 검사가 필요해요', 'going up is automatic; going down needs a check'], 'plx-xs plx-w', 2, { off: 3, w: 11.8 });
+  codeLines(S, 'c3', CX, .8, ['fun fail(msg: String): Nothing', '  = throw Error(msg)', '', 'val n = s.toIntOrNull()', '    ?: fail("NaN")'], 3, 4, { lh: .9 });
+  T(S, 'n3', CX - .4, 5.8, ['Any(맨 위): 모든 값을 담아요', 'Any (top): holds every value'], 'plx-xs plx-w', 3, { off: 4 });
+  T(S, 'n3b', CX - .4, 6.8, ['Nothing(맨 아래): 값이 없어 어디에나 들어가요', 'Nothing (bottom): no values, fits anywhere'], 'plx-xs plx-w', 3, { off: 4 });
+  T(S, 'n4a', CX - .4, .8, ['서브타입 ≠ 상속', 'subtyping ≠ inheritance'], 'plx-s plx-a', 4);
+  T(S, 'n4b', CX - .4, 2.2, ['인터페이스 구현: 코드 없이 서브타입만', 'implementing an interface: a subtype, no code reused'], 'plx-xs', 4, { w: 11.8 });
+  T(S, 'n4c', CX - .4, 3.3, ['Square extends Rectangle: 상속은 되지만', 'Square extends Rectangle: it inherits,'], 'plx-xs', 4, { w: 11.8 });
+  T(S, 'n4d', CX - .4, 4.3, ['너비만 바꾸는 코드가 깨짐 → 서브타입 아님', 'width-only updates break → not a subtype'], 'plx-xs plx-r', 4, { w: 11.8 });
+  notesSplit(S, 'k', 15.6, [['S가 T의 서브타입(S <: T)이면, T가 필요한 모든 자리에 S 값을 써도 안전해요', 'if S is a subtype of T (S <: T), an S value can safely go wherever a T is expected'], ['위로 가는 업캐스트는 자동이고, 아래로 가는 다운캐스트는 실행 중에 검사해야 해요', 'upcasts happen implicitly; downcasts must be checked at run time'], ['타입들은 위아래 관계로 이어져요 · 맨 위 Any, 맨 아래 Nothing(never)은 모든 타입의 서브타입', 'types form a hierarchy · Any sits at the top and Nothing (never) at the bottom, a subtype of everything'], ['서브타입은 “대신 쓸 수 있다”는 약속 · 상속은 코드를 물려받는 방법일 뿐이라 둘은 달라요', 'a subtype promises substitutability; inheritance merely reuses code, and the two can diverge']]);
+  fin(S, 'z', 15.6, [['서브타이핑: 하위 타입의 값을 상위 타입 자리에 대신 쓸 수 있다는 타입 관계', 'subtyping is the type relation that lets a value of a subtype stand in for its supertype', 'plx-xs plx-a'], ['명목적 언어(Java, Kotlin)는 선언으로, 구조적 언어(TypeScript, Go 인터페이스)는 모양으로 정해요', 'nominal languages (Java, Kotlin) declare it; structural ones (TypeScript, Go interfaces) infer it from shape'], ['리스코프 치환 원칙은 서브타입이 상위 타입의 약속을 지켜야 한다는 설계 규칙이에요', 'the Liskov substitution principle is the design rule that a subtype must keep its supertype’s promises']]);
+  S.cap(1, '대신 쓸 수 있는 타입', 'A type that can stand in').cap(2, '업캐스트와 다운캐스트', 'Upcasts and downcasts').cap(3, '맨 위와 맨 아래', 'Top and bottom').cap(4, '서브타입과 상속은 달라요', 'Subtyping is not inheritance').cap(5, '서브타이핑', 'Subtyping');
+  return S;
+}
+
+function sMatch() {
+  const S = scene({ id: 'pl-match', steps: 5, per: 1.7 });
+  const CX = 1.0, CY = .7, LH = 1.2;
+  rect(S, 'cbg', .6, .4, 15.6, 7.2, 'ink', 6, 0, { r: .4 });
+  const lines = ['match shape {', '  Circle(r) if r == 0 => "point",', '  Circle(r)           => π × r²,', '  Rect(w, h)          => w × h,', '  Tri { base, height } => base × height / 2,', '}'];
+  codeLines(S, 'cd', CX, CY, lines, 0, 0, { lh: LH });
+  const row = i => CY + i * LH - .1;
+  T(S, 'in', 17.4, .6, ['입력: Rect(3, 4)', 'input: Rect(3, 4)'], 'cz-mono plx-s plx-a', 1, { off: 2 });
+  [[1, 'danger'], [2, 'danger'], [3, 'ok']].forEach(([r, c], i) => rect(S, 'tr' + i, .8, row(r), 15.2, 1.15, c, 22, 1, { r: .2, off: 2 }));
+  T(S, 'tr0l', 17.4, row(1) + .1, ['Circle? ✗', 'Circle? ✗'], 'plx-xs plx-r', 1, { off: 2 }); T(S, 'tr1l', 17.4, row(2) + .1, ['Circle? ✗', 'Circle? ✗'], 'plx-xs plx-r', 1, { off: 2 });
+  T(S, 'tr2l', 17.4, row(3) + .1, ['Rect ✓ → w = 3, h = 4 → 12', 'Rect ✓ → w = 3, h = 4 → 12'], 'cz-mono plx-xs plx-g', 1, { off: 2 });
+  T(S, 'o1', 17.4, 5.6, ['위에서부터 차례로 맞춰 보고 첫 번째로 맞는 갈래만 실행', 'arms are tried top to bottom; the first match runs'], 'plx-xs', 1, { off: 2, w: 13.8 });
+  const P = [['Some(Point { x: 0, y })', 'cz-mono plx-s'], ['Some(Point { x: 0, y: 5 })', 'cz-mono plx-s']];
+  T(S, 'p0', 1.0, 9.0, ['패턴', 'pattern'], 'plx-xs plx-a', 2, { off: 3 }); T(S, 'p1', 6.0, 9.0, P[0][0], P[0][1], 2, { off: 3 });
+  T(S, 'v0', 1.0, 10.6, ['값', 'value'], 'plx-xs', 2, { off: 3 }); T(S, 'v1', 6.0, 10.6, P[1][0], P[1][1], 2, { off: 3 });
+  [[['Some(…) → 감싼 모양 확인', 'Some(…) → check the wrapper'], 'plx-a'], [['x: 0 → 상수와 비교', 'x: 0 → compare with a literal'], 'plx-w'], [['y → 이름에 묶기: y = 5', 'y → bind a name: y = 5'], 'plx-g']].forEach(([t, c], i) => T(S, 'pp' + i, 1.0, 12.0 + i * 1.0, t, 'cz-mono plx-xs ' + c, 2, { off: 3 }));
+  T(S, 'g1', 1.0, 9.0, ['순서가 중요해요: 넓은 패턴이 먼저면 아래 갈래는 절대 실행되지 않아요', 'order matters: a broad pattern first makes later arms unreachable'], 'plx-xs plx-w', 3, { off: 4 });
+  codeLines(S, 'g2', 1.0, 10.3, ['Circle(r)           => π × r²,', 'Circle(r) if r == 0 => "point",   // 경고: 도달 불가'].map((t, i) => i ? [t, 'Circle(r) if r == 0 => "point",   // warning: unreachable'] : t), 3, 4);
+  T(S, 'g3', 1.0, 12.6, ['if 가드는 모양이 맞은 뒤 추가 조건을 검사해요', 'an if guard adds a condition after the shape matches'], 'plx-xs', 3, { off: 4 });
+  T(S, 'x1', 1.0, 9.0, ['Tri 갈래를 지우면?', 'remove the Tri arm?'], 'plx-xs plx-a', 4);
+  T(S, 'x2', 1.0, 10.2, 'error: non-exhaustive patterns: `Tri { .. }` not covered', 'cz-mono plx-xs plx-r', 4);
+  T(S, 'x3', 1.0, 11.4, ['빠진 경우를 컴파일러가 알려줘요 · _는 나머지 전부', 'the compiler reports missing cases · _ catches everything else'], 'plx-xs', 4);
+  T(S, 'x4', 1.0, 12.6, ['컴파일러는 갈래를 결정 트리·점프 테이블로 바꿔 빠르게 실행해요', 'compilers turn arms into decision trees or jump tables'], 'plx-xs plx-g', 4);
+  notesSplit(S, 'k', 15.6, [['match는 값을 위에서부터 패턴과 맞춰 보고, 처음 맞은 갈래를 실행해요 · 맞으면서 안의 값도 꺼내요', 'match tries each pattern from the top and runs the first that fits, pulling the inner values out as it goes'], ['패턴은 중첩할 수 있어요 · 감싼 모양, 상수 비교, 이름에 묶기를 한 번에', 'patterns nest, combining wrapper shapes, literal checks and name bindings in one go'], ['갈래 순서가 의미를 정해요 · if 가드로 조건을 더하고, 가려진 갈래는 경고가 나와요', 'arm order defines meaning · if guards add conditions, and shadowed arms produce warnings'], ['빠진 경우가 있으면 컴파일 오류 · 새 경우를 추가하면 고칠 곳을 모두 찾아 줘요', 'missing cases are compile errors, so adding a variant reveals every place to update']]);
+  fin(S, 'z', 15.6, [['패턴 매칭: 값의 모양을 검사하고, 동시에 안의 값을 꺼내 이름에 묶는 문법', 'pattern matching checks the shape of a value and binds its parts to names in one step', 'plx-xs plx-a'], ['Rust·Scala·Haskell·OCaml의 match, Python 3.10 match, Java 21과 C#의 switch 패턴', 'match in Rust, Scala, Haskell and OCaml, Python 3.10’s match, and switch patterns in Java 21 and C#'], ['if-else 사슬과 instanceof 캐스팅을 대신해 실수를 컴파일러가 잡게 해요', 'it replaces if-else chains and instanceof casts so the compiler can catch mistakes']]);
+  S.cap(1, '위에서부터 맞춰 보기', 'Try arms top to bottom').cap(2, '중첩된 패턴과 묶기', 'Nested patterns and bindings').cap(3, '순서와 가드', 'Order and guards').cap(4, '빠짐 검사', 'Exhaustiveness checking').cap(5, '패턴 매칭', 'Pattern matching');
+  return S;
+}
+
+function sActor() {
+  const S = scene({ id: 'pl-actor', steps: 5, per: 1.7 });
+  const A = [['acc', 1.0, 1.0, ['계좌 액터', 'Account actor'], 'accent'], ['log', 1.0, 7.6, ['로그 액터', 'Logger actor'], 'ok'], ['cli', 21.4, 1.0, ['요청 보내는 쪽들', 'senders'], 'line']];
+  A.forEach(([k, x, y, l, c]) => { box2(S, k, x, y, 9.6, 4.4, '', c, 0, { pct: 14 }); T(S, k + 'l', x + .4, y + .2, l, 'plx-xs plx-a', 0); });
+  T(S, 'st', 1.4, 2.4, ['상태: balance = 100', 'state: balance = 100'], 'cz-mono plx-xs', 0, { off: 2 });
+  T(S, 'st2', 1.4, 2.4, ['상태: balance = 220', 'state: balance = 220'], 'cz-mono plx-xs plx-g', 2);
+  T(S, 'own', 1.4, 3.5, ['다른 누구도 직접 못 건드려요', 'nobody else can touch it'], 'plx-xs', 1);
+  const MX = 12.2, MY = 1.6;
+  T(S, 'mbl', MX, .6, ['우편함', 'mailbox'], 'plx-xs plx-w', 0);
+  ['deposit +100', 'withdraw −30', 'deposit +50'].forEach((m, i) => { cell(S, 'm' + i, MX, MY + i * 1.25, 7.4, 1.05, m, 'warn', 22, 1); S.set('m' + i, 2, { opacity: '.3' }); });
+  ar(S, 'in', [21.4, 3.2], [19.8, 3.2], 'ink-2', 1, { h: .1 }); ar(S, 'take', [12.2, 2.1], [10.8, 2.1], 'warn', 1, { h: .1 });
+  T(S, 'cl1', 21.8, 2.4, ['메시지만 보낼 수 있어요', 'can only send messages'], 'plx-xs', 1);
+  T(S, 'one', MX, 5.6, ['한 번에 하나씩 순서대로', 'one at a time, in order'], 'plx-xs plx-a', 2);
+  T(S, 'calc', 1.4, 4.4, '100 + 100 − 30 + 50', 'cz-mono plx-xs', 2);
+  ar(S, 'tell', [5.8, 5.4], [5.8, 7.6], 'ok', 3, { h: .1 }); T(S, 'tl', 6.2, 6.1, 'log("withdraw 30")', 'cz-mono plx-xs plx-g', 3);
+  T(S, 'p1', 12.2, 7.6, ['액터가 할 수 있는 세 가지', 'all an actor can do'], 'plx-xs plx-a', 3, { off: 4 });
+  [['메시지 보내기', 'send messages'], ['새 액터 만들기', 'create actors'], ['다음 메시지의 동작 바꾸기', 'change how it handles the next one']].forEach((t, i) => T(S, 'p1' + i, 12.6, 8.7 + i * 1.0, t, 'plx-xs', 3, { off: 4 }));
+  box2(S, 'sup', 21.4, 7.6, 9.6, 1.6, ['감독자', 'supervisor'], 'warn', 4, { pct: 26 });
+  seg(S, 'sv1', [23.7, 9.2], [23.7, 10.4], 4, 'ink-3', .08); seg(S, 'sv2', [28.7, 9.2], [28.7, 10.4], 4, 'ink-3', .08);
+  box2(S, 'w1', 21.4, 10.4, 4.6, 1.4, ['일꾼 ✗ → ↻', 'worker ✗ → ↻'], 'danger', 4, { pct: 26 }); box2(S, 'w2', 26.4, 10.4, 4.6, 1.4, ['일꾼', 'worker'], 'ok', 4, { pct: 22 });
+  T(S, 'crash', 12.2, 7.6, ['죽은 일꾼은 감독자가 재시작', 'supervisors restart crashed workers'], 'plx-xs plx-r', 4, { w: 8.8 });
+  T(S, 'crash2', 12.2, 8.8, ['방어 코드 대신 “let it crash”', '“let it crash” over defensive code'], 'plx-xs plx-w', 4, { w: 8.8 });
+  notesSplit(S, 'k', 15.6, [['액터는 자기 상태를 혼자 가진 작은 객체 · 다른 액터는 메시지로만 부탁할 수 있어요', 'an actor is a small object that alone owns its state · others can only ask by message'], ['메시지는 우편함에 쌓이고 하나씩 순서대로 처리돼요 · 그래서 락 없이도 상태가 꼬이지 않아요', 'messages queue in the mailbox and are handled one at a time, so the state stays consistent without locks'], ['처리 중에 할 수 있는 건 메시지 보내기, 액터 만들기, 다음 동작 바꾸기뿐이에요', 'while handling a message an actor can only send messages, create actors and change its behaviour'], ['실패는 감독자가 맡아요 · 죽은 액터를 다시 띄워서 시스템 전체는 계속 돌아가요', 'failures go to supervisors, which restart crashed actors so the system keeps running']]);
+  fin(S, 'z', 15.6, [['액터 모델: 상태를 공유하지 않고, 우편함으로 비동기 메시지만 주고받는 동시성 모델', 'the actor model shares no state; actors only exchange asynchronous messages through mailboxes', 'plx-xs plx-a'], ['Erlang·Elixir(WhatsApp, 통신 장비), Akka, Orleans가 대표적 · 다른 머신의 액터도 같은 방식으로 불러요', 'Erlang and Elixir (WhatsApp, telecom gear), Akka and Orleans are the classics · remote actors are addressed the same way'], ['우편함이 넘치지 않게 배압을 두고, 서로 응답을 기다리는 교착에 주의해요', 'add backpressure so mailboxes do not overflow, and beware actors waiting on each other']]);
+  S.cap(1, '상태를 혼자 가진 액터', 'Actors own their state').cap(2, '우편함에서 하나씩', 'One message at a time').cap(3, '액터가 하는 일', 'What an actor can do').cap(4, '감독자와 재시작', 'Supervisors and restarts').cap(5, '액터 모델', 'The actor model');
+  return S;
+}
+
 
 return { css: CSSX, secs: [], add: {
   'pl-impl': [
@@ -595,6 +684,11 @@ return { css: CSSX, secs: [], add: {
     item('pl-csp', '채널(CSP)과 액터 모델', 'Channels (CSP) and the actor model', '공유 메모리와 락 대신 메시지를 주고받아 협력하는 동시성 모델이에요. Go는 채널, Erlang·Akka는 액터의 우편함을 써요.', 'Go의 고루틴은 채널로 값을 주고받고, 버퍼 없는 채널은 보내는 쪽과 받는 쪽이 만날 때까지 기다려 동기화도 해 줘요. 액터는 자기 상태를 혼자 소유하고 우편함의 메시지를 하나씩 처리해서 락이 필요 없어요. Erlang은 죽은 액터를 감독자가 다시 띄우는 “let it crash” 철학으로 높은 가용성을 얻어요. 대신 교착 상태와 메시지 폭주는 여전히 조심해야 해요.', 'Concurrency models that cooperate by passing messages instead of sharing memory under locks: Go uses channels, Erlang and Akka use actor mailboxes.', 'Goroutines exchange values over channels, and an unbuffered channel makes sender and receiver meet, synchronizing them. An actor owns its state alone and processes mailbox messages one at a time, so it needs no locks. Erlang’s supervisors restart crashed actors (“let it crash”), a key to its famous availability. Deadlocks and message floods still need care.', sCsp()),
     item('pl-result', '예외 vs 결과 타입', 'Exceptions vs result types', '오류를 보이지 않는 탈출구(예외)로 던질지, 반환 값(Result)으로 돌려줄지의 선택이에요.', '예외는 코드가 짧지만 시그니처만 봐서는 어디서 튈지 알 수 없어요. Rust의 Result<T, E>나 Haskell의 Either는 실패가 타입에 드러나고, 처리하지 않으면 컴파일러가 경고해요. ? 연산자는 실패하면 그 자리에서 오류를 그대로 돌려줘 간결하게 전파하고, Go는 (값, err) 두 개를 돌려주고 매번 검사해요. Swift는 던지는 함수에 throws와 try 표시를 강제해 중간을 택했어요.', 'Should errors escape through an invisible exit (exceptions) or come back as values (results)?', 'Exceptions keep code short, but signatures don’t reveal what may throw. Rust’s Result<T, E> and Haskell’s Either put failure in the type, and ignoring it draws a compiler warning. The ? operator returns the error on the spot for concise propagation, while Go returns (value, err) and checks every time. Swift takes a middle road by requiring throws and try markers.', sResult())
   ]
+},
+after: {
+  'pl-subtype': [item('pl-subtyping', '서브타이핑', 'Subtyping', 'S가 T의 서브타입이면 T가 필요한 모든 자리에 S 값을 대신 넣어도 안전해요. 타입들은 맨 위 Any부터 맨 아래 Nothing까지 위아래 관계를 이뤄요.', '서브타입 관계 S <: T는 “T를 기대하는 곳 어디에나 S를 넣어도 된다”는 약속이에요. Dog <: Animal이면 feed(a: Animal)에 Dog를 넘길 수 있어요. 하위 타입을 상위 타입 변수에 담는 업캐스트는 언제나 안전해서 자동으로 일어나고, 반대 방향 다운캐스트(a as Dog)는 실제 값이 Cat일 수 있으니 실행 중에 검사해야 해요. Kotlin의 is, TypeScript의 타입 가드처럼 검사 후 자동으로 좁혀 주는 문법이 안전한 방법이에요. 타입들은 위아래로 이어진 계층을 이뤄요. 맨 위의 Any(Object, unknown)는 모든 값을 담고, 맨 아래의 Nothing(never)은 값이 하나도 없어서 모든 타입의 서브타입이에요. 그래서 항상 예외를 던지는 fail()의 반환 타입을 Nothing으로 두면 Int가 필요한 자리에도 쓸 수 있어요. 서브타입과 상속은 달라요. 인터페이스 구현은 코드를 물려받지 않고도 서브타입이 되고, Square extends Rectangle처럼 상속은 했지만 너비만 바꾸는 코드가 깨진다면 진짜 서브타입이 아니에요(리스코프 치환 원칙 위반). Java·Kotlin 같은 명목적 언어는 선언으로, TypeScript·Go 인터페이스 같은 구조적 언어는 모양으로 서브타입을 정해요. 제네릭 타입끼리의 서브타입 관계는 변성이 정해요.', 'If S is a subtype of T, an S value can safely go wherever a T is expected. Types form a hierarchy from Any at the top to Nothing at the bottom.', 'The subtype relation S <: T promises that an S can be used anywhere a T is expected: with Dog <: Animal, feed(a: Animal) accepts a Dog. Upcasting, storing a subtype in a supertype variable, is always safe and happens implicitly; downcasting the other way (a as Dog) must be checked at run time, since the value might really be a Cat. Flow-sensitive checks such as Kotlin’s is or TypeScript’s type guards narrow the type safely. Types form a hierarchy: Any (Object, unknown) at the top holds every value, and Nothing (never) at the bottom has no values at all, making it a subtype of every type, so a fail() that always throws can be typed Nothing and used where an Int is required. Subtyping is not inheritance: implementing an interface creates a subtype without inheriting code, and a Square that extends Rectangle but breaks code that sets only the width is not a true subtype (a Liskov violation). Nominal languages such as Java and Kotlin establish subtypes by declaration, while structural ones such as TypeScript and Go interfaces infer them from shape. How subtyping carries over to generic types is the job of variance.', sSubtyping())],
+  'pl-adt': [item('pl-match', '패턴 매칭', 'Pattern matching', '값의 모양을 위에서부터 패턴과 맞춰 보고, 맞은 갈래에서 안의 값을 꺼내 이름에 묶어요. 빠진 경우는 컴파일러가 잡아 줘요.', 'match는 갈래를 위에서부터 차례로 맞춰 보고 처음 맞는 갈래 하나만 실행해요. Rect(3, 4)는 Circle(r) 갈래 둘을 지나 Rect(w, h)에 맞으며 w = 3, h = 4가 묶여 12를 계산해요. 패턴은 중첩할 수 있어서 Some(Point { x: 0, y })는 “Some으로 감싸져 있고, 안의 Point의 x가 0이면 y를 꺼내라”를 한 번에 표현해요. 상수 비교, 이름 묶기, _(아무거나), 범위, 여러 패턴의 |, 남은 부분을 받는 .. 같은 패턴을 섞어 써요. 순서가 의미를 정하기 때문에 넓은 패턴을 먼저 쓰면 아래의 좁은 갈래는 절대 실행되지 않고, 컴파일러가 도달 불가 경고를 내요. if 가드는 모양이 맞은 뒤 조건을 하나 더 검사해요. 합 타입에 대한 match는 빠짐 검사를 받아서, Tri 갈래를 지우면 “Tri가 처리되지 않았다”는 컴파일 오류가 나요. 컴파일러는 갈래를 결정 트리나 점프 테이블로 바꿔 효율적으로 실행해요. Rust·Scala·Haskell·OCaml의 match, Python 3.10의 match 문, Java 21과 C#의 switch 패턴이 있고, if-else 사슬과 instanceof 캐스팅을 대신해 실수를 컴파일 시간에 잡아 줘요.', 'Tries a value against patterns from the top, pulling inner values out into names in the arm that matches. The compiler catches missing cases.', 'A match tries its arms from the top and runs only the first that fits. Rect(3, 4) skips both Circle(r) arms and matches Rect(w, h), binding w = 3 and h = 4 to compute 12. Patterns nest, so Some(Point { x: 0, y }) says in one go “wrapped in Some, with a Point whose x is 0; pull out y”. Literal checks, name bindings, _ (anything), ranges, alternatives with | and .. for the rest can be mixed. Because order defines meaning, a broad pattern placed first makes narrower arms below it unreachable, and the compiler warns. An if guard adds one more condition after the shape matches. Matches over sum types are checked for exhaustiveness: delete the Tri arm and compilation fails with “Tri not covered”. Compilers turn the arms into decision trees or jump tables for efficient dispatch. Rust, Scala, Haskell and OCaml have match, Python 3.10 added a match statement, and Java 21 and C# offer switch patterns; all replace if-else chains and instanceof casts so mistakes surface at compile time.', sMatch())],
+  'pl-csp': [item('pl-actor', '액터 모델', 'The actor model', '상태를 혼자 가진 액터들이 우편함을 통해 비동기 메시지만 주고받는 동시성 모델이에요. 메시지를 하나씩 처리하니 락이 필요 없어요.', '액터는 자기 상태를 혼자 소유하는 작은 계산 단위예요. 다른 액터는 그 상태를 직접 읽거나 바꿀 수 없고, 메시지를 보내 부탁할 수만 있어요. 메시지는 액터의 우편함에 쌓이고 액터는 하나씩 순서대로 처리하므로, 계좌 액터에 +100, −30, +50이 동시에 도착해도 잔액은 락 없이 정확히 220이 돼요. 메시지를 처리하면서 액터가 할 수 있는 일은 세 가지뿐이에요. 다른 액터에게 메시지 보내기, 새 액터 만들기, 다음 메시지를 처리할 동작 바꾸기. 메시지는 비동기라 보내는 쪽은 기다리지 않고, 같은 주소 방식으로 다른 머신의 액터에도 보낼 수 있어서(위치 투명성) 분산 시스템으로 자연스럽게 커져요. 실패는 감독자 액터가 맡아요. 일꾼이 예외로 죽으면 감독자가 정해진 전략대로 다시 띄우므로, 곳곳에 방어 코드를 넣기보다 “죽게 두고 재시작(let it crash)”하는 설계가 가능해요. Erlang·Elixir(WhatsApp, 통신 장비), Akka, Microsoft Orleans가 대표적이에요. 주의할 점은 우편함이 무한히 쌓이지 않게 하는 배압, 서로의 응답을 기다리는 교착, 그리고 메시지 순서는 같은 송신자–수신자 사이에서만 보장된다는 점이에요.', 'A concurrency model in which actors, each owning its state, exchange only asynchronous messages through mailboxes. Handling one message at a time removes the need for locks.', 'An actor is a small unit of computation that alone owns its state: no one else can read or change it directly, only ask by sending messages. Messages queue in the actor’s mailbox and are processed one at a time, so even if +100, −30 and +50 arrive at an account actor together, the balance comes out at exactly 220 without locks. While handling a message an actor can do only three things: send messages, create new actors and decide how to handle the next message. Sending is asynchronous, and actors on other machines are addressed the same way (location transparency), so systems grow naturally into distributed ones. Failures go to supervisor actors: when a worker crashes, its supervisor restarts it according to a strategy, enabling a “let it crash” design instead of defensive code everywhere. Erlang and Elixir (WhatsApp, telecom equipment), Akka and Microsoft Orleans are the best-known implementations. Watch for unbounded mailboxes (add backpressure), actors deadlocked waiting on each other’s replies, and the fact that ordering is guaranteed only between one sender and one receiver.', sActor())]
 } };
 })();
 
@@ -628,6 +722,7 @@ window.UX = page([
   ].concat(XT.add['pl-conc'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .pl-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .pl-code{place-items:center start!important;padding-left:.7em}

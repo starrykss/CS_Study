@@ -7,7 +7,7 @@ SOLID 원칙 5가지와 GoF 디자인 패턴 23가지(생성 5 · 구조 7 · �
 
 The five SOLID principles, all 23 Gang of Four patterns (5 creational, 7 structural, 11 behavioral) and architecture patterns such as MVC, MVVM and dependency injection, animated as messages between objects.
 
-**5개 주제 · 33개 개념** — 모든 개념에 반복 재생되는 모션 예시가 있어요. 아래 표는 페이지 내용을 글로 옮긴 거예요.
+**5개 주제 · 34개 개념** — 모든 개념에 반복 재생되는 모션 예시가 있어요. 아래 표는 페이지 내용을 글로 옮긴 거예요.
 
 ## 목차 · Contents
 
@@ -15,7 +15,7 @@ The five SOLID principles, all 23 Gang of Four patterns (5 creational, 7 structu
 - [생성 패턴 · Creational patterns](#dp-create) (5)
 - [구조 패턴 · Structural patterns](#dp-struct) (7)
 - [행위 패턴 · Behavioral patterns](#dp-behav) (11)
-- [아키텍처 패턴 · Architectural patterns](#dp-arch) (5)
+- [아키텍처 패턴 · Architectural patterns](#dp-arch) (6)
 
 <a id="dp-solid"></a>
 
@@ -98,6 +98,7 @@ The five SOLID principles, all 23 Gang of Four patterns (5 creational, 7 structu
 | **MVVM**<br><sub>MVVM · Model–View–ViewModel</sub> | 뷰모델의 상태와 화면을 데이터 바인딩으로 연결해, 값이 바뀌면 화면이 자동으로 따라오게 해요.<br><sub>Binds a view-model’s state to the screen so the UI updates automatically when values change.</sub> | Vue, SwiftUI, Jetpack Compose, WPF가 이 방식이에요. UI 로직을 뷰모델에서 테스트할 수 있어요.<br><sub>Vue, SwiftUI, Jetpack Compose and WPF work this way, and UI logic becomes testable in the view-model.</sub> |
 | **의존성 주입 (DI)**<br><sub>Dependency injection</sub> | 객체가 필요한 의존 객체를 직접 만들지 않고 생성자 등을 통해 밖에서 받아요.<br><sub>Objects receive their dependencies from outside (e.g. through the constructor) instead of creating them.</sub> | 설정만으로 구현을 바꾸고, 테스트에서 가짜를 넣을 수 있어요. Spring, NestJS, Angular, Hilt가 컨테이너를 제공해요.<br><sub>Implementations can be swapped by configuration and faked in tests. Spring, NestJS, Angular and Hilt provide containers.</sub> |
 | **레이어드·클린 아키텍처**<br><sub>Layered · Clean architecture</sub> | 핵심 비즈니스 규칙을 중심에 두고, UI·DB 같은 바깥 기술이 안쪽을 의존하게 해요. 안쪽은 바깥을 몰라요.<br><sub>Keeps business rules at the centre and makes outer technologies like UI and databases depend inward, never the reverse.</sub> | 프레임워크나 DB를 바꿔도 핵심 로직이 안전하고 테스트가 쉬워요. 작은 프로젝트에 과하게 적용하면 파일만 늘어나요.<br><sub>Frameworks and databases can change without touching the core, and tests get easy. Overkill for small projects.</sub> |
+| **클린 아키텍처**<br><sub>Clean architecture</sub> | 업무 규칙을 가운데 두고 바깥으로 유스케이스, 어댑터, 프레임워크를 감싸는 동심원 구조예요. 모든 코드 의존은 안쪽으로만 향해요.<br><sub>Concentric rings with business rules at the centre, wrapped by use cases, adapters and frameworks; every code dependency points inward.</sub> | 클린 아키텍처는 네 겹의 동심원으로 그려요. 가운데 엔티티는 가장 오래가는 업무 규칙(주문, 할인 계산), 그 바깥 유스케이스는 앱이 하는 일(주문하기), 그 바깥 인터페이스 어댑터는 컨트롤러·프레젠터·게이트웨이, 맨 바깥은 웹 프레임워크·DB·UI 같은 바뀌기 쉬운 기술 세부예요. 핵심은 의존성 규칙이에요. 소스 코드의 의존은 언제나 안쪽을 향해서, 엔티티와 유스케이스는 express, SQL, HTTP 같은 바깥의 이름을 import조차 하지 않아요. 그런데 주문하기 유스케이스는 주문을 저장해야 하죠. 그래서 유스케이스 계층에 OrderRepository 인터페이스(포트)를 선언하고, 바깥 어댑터 계층의 PgOrderRepository가 그것을 구현해요. 실행 중 호출은 바깥으로 나가지만 코드 의존은 안쪽을 향하는 의존성 역전(DIP)이에요. 덕분에 유스케이스는 메모리 저장소 같은 가짜 구현으로 웹 서버와 DB 없이 몇 ms 만에 테스트할 수 있고, Postgres를 DynamoDB로 바꿔도 바깥 고리의 어댑터 하나만 고치면 돼요. 헥사고날(포트와 어댑터), 어니언 아키텍처도 같은 생각을 다르게 그린 것이에요. 다만 규칙이 거의 없는 단순한 CRUD 앱에 그대로 적용하면 계층마다 변환 코드와 파일만 늘어나니, 업무 규칙이 복잡한 도메인에서 쓰는 게 좋아요.<br><sub>Clean architecture is drawn as four concentric rings: entities at the centre hold the most durable business rules (orders, discount calculations); use cases around them describe what the application does (place an order); interface adapters hold controllers, presenters and gateways; and the outer ring holds volatile technical details such as web frameworks, databases and UIs. The key is the dependency rule: source-code dependencies always point inward, so entities and use cases never even import names like express, SQL or HTTP. Yet placing an order must save it, so the use-case layer declares an OrderRepository interface (a port) and PgOrderRepository in the adapter layer implements it; calls flow outward at run time while code dependencies point inward, which is dependency inversion (DIP). As a result use cases can be tested in milliseconds with fakes such as an in-memory repository, without a web server or database, and swapping Postgres for DynamoDB changes only one adapter in the outer ring. Hexagonal (ports and adapters) and onion architectures draw the same idea differently. Applied as-is to a simple CRUD app with few rules, it mostly adds mapping code and files per layer, so it pays off in domains with complex business rules.</sub> |
 | **리포지토리**<br><sub>Repository</sub> | 데이터 저장·조회를 컬렉션처럼 다루는 인터페이스 뒤에 숨겨서, 도메인 코드가 저장 방식을 모르게 해요.<br><sub>Hides storage behind a collection-like interface so domain code never knows how data is stored.</sub> | Spring Data, Prisma, TypeORM이 자동으로 만들어 줘요. 쿼리 성능 문제는 숨겨질 뿐 사라지지 않으니 주의하세요.<br><sub>Spring Data, Prisma and TypeORM generate them. Query performance issues are hidden, not removed.</sub> |
 
 ## 파일 · Files

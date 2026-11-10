@@ -747,6 +747,60 @@ function sDora() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+const notesSplit = (S, k, y, list) => list.forEach((t, i) => T(S, k + i, 1, y, t, 'sfx-xs', i + 1, { off: i + 2 }));
+function sEquiv() {
+  const S = scene({ id: 'se-equiv', steps: 5, per: 1.7 });
+  T(S, 'spec', 1, .2, ['요금 규칙: 나이(정수) 0–12 어린이, 13–64 성인, 65–120 경로, 그 밖은 오류', 'fare rule: age (integer) 0–12 child, 13–64 adult, 65–120 senior, anything else is an error'], 'sfx-xs sfx-a', 0);
+  const X = v => 3.0 + (v + 20) / 160 * 26.0, LY = 4.6;
+  hl(S, 'ax', X(-20), X(140), LY, 'ink-3', 0, { w: .1 });
+  [0, 13, 65, 120].forEach(v => { vl(S, 't' + v, X(v), LY - .3, LY + .3, 'ink-3', 0, { w: .08 }); T(S, 'tl' + v, X(v) - 1, LY + .5, String(v), 'cz-tc cz-mono sfx-xs', 0, { w: 2 }); });
+  const C = [[-20, -.5, 'danger', ['음수', 'negative']], [0, 12.5, 'accent', ['어린이', 'child']], [12.5, 64.5, 'ok', ['성인', 'adult']], [64.5, 120.5, 'warn', ['경로', 'senior']], [120.5, 140, 'danger', ['120 초과', 'over 120']]];
+  C.forEach(([a, b, c, l], i) => { rect(S, 'c' + i, X(a), LY - 2.0, X(b) - X(a) - .06, 1.6, c, 26, 1, { r: .15 }); T(S, 'cl' + i, X(a), LY - 3.05, l, 'cz-tc sfx-xs', 1, { w: X(b) - X(a) }); });
+  const REP = [[-5, 'danger'], [6, 'accent'], [30, 'ok'], [80, 'warn'], [130, 'danger']];
+  REP.forEach(([v, c], i) => { pt(S, 'p' + i, X(v), LY, 2, { background: `var(--${c === 'ok' ? 'ok' : c === 'accent' ? 'accent' : c === 'warn' ? 'warn' : 'danger'})` }, .3); T(S, 'pv' + i, X(v) - 1, LY + 1.4, String(v), 'cz-tc cz-mono sfx-xs sfx-a', 2, { w: 2 }); });
+  T(S, 'nn', 1, 7.4, ['숫자가 아닌 입력도 한 부류: "abc", 빈칸', 'non-numbers are a class too: "abc", empty'], 'sfx-xs sfx-r', 2);
+  T(S, 'cnt', 1, 8.8, ['대표값 7개: −5, 6, 30, 80, 130, "abc", ""', 'seven representatives: −5, 6, 30, 80, 130, "abc", ""'], 'cz-mono sfx-xs sfx-g', 2, { off: 4 });
+  T(S, 'why', 1, 9.9, ['같은 부류의 값은 똑같이 처리된다고 보고 하나만 시험해요 (0~120을 다 쓰면 121개)', 'values in one class are assumed to behave alike, so one test each (all of 0–120 would be 121)'], 'sfx-xs', 3, { off: 4 });
+  [[-1, 0], [12, 13], [64, 65], [120, 121]].forEach(([a, b], i) => { pt(S, 'ba' + i, X(a), LY, 3, { background: 'var(--ink-2)' }, .16, { off: 4 }); pt(S, 'bb' + i, X(b), LY, 3, { background: 'var(--ink-2)' }, .16, { off: 4 }); });
+  T(S, 'bnd', 1, 11.0, ['경계값 분석을 더하면: −1/0, 12/13, 64/65, 120/121', 'add boundary analysis: −1/0, 12/13, 64/65, 120/121'], 'cz-mono sfx-xs sfx-w', 3, { off: 4 });
+  const TB = [['6', ['회원', 'member'], '✓'], ['30', ['비회원', 'guest'], '✓'], ['80', ['회원', 'member'], '✓'], ['−5', ['회원', 'member'], '✗'], ['130', ['비회원', 'guest'], '✗'], ['30', '"XYZ"', '✗']];
+  T(S, 'th', 1, 8.6, ['나이 × 회원 코드: 유효 부류는 모두 한 번 이상, 무효 부류는 하나씩만', 'age × member code: cover every valid class, add invalid ones one at a time'], 'sfx-xs sfx-a', 4);
+  TB.forEach(([a, b, r], i) => { const x = 1 + (i % 3) * 10.2, y = 9.8 + Math.floor(i / 3) * 1.3; cell(S, 'tb' + i, x, y, 9.6, 1.1, '', r === '✓' ? 'ok' : 'danger', 20, 4); T(S, 'tba' + i, x + .4, y + .1, a, 'cz-mono sfx-xs', 4); T(S, 'tbb' + i, x + 3.2, y + .1, b, 'sfx-xs', 4); T(S, 'tbr' + i, x + 8.2, y + .1, r, 'sfx-xs', 4); });
+  T(S, 'tbn', 1, 12.7, ['전체 조합 5 × 3 = 15개 대신 6개 · 무효 값을 섞지 않아야 어느 것이 오류를 냈는지 알아요', '6 tests instead of all 5 × 3 = 15 · one invalid value per test shows which one caused the error'], 'sfx-xs', 4);
+  notesSplit(S, 'k', 15.6, [['나이를 받아 요금을 정하는 기능 · 입력 범위를 같은 결과를 내는 구간으로 나눠 봐요', 'a function maps age to a fare · split the input range into intervals that behave the same'], ['유효한 부류 셋과 무효한 부류(음수, 120 초과, 숫자 아님)마다 대표값을 하나씩 골라요', 'pick one representative from each valid class and each invalid one (negative, over 120, not a number)'], ['같은 부류는 같은 코드 경로를 탄다고 보고 하나만 시험 · 경계값 분석이 그 사이 틈을 메워요', 'a class is assumed to take one code path, so one value suffices · boundary analysis covers the edges between'], ['입력이 여럿이면 유효 부류는 함께 섞어 덮고, 무효 부류는 한 테스트에 하나씩만 넣어요', 'with several inputs, combine valid classes freely but put only one invalid class in each test']]);
+  fin(S, 'z', 15.6, [['동등 분할: 입력을 같게 처리되는 부류로 나누고, 부류마다 대표값 하나로 시험하기', 'equivalence partitioning splits inputs into classes treated alike and tests one representative per class', 'sfx-xs sfx-a'], ['테스트 수를 크게 줄이면서도 모든 경우의 “종류”를 빠짐없이 덮어요', 'it cuts the number of tests sharply while still covering every kind of case'], ['경계값 분석과 거의 항상 함께 쓰고, 부류를 잘못 나누면 놓치는 버그가 생겨요', 'it is almost always paired with boundary analysis, and wrong partitions hide bugs']]);
+  S.cap(1, '입력을 부류로 나누기', 'Partition the input').cap(2, '부류마다 대표값 하나', 'One value per class').cap(3, '왜 하나면 되나', 'Why one is enough').cap(4, '입력이 여럿일 때', 'With several inputs').cap(5, '동등 분할', 'Equivalence partitioning');
+  return S;
+}
+
+function sBoundedCtx() {
+  const S = scene({ id: 'se-bc', steps: 5, per: 1.7 });
+  const FL = ['name', 'description', 'images', 'sku', 'quantity', 'warehouseLoc', 'price', 'taxCategory', 'weight', 'dimensions'];
+  rect(S, 'big', 9.4, .4, 13.2, 9.6, 'danger', 8, 0, { r: .4, off: 2 }); T(S, 'bigl', 9.8, .5, 'class Product', 'cz-mono sfx-s sfx-r', 0, { off: 2 });
+  FL.forEach((f, i) => T(S, 'fl' + i, 10.2 + (i % 2) * 6.2, 2.0 + Math.floor(i / 2) * 1.5, f, 'cz-mono sfx-xs', 0, { off: 2 }));
+  const TM = [[['카탈로그팀', 'catalog team'], 1.0, 1.2], [['재고팀', 'inventory team'], 1.0, 6.6], [['결제팀', 'billing team'], 24.0, 1.2], [['배송팀', 'shipping team'], 24.0, 6.6]];
+  TM.forEach(([l, x, y], i) => { box2(S, 'tm' + i, x, y, 7.0, 1.6, l, 'line', 0, { pct: 16, off: 2 }); ar(S, 'ta' + i, [x < 10 ? x + 7.0 : x, y + .8], [x < 10 ? 9.4 : 22.6, y + .8 + (y < 4 ? 1.0 : 0)], 'danger', 1, { h: .1, off: 2 }); });
+  T(S, 'pain', 1, 11.0, ['모두가 고치는 하나의 클래스 · 한 팀의 변경이 다른 팀을 깨뜨려요', 'one class everyone edits · one team’s change breaks another’s'], 'sfx-xs sfx-r', 1, { off: 2 });
+  const BX = [[['카탈로그', 'Catalog'], 1.0, .6, 'id, name, desc, images', 'accent'], [['재고', 'Inventory'], 20.0, .6, 'id, sku, quantity, location', 'ok'], [['결제', 'Billing'], 1.0, 7.0, 'id, price, taxCategory', 'warn'], [['배송', 'Shipping'], 20.0, 7.0, 'id, weight, dimensions', 'line']];
+  BX.forEach(([l, x, y, fs, c], i) => { rect(S, 'bx' + i, x, y, 11.0, 5.2, c, 10, 2, { r: .4 }); T(S, 'bxl' + i, x + .4, y + .2, l, 'sfx-xs sfx-a', 2); T(S, 'bxc' + i, x + .4, y + 1.4, 'Product', 'cz-mono sfx-xs', 2, { off: 3 }); T(S, 'bxd' + i, x + .4, y + 2.4, fs, 'cz-mono sfx-xs', 2, { off: 3 }); });
+  T(S, 'id', 12.2, 6.0, ['productId로만 연결', 'linked only by productId'], 'cz-tc sfx-xs sfx-g', 2, { w: 7.6, off: 3 });
+  box2(S, 'ord', 12.6, 3.0, 6.8, 1.6, ['주문', 'Ordering'], 'accent', 3, { pct: 26, off: 4 });
+  T(S, 'evl', 12.2, 1.6, 'OrderPlaced', 'cz-tc cz-mono sfx-xs sfx-g', 3, { w: 7.6, off: 4 });
+  ar(S, 'ev1', [19.4, 3.6], [20.0, 3.6], 'ok', 3, { h: .12, off: 4 }); elb(S, 'ev2', [[16.0, 4.6], [16.0, 9.6], [20.0, 9.6]], 'ok', 3, { h: .12, off: 4 });
+  T(S, 'ev1t', 20.4, 1.6, ['OrderPlaced → 재고 예약', 'OrderPlaced → reserve stock'], 'sfx-xs', 3, { off: 4 }); T(S, 'ev2t', 20.4, 8.2, ['OrderPlaced → 배송 생성', 'OrderPlaced → create shipment'], 'sfx-xs', 3, { off: 4 });
+  T(S, 'acl', 1.4, 8.2, ['외부 결제 대행사(PG)와의 사이에', 'between us and the payment gateway'], 'sfx-xs', 3, { off: 4 });
+  T(S, 'acl2', 1.4, 9.3, ['부패 방지 계층(ACL)이 번역', 'an anti-corruption layer translates'], 'sfx-xs sfx-w', 3, { off: 4 });
+  T(S, 'ul0', 1.4, 1.6, ['컨텍스트 안에서는', 'inside a context'], 'sfx-xs', 4); T(S, 'ul0b', 1.4, 2.6, ['한 단어 = 한 뜻', 'one word = one meaning'], 'sfx-xs sfx-a', 4);
+  T(S, 'ul1', 20.4, 1.6, ['“예약” = 재고 묶어 두기', '“reservation” = held stock'], 'sfx-xs', 4);
+  T(S, 'ul2', 20.4, 8.2, ['“예약” = 택배 픽업 일정', '“reservation” = pickup slot'], 'sfx-xs', 4);
+  T(S, 'ul4', 1.4, 8.2, ['팀 하나가 컨텍스트 하나를 맡아요', 'one team owns one context'], 'sfx-xs sfx-g', 4);
+  notesSplit(S, 'k', 15.6, [['“상품”이라는 말 하나에 팀마다 다른 뜻을 담으면, 모두가 고치는 거대한 클래스가 생겨요', 'when “product” means something different to every team, one giant class ends up edited by all'], ['바운디드 컨텍스트로 나누면 각자 필요한 필드만 가진 자기 Product 모델을 가져요 · 연결은 ID로만', 'bounded contexts give each team its own Product model with just the fields it needs, linked only by ID'], ['컨텍스트 사이는 이벤트나 번역 계층으로 이어요 · 컨텍스트 맵이 그 관계를 그려요', 'contexts connect through events or translation layers, and a context map records those relations'], ['같은 단어도 컨텍스트 안에서는 한 뜻 · 팀과 서비스의 경계를 정하는 출발점이 돼요', 'inside a context each word has one meaning, which makes it the starting point for team and service boundaries']]);
+  fin(S, 'z', 15.6, [['바운디드 컨텍스트: 하나의 모델과 용어가 일관되게 통하는 경계', 'a bounded context is the boundary within which one model and vocabulary stay consistent', 'sfx-xs sfx-a'], ['컨텍스트 맵의 관계: 상류·하류, 공유 커널, 공개 언어, 부패 방지 계층', 'context-map relations include upstream/downstream, shared kernel, published language and anti-corruption layers'], ['마이크로서비스 경계 후보 · 콘웨이의 법칙처럼 팀 구조와 맞물려요', 'they are prime microservice boundaries and, per Conway’s law, mirror team structure']]);
+  S.cap(1, '모두가 고치는 하나의 모델', 'One model everyone edits').cap(2, '컨텍스트로 나누기', 'Split into contexts').cap(3, '컨텍스트 사이의 연결', 'Connecting contexts').cap(4, '컨텍스트마다 자기 언어', 'A language per context').cap(5, '바운디드 컨텍스트', 'Bounded contexts');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'se-proc': [
     item('se-req', '요구사항 공학', 'Requirements engineering', '무엇을 만들어야 하는지 이해관계자에게서 도출하고, 분석·명세·검증·관리하는 활동이에요.', '요구사항은 기능(무엇을 하나: 비밀번호 재설정)과 비기능(얼마나 잘 하나: 성능, 보안, 가용성 99.9%)으로 나눠요. “빠르게 로딩”처럼 모호한 요구는 “3G에서 첫 화면 p95 ≤ 2초”처럼 측정·검증 가능하게 다시 써요. MoSCoW(Must, Should, Could, Won’t)로 우선순위를 정하고, 요구사항과 테스트를 추적 매트릭스로 연결해요. 요구사항 오류는 초기에 잡을수록 싸요.', 'The work of eliciting what to build from stakeholders, then analyzing, specifying, validating and managing it.', 'Requirements split into functional ones (what it does: reset a password) and non-functional ones (how well: performance, security, 99.9% availability). Vague wishes like “loads fast” are rewritten to be measurable and testable, such as “first screen p95 ≤ 2 s on 3G”. MoSCoW (Must, Should, Could, Won’t) sets priorities, and a traceability matrix links requirements to tests. Requirement errors are cheapest to fix early.', sReq()),
@@ -766,6 +820,10 @@ return { css: CSSX, secs: [], add: {
   'se-team': [
     item('se-dora', 'DORA 지표', 'DORA metrics', '소프트웨어 전달 성과를 재는 네 가지 지표예요: 배포 빈도, 변경 리드 타임, 변경 실패율, 서비스 복구 시간.', '앞의 둘은 속도(얼마나 자주, 빨리 내보내나), 뒤의 둘은 안정성(얼마나 자주 깨지고, 빨리 고치나)을 재요. 『Accelerate』와 State of DevOps 보고서는 상위 팀이 하루 여러 번 배포하고 한 시간 안에 복구하는 등 하위 팀과 수백 배 차이가 나며, 속도와 안정성이 함께 좋아진다는 걸 보여 줬어요. 개인 평가가 아니라 팀 개선용이고, 목표로 삼으면 왜곡돼요(굿하트의 법칙).', 'Four measures of software delivery performance: deployment frequency, lead time for changes, change failure rate and time to restore service.', 'The first two measure speed (how often and how fast you ship); the last two measure stability (how often things break and how fast you recover). “Accelerate” and the State of DevOps reports showed top teams deploying many times a day and restoring within an hour, orders of magnitude ahead of low performers, with speed and stability improving together. They are for improving teams, not rating individuals, and get gamed once turned into targets (Goodhart’s law).', sDora())
   ]
+},
+after: {
+  'se-boundary': [item('se-equiv', '동등 분할', 'Equivalence partitioning', '입력을 같은 방식으로 처리되는 부류로 나누고, 부류마다 대표값 하나씩만 시험해요. 테스트 수를 줄이면서도 모든 경우의 종류를 덮어요.', '나이(정수)에 따라 요금을 정하는 기능이 0–12는 어린이, 13–64는 성인, 65–120은 경로, 나머지는 오류라고 해 봐요. 0부터 120까지 다 시험하면 121개지만, 같은 구간 안의 값은 같은 코드 경로를 탄다고 보면 부류마다 하나면 충분해요. 유효한 부류 셋(어린이, 성인, 경로)과 무효한 부류(음수, 120 초과, 숫자가 아님, 빈칸)에서 대표값을 하나씩 고르면 −5, 6, 30, 80, 130, "abc", "" 일곱 개로 모든 경우의 “종류”를 덮어요. 부류 사이의 경계(−1/0, 12/13, 64/65, 120/121)는 실수가 몰리는 곳이라 경계값 분석을 함께 써요. 입력이 여러 개면 부류마다 조합이 늘어나는데, 유효한 부류들은 한 테스트에 섞어서 각 부류가 한 번 이상 나오게 하고, 무효한 부류는 한 테스트에 하나씩만 넣어요. 무효 값을 둘 섞으면 첫 번째 오류가 두 번째를 가려서 어느 쪽이 처리되지 않았는지 알 수 없기 때문이에요. 나이 5부류 × 회원 코드 3부류의 전체 조합 15개 대신 6개면 돼요. 부류를 잘못 나누면(예: 실제 코드가 18세에서도 분기하는데 모르고 있으면) 버그를 놓치므로, 명세와 코드를 함께 보며 나눠야 해요.', 'Split inputs into classes handled the same way and test one representative per class, covering every kind of case with far fewer tests.', 'Suppose a fare depends on an integer age: 0–12 child, 13–64 adult, 65–120 senior, anything else an error. Testing every age from 0 to 120 takes 121 tests, but if values within an interval follow the same code path, one per class is enough. Picking a representative from the three valid classes (child, adult, senior) and the invalid ones (negative, over 120, not a number, empty) gives seven tests, −5, 6, 30, 80, 130, "abc" and "", covering every kind of case. The edges between classes (−1/0, 12/13, 64/65, 120/121) attract mistakes, so boundary-value analysis is used alongside. With several inputs, combinations multiply: combine valid classes freely so each appears at least once, but put only one invalid class in each test, because two invalid values let the first error mask the second and hide which one went unhandled. Five age classes × three member-code classes then need six tests instead of all fifteen. Partitions drawn wrongly, for example when the code also branches at 18 without anyone knowing, hide bugs, so derive them from both the specification and the code.', sEquiv())],
+  'se-ddd': [item('se-bc', '바운디드 컨텍스트', 'Bounded contexts', '하나의 모델과 용어가 일관되게 통하는 경계예요. “상품”을 팀마다 자기 모델로 따로 가지고, 경계 사이는 ID와 이벤트로 이어요.', '“상품”이라는 말은 카탈로그팀에게는 이름·설명·이미지, 재고팀에게는 SKU·수량·창고 위치, 결제팀에게는 가격·세금 분류, 배송팀에게는 무게·크기예요. 이걸 모두 담은 거대한 Product 클래스 하나를 모든 팀이 고치면, 한 팀의 변경이 다른 팀을 깨뜨리고 아무도 전체를 이해하지 못해요. 바운디드 컨텍스트는 모델과 용어가 일관되게 통하는 경계를 정해, 각 컨텍스트가 필요한 필드만 가진 자기 Product 모델을 갖게 해요. 서로는 productId 같은 식별자로만 가리켜요. 컨텍스트 안에서는 한 단어가 한 뜻(유비쿼터스 언어)이라, 재고팀의 “예약”은 재고를 묶어 두는 것이고 배송팀의 “예약”은 택배 픽업 일정이어도 혼란이 없어요. 컨텍스트 사이의 관계는 컨텍스트 맵으로 그려요. 주문 컨텍스트가 OrderPlaced 이벤트를 발행하면 재고는 재고를 예약하고 배송은 배송을 만들고, 외부 결제 대행사처럼 우리가 바꿀 수 없는 모델과는 부패 방지 계층(ACL)이 번역해 우리 모델이 오염되지 않게 해요. 이 밖에 상류·하류, 공유 커널, 공개 언어 같은 관계가 있어요. 보통 한 팀이 한 컨텍스트를 맡고, 마이크로서비스의 경계를 정할 때 출발점이 돼요. 콘웨이의 법칙처럼 팀 구조와 맞물려 움직여요.', 'The boundary within which one model and vocabulary stay consistent. Each team keeps its own Product model, linked to others only by IDs and events.', 'To the catalog team a “product” is a name, description and images; to inventory it is an SKU, quantity and warehouse location; to billing a price and tax category; to shipping a weight and dimensions. One giant Product class holding all of it, edited by every team, means one team’s change breaks another’s and nobody understands the whole. A bounded context draws the boundary within which a model and its vocabulary stay consistent, so each context keeps its own Product with only the fields it needs, and contexts refer to one another only by identifiers such as productId. Inside a context each word has one meaning (the ubiquitous language), so inventory’s “reservation” can mean held stock while shipping’s means a courier pickup slot without confusion. A context map records how contexts relate: the ordering context publishes an OrderPlaced event, inventory reserves stock and shipping creates a shipment, and toward models we cannot change, such as an external payment gateway, an anti-corruption layer translates so ours stays clean. Other relations include upstream/downstream, shared kernel and published language. Typically one team owns one context, and contexts are the usual starting point for microservice boundaries, moving together with team structure as Conway’s law predicts.', sBoundedCtx())]
 } };
 })();
 
@@ -804,6 +862,7 @@ window.UX = page([
   ].concat(XT.add['se-team'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .se-m .in{font-family:var(--f-mono);font-size:.7em;font-weight:700}
 .se-p .in{font-family:inherit;font-size:.72em;font-weight:700;line-height:1.25;text-align:center}

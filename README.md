@@ -13,7 +13,7 @@
 
 컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 31개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1383" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1383-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 31" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-31-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 1393" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-1393-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 30개와 UI/UX 도감, 개념 1383개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 30개와 UI/UX 도감, 개념 1393개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -76,11 +76,11 @@
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
-| **프로그래밍 언어**<br><sub>Programming languages</sub> | 컴파일러, 타입, 스코프, 클로저, GC, 이벤트 루프, 비동기 | 30 | [열기](https://starrykss.github.io/CS_Study/programming-languages/) | [`programming-languages/`](./programming-languages) |
+| **프로그래밍 언어**<br><sub>Programming languages</sub> | 컴파일러, 타입, 스코프, 클로저, GC, 이벤트 루프, 비동기 | 33 | [열기](https://starrykss.github.io/CS_Study/programming-languages/) | [`programming-languages/`](./programming-languages) |
 | **컴파일러**<br><sub>Compilers</sub> | 렉싱·파싱·AST, 타입 검사와 추론, SSA와 최적화, 명령어 선택·레지스터 할당, LLVM과 JIT | 30 | [열기](https://starrykss.github.io/CS_Study/compilers/) | [`compilers/`](./compilers) |
-| **프로그래밍 패러다임·방법론**<br><sub>Paradigms & practices</sub> | 객체지향, 함수형, 선언형, 반응형, 클린 코드, 리팩터링 | 31 | [열기](https://starrykss.github.io/CS_Study/programming-paradigms/) | [`programming-paradigms/`](./programming-paradigms) |
-| **디자인 패턴**<br><sub>Design patterns</sub> | SOLID, GoF 23개 패턴, MVC·MVVM, 의존성 주입 | 33 | [열기](https://starrykss.github.io/CS_Study/design-patterns/) | [`design-patterns/`](./design-patterns) |
-| **소프트웨어 공학**<br><sub>Software engineering</sub> | 애자일, 스크럼, 칸반, TDD, BDD, DDD, 테스트, UML, 코드 리뷰 | 30 | [열기](https://starrykss.github.io/CS_Study/software-engineering/) | [`software-engineering/`](./software-engineering) |
+| **프로그래밍 패러다임·방법론**<br><sub>Paradigms & practices</sub> | 객체지향, 함수형, 선언형, 반응형, 클린 코드, 리팩터링 | 35 | [열기](https://starrykss.github.io/CS_Study/programming-paradigms/) | [`programming-paradigms/`](./programming-paradigms) |
+| **디자인 패턴**<br><sub>Design patterns</sub> | SOLID, GoF 23개 패턴, MVC·MVVM, 의존성 주입 | 34 | [열기](https://starrykss.github.io/CS_Study/design-patterns/) | [`design-patterns/`](./design-patterns) |
+| **소프트웨어 공학**<br><sub>Software engineering</sub> | 애자일, 스크럼, 칸반, TDD, BDD, DDD, 테스트, UML, 코드 리뷰 | 32 | [열기](https://starrykss.github.io/CS_Study/software-engineering/) | [`software-engineering/`](./software-engineering) |
 
 ### 데이터·인프라 · Data & infrastructure
 
