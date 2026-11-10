@@ -844,6 +844,268 @@ function sStokes() {
   return S;
 }
 
+const XT = (() => {
+const ex = t => Array.isArray(t) ? t.map(ex) : (typeof t === 'string' ? t.replace(/</g, '&lt;') : t);
+const { scene, node, edge, text, arrow, dot, item, sec, page, C } = CZ;
+const hid = o => Object.assign({ opacity: '0' }, o || {});
+const r3 = n => +(+n).toFixed(3);
+const cv = c => c.includes('(') ? c : `var(--${c})`;
+const tint = (c, p) => `color-mix(in srgb,var(--${c}) ${p}%,var(--ui))`;
+const vis = (S, k, st, off) => { if (st) S.set(k, st, { opacity: '1' }); if (off) S.set(k, off, { opacity: '0' }); };
+const fr = (x0, x1, y0, y1, L, R, T, B) => ({ x0, x1, y0, y1, L, R, T, B, u: (R - L) / (x1 - x0), X: x => L + (x - x0) / (x1 - x0) * (R - L), Y: y => B - (y - y0) / (y1 - y0) * (B - T) });
+/* frame with origin at (ox, oy) on the stage, u em per unit, integer extents */
+const pf = (ox, oy, u, xa, xb, ya, yb) => fr(xa, xb, ya, yb, ox + xa * u, ox + xb * u, oy - yb * u, oy - ya * u);
+const dashBg = (c, dir) => `repeating-linear-gradient(${dir || 90}deg,${cv(c)} 0 .45em,transparent .45em .75em)`;
+function seg(S, k, a, b, st, color, h, o = {}) {
+  h = h || .18; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, ux = o.dash ? 0 : dx / L * h * .45, uy = o.dash ? 0 : dy / L * h * .45;
+  const bg = o.dash ? dashBg(color) : cv(color);
+  edge(S, k, a[0] - ux, a[1] - uy, b[0] + ux, b[1] + uy, { h, y: a[1] - uy - h / 2, s: st ? hid({ background: bg }) : { background: bg } });
+  vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' });
+}
+function poly(S, pfx, pts, o = {}) { let n = 0; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if (!a || !b) continue; const st = typeof o.st === 'function' ? o.st(i, pts.length - 1) : o.st; seg(S, pfx + (n++), a, b, st, o.color || 'accent', o.h, { off: o.off }); } return n; }
+function pplot(S, pfx, P, t0, t1, o = {}) { const n = o.n || 48, pts = []; for (let i = 0; i <= n; i++) pts.push(P(t0 + (t1 - t0) * i / n)); return poly(S, pfx, pts, o); }
+/* plot a parametric curve given in math coordinates, dropping points outside the frame */
+function mplot(S, pfx, F, P, t0, t1, o = {}) { return pplot(S, pfx, t => { const [x, y] = P(t); return x >= F.x0 - 1e-9 && x <= F.x1 + 1e-9 && y >= F.y0 - 1e-9 && y <= F.y1 + 1e-9 ? [F.X(x), F.Y(y)] : null; }, t0, t1, o); }
+/* clip segment p-q (math coords) to the frame (Liang-Barsky) */
+function clip(F, p, q) {
+  let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+  const tests = [[-dx, p[0] - F.x0], [dx, F.x1 - p[0]], [-dy, p[1] - F.y0], [dy, F.y1 - p[1]]];
+  for (const [pp, qq] of tests) { if (pp === 0) { if (qq < 0) return null; continue; } const t = qq / pp; if (pp < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  return [[p[0] + t0 * dx, p[1] + t0 * dy], [p[0] + t1 * dx, p[1] + t1 * dy]];
+}
+function mline(S, k, F, p, q, o = {}) { const c = clip(F, p, q); if (!c) return; seg(S, k, [F.X(c[0][0]), F.Y(c[0][1])], [F.X(c[1][0]), F.Y(c[1][1])], o.st, o.color || 'accent', o.h || .14, o); }
+const thru = (S, k, F, d, o = {}) => mline(S, k, F, [(o.p || [0, 0])[0] - 99 * d[0], (o.p || [0, 0])[1] - 99 * d[1]], [(o.p || [0, 0])[0] + 99 * d[0], (o.p || [0, 0])[1] + 99 * d[1]], o);
+const vl = (S, k, x, y1, y2, color, st, o = {}) => { S.el(k, { x: x - (o.w || .14) / 2, y: Math.min(y1, y2), w: o.w || .14, h: Math.abs(y2 - y1), css: `background:${o.dash ? dashBg(color, 180) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const hl = (S, k, x1, x2, y, color, st, o = {}) => { S.el(k, { x: Math.min(x1, x2), y: y - (o.w || .14) / 2, w: Math.abs(x2 - x1), h: o.w || .14, css: `background:${o.dash ? dashBg(color) : cv(color)}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rect = (S, k, x, y, w, h, color, pct, st, o = {}) => { S.el(k, { x, y, w, h, html: ex(o.html || ''), cls: o.cls || '', css: `border-radius:${o.r ?? .2}em;${o.css || ''}`, s: Object.assign(st ? hid() : {}, { background: tint(color, pct) }) }); vis(S, k, st, o.off); };
+const pt = (S, k, x, y, st, sty, r, o = {}) => { dot(S, k, x, y, '', { r: r || .42, s: Object.assign(st ? { opacity: '0' } : {}, sty || C.cur) }); vis(S, k, st, o.off); };
+const T = (S, k, x, y, t, cls, st, o = {}) => { t = ex(t); const p = { cls: 'cz-t ' + (cls || ''), css: 'z-index:5;' + (o.css || ''), s: st ? hid() : {} }; if (o.w) p.w = o.w; text(S, k, x, y, t, p); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.3' }); };
+const L = (S, k, x, y, w, cls, list) => S.label(k, { cls: 'cz-t ' + cls, x, y, w, css: 'z-index:5' }, [[0, '']].concat(list));
+const ar = (S, k, a, b, color, st, o = {}) => { const c = cv(color || 'ink-2'); arrow(S, k, a[0], a[1], b[0], b[1], { h: o.h || .16, s: Object.assign(st ? hid() : {}, { background: o.dash ? dashBg(color) : c, 'border-color': c }) }); vis(S, k, st, o.off); if (o.dim) S.set(k, o.dim, { opacity: '.25' }); };
+const mar = (S, k, F, a, b, color, st, o) => ar(S, k, [F.X(a[0]), F.Y(a[1])], [F.X(b[0]), F.Y(b[1])], color, st, o);
+const mpt = (S, k, F, p, st, sty, r, o) => pt(S, k, F.X(p[0]), F.Y(p[1]), st, sty, r, o);
+const mT = (S, k, F, p, dx, dy, t, cls, st, o) => T(S, k, F.X(p[0]) + dx, F.Y(p[1]) + dy, t, cls, st, o);
+/* static grid with integer lines and axes */
+function grid(S, k, F, st, o = {}) {
+  S.el(k, { x: F.L, y: F.T, w: F.R - F.L, h: F.B - F.T, cls: 'cax-gs', css: `background-size:${r3(F.u)}em ${r3(F.u)}em`, s: st ? hid() : {} }); vis(S, k, st, o.off);
+  if (F.y0 <= 0 && F.y1 >= 0) hl(S, k + 'x', F.L, F.R, F.Y(0), 'ink-3', st, { w: .1, off: o.off });
+  if (F.x0 <= 0 && F.x1 >= 0) vl(S, k + 'y', F.X(0), F.T, F.B, 'ink-3', st, { w: .1, off: o.off });
+}
+/* matrix [[a,b],[c,d]] (math, y up) as a CSS transform */
+
+
+/* ---- probability helpers ---- */
+const poly2 = (S, k, pts, fill, st, o = {}) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+  S.el(k, { x: x0, y: y0, w, h, css: `clip-path:polygon(${pts.map(([x, y]) => `${r3(x - x0)}em ${r3(y - y0)}em`).join(',')});background:${fill};${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const rnd = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(7);
+const gauss = () => { const u = Math.max(rnd(), 1e-9), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const npdf = (x, m = 0, s = 1) => Math.exp(-(((x - m) / s) ** 2) / 2) / (s * Math.sqrt(2 * Math.PI));
+const fact = n => n <= 1 ? 1 : n * fact(n - 1), C2 = (n, k) => fact(n) / (fact(k) * fact(n - k));
+const ring = (S, k, cx, cy, r, color, st, o = {}) => { S.el(k, { x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, css: `border-radius:50%;border:${o.w || .12}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)};${o.fill ? `background:${o.fill};` : ''}${o.css || ''}`, s: st ? hid() : {} }); vis(S, k, st, o.off); };
+const ax2 = (S, k, F, xl, yl, st) => { hl(S, k + 'x', F.L, F.R, F.Y(Math.max(F.y0, 0)), 'ink-3', st, { w: .12 }); vl(S, k + 'y', F.X(Math.max(F.x0, 0)), F.T, F.B, 'ink-3', st, { w: .12 });
+  if (xl) T(S, k + 'xl', F.R - 2.6, F.Y(Math.max(F.y0, 0)) + .2, xl, 'cz-mono cax-xs', st, { w: 2.8 }); if (yl) T(S, k + 'yl', F.X(Math.max(F.x0, 0)) + .3, F.T - .5, yl, 'cz-mono cax-xs', st); };
+function bars(S, k, F, xs, ys, o = {}) { const bw = o.bw || .8; xs.forEach((x, i) => { const y = ys[i]; if (!(y > 0)) return; const c = typeof o.color === 'function' ? o.color(i, x) : (o.color || 'accent');
+  rect(S, k + i, F.X(x - bw / 2), F.Y(y), F.X(x + bw / 2) - F.X(x - bw / 2), F.Y(0) - F.Y(y), c, o.pct || 50, typeof o.st === 'function' ? o.st(i, x) : o.st, { off: o.off, r: .08 }); }); }
+/* area under f between a and b */
+function shade(S, k, F, f, a, b, color, pct, st, o = {}) { const pts = [[F.X(a), F.Y(0)]]; for (let i = 0; i <= 40; i++) { const x = a + (b - a) * i / 40; pts.push([F.X(x), F.Y(Math.min(f(x), F.y1))]); } pts.push([F.X(b), F.Y(0)]); poly2(S, k, pts, tint(color, pct), st, o); }
+const Phi = z => { const t = 1 / (1 + .2316419 * Math.abs(z)), d = .3989423 * Math.exp(-z * z / 2), p = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+const cell = (S, k, x, y, w, h, label, color, pct, st, o = {}) => rect(S, k, x, y, w, h, color, pct, st, { cls: 'cz-c cax-c', html: label, off: o.off, r: .2, css: o.css });
+const tsets = (S, k, list) => list.forEach(([st, c, p]) => S.set(k, st, { background: tint(c, p) }));
+
+
+/* ---- data-engineering helpers ---- */
+function code(S, k, x, y, w, lines, hi = [], o = {}) {
+  const lh = o.lh || 1.3;
+  rect(S, k + 'bg', x, y, w, lines.length * lh + .6, 'ink', 6, o.st || 0, { r: .4, off: o.off });
+  if (hi.length) { rect(S, k + 'hl', x + .2, y + .25 + hi[0][0] * lh, w - .4, lh, 'accent', 24, hi[0][1], { r: .2, off: o.hoff || o.off }); hi.slice(1).forEach(([l, s]) => S.move(k + 'hl', s, x + .2, y + .25 + l * lh)); }
+  lines.forEach((t, i) => T(S, k + i, x + .5, y + .3 + i * lh, t, 'cz-mono cax-code', o.st || 0, { css: 'z-index:6', off: o.off }));
+}
+const elb = (S, k, pts, color, st, o = {}) => { for (let i = 1; i < pts.length - 1; i++) seg(S, k + 's' + i, pts[i - 1], pts[i], st, color, o.h || .12, { off: o.off }); ar(S, k, pts[pts.length - 2], pts[pts.length - 1], color, st, { h: o.h || .12, off: o.off, dash: o.dash }); };
+const box = (S, k, x, y, w, h, label, color, st, o = {}) => cell(S, k, x, y, w, h, label, color, o.pct || 35, st, { off: o.off });
+const box2 = (S, k, x, y, w, h, label, color, st, o = {}) => rect(S, k, x, y, w, h, color, o.pct || 35, st, { cls: 'cz-c cax-c2', html: label, off: o.off, r: .2, css: o.css });
+const frame = (S, k, x, y, w, h, color, st, o = {}) => rect(S, k, x, y, w, h, color, 0, st, { r: o.r ?? .4, css: `background:transparent;border:${o.w || .16}em ${o.dash ? 'dashed' : 'solid'} ${cv(color)}`, off: o.off });
+const phone = (S, k, x, y, w, h, st, o = {}) => { rect(S, k, x, y, w, h, 'ui', 0, st, { r: 1, css: 'border:.16em solid var(--ink-3)', off: o.off }); rect(S, k + 'n', x + w / 2 - 1.1, y + .3, 2.2, .28, 'ink-3', 55, st, { r: .2, off: o.off }); };
+const xm = (S, k, x, y, st, o = {}) => T(S, k, x - .35, y - .55, '✗', 'cax-s cax-r', st, o);
+/* table card: title + column lines; returns y of each line's center */
+function tbl(S, k, x, y, w, title, cols, color, st, o = {}) {
+  const lh = o.lh || 1, h = 1.3 + cols.length * lh + .3;
+  rect(S, k, x, y, w, h, color, 10, st, { r: .35, css: `border:.12em solid var(--${color})`, off: o.off });
+  T(S, k + 't', x + .4, y + .25, title, 'cz-mono cax-s', st, { off: o.off, css: 'font-weight:800' });
+  return cols.map((c, i) => { T(S, k + 'c' + i, x + .5, y + 1.3 + i * lh, c, 'cz-mono cax-xs', st, { off: o.off }); return y + 1.3 + i * lh + .45; });
+}
+
+/* ---- state-machine helpers ---- */
+const stt = (S, k, x, y, label, color, st, o = {}) => { const r = o.r || 1.1;
+  rect(S, k, x - r, y - r, 2 * r, 2 * r, color, o.pct ?? 14, st, { r, css: `border:.12em solid var(--${color})`, off: o.off });
+  if (o.acc) ring(S, k + 'i', x, y, r - .28, color, st, { w: .08, off: o.off });
+  T(S, k + 'l', x - r, y - .45, label, 'cz-tc cz-mono cax-xs', st, { w: 2 * r, off: o.off });
+  if (o.start) ar(S, k + 's', [x - r - 1.5, y], [x - r - .05, y], 'ink-3', st, { h: .1, off: o.off }); };
+const trn = (S, k, a, b, label, st, o = {}) => { const r = o.r || 1.1, dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux, bd = o.bend || 0;
+  const p1 = [a[0] + ux * r + nx * bd, a[1] + uy * r + ny * bd], p2 = [b[0] - ux * (o.rb || r) + nx * bd, b[1] - uy * (o.rb || r) + ny * bd];
+  ar(S, k, p1, p2, o.color || 'ink-3', st, { h: .1, off: o.off });
+  if (label !== '') { const ld = o.ld ?? .55, mx = (p1[0] + p2[0]) / 2 + nx * ld, my = (p1[1] + p2[1]) / 2 + ny * ld; T(S, k + 'l', mx - 1.5, my - .45, label, 'cz-tc cz-mono cax-xs ' + (o.lc || ''), st, { w: 3, off: o.off }); } };
+const lp = (S, k, x, y, label, st, o = {}) => { const r = o.r || 1.1; ring(S, k, x, y - r - .32, .5, o.color || 'ink-3', st, { w: .1, off: o.off }); T(S, k + 'l', x - 1.5, y - r - 1.75, label, 'cz-tc cz-mono cax-xs', st, { w: 3, off: o.off }); };
+const notes = (S, pre, y, list, cls) => list.forEach((t, i) => T(S, pre + i, 1, y, t, cls || 'cax-s', i + 1, { off: i + 2 }));
+const fin = (S, pre, y, list) => list.forEach(([a, b, c], i) => T(S, pre + i, 1, y + i * 1.3, [a, b], c || 'cax-xs', 5));
+
+
+const CSSX = `
+.cax-l .in{font-size:.86em;color:var(--ink);font-weight:700}
+.cax-s .in{font-size:.66em;color:var(--ink-2);font-weight:600}
+.cax-xs .in{font-size:.56em;color:var(--ink-2);font-weight:600}
+.cax-tiny .in{font-size:.42em;color:var(--ink-2);font-weight:600}
+.cax-r .in{color:var(--danger);font-weight:800}
+.cax-g .in{color:var(--ok);font-weight:800}
+.cax-a .in{color:var(--accent);font-weight:800}
+.cax-w .in{color:var(--warn);font-weight:800}
+.cax-c .in{font-size:.6em;font-weight:700}
+.cax-c2 .in{font-size:.5em;font-weight:700}
+.cax-code .in{font-size:.54em;white-space:pre;color:var(--ink);font-weight:600}
+.cax-gs{background-image:linear-gradient(var(--line) .07em,transparent .07em),linear-gradient(90deg,var(--line) .07em,transparent .07em)}`;
+const stepT = (S, k, x, y, list, cls) => list.forEach((t, i) => T(S, k + i, x, y, t, cls || 'cax-xs', i + 1, { off: i + 2 }));
+const tang = (S, k, F, x0, y0, m, d, st, o = {}) => mline(S, k, F, [x0 - d, y0 - m * d], [x0 + d, y0 + m * d], Object.assign({ st, color: 'warn', h: .1 }, o));
+const hole = (S, k, F, p, st, o = {}) => ring(S, k, F.X(p[0]), F.Y(p[1]), .24, o.color || 'accent', st, { w: .1, fill: 'var(--stage)', off: o.off, css: 'z-index:4' });
+
+/* ================= limits ================= */
+function sCont() {
+  const S = scene({ id: 'ca-cont', steps: 5, per: 1.7 });
+  const P = [[1, 1.0], [16.4, 1.0], [1, 8.1], [16.4, 8.1]], PW = 14.6, PH = 6.3;
+  const pan = (i, st, title, verdict, vcls, draw) => { const [x, y] = P[i], F = fr(-2, 2, -2, 2.4, x + .4, x + PW - .4, y + .9, y + PH - .3);
+    rect(S, 'pb' + i, x, y, PW, PH, 'line', 8, st, { r: .4 });
+    hl(S, 'px' + i, F.L, F.R, F.Y(0), 'ink-3', st, { w: .06 }); vl(S, 'py' + i, F.X(0), F.T, F.B, 'ink-3', st, { w: .06 });
+    T(S, 'pt' + i, x + .4, y + .15, title, 'cax-xs', st); T(S, 'pv' + i, x + PW - 7.2, y + .15, verdict, 'cax-xs ' + vcls, st, { w: 6.8, css: 'text-align:right' });
+    T(S, 'pa' + i, F.X(0) + .15, F.Y(0) + .1, 'a', 'cz-mono cax-xs', st); draw(F, st); };
+  pan(0, 1, ['연속', 'continuous'], ['lim = f(a) ✓', 'lim = f(a) ✓'], 'cax-g', (F, st) => { mplot(S, 'c0', F, x => [x, .9 + .6 * Math.sin(1.4 * x)], -2, 2, { st, color: 'accent', h: .12, n: 50 }); mpt(S, 'd0', F, [0, .9], st, C.okf, .26); });
+  pan(1, 2, ['제거 가능 불연속', 'removable'], ['f(a) ≠ lim ✗', 'f(a) ≠ lim ✗'], 'cax-r', (F, st) => { mplot(S, 'c1', F, x => [x, .5 + .5 * x], -2, 2, { st, color: 'accent', h: .12, n: 10 }); hole(S, 'h1', F, [0, .5], st); mpt(S, 'd1', F, [0, 1.8], st, C.badf, .24); });
+  pan(2, 3, ['도약 불연속', 'jump'], ['좌극한 ≠ 우극한 ✗', 'left ≠ right limit ✗'], 'cax-r', (F, st) => { mplot(S, 'c2a', F, x => [x, -.6 + .2 * x], -2, -.02, { st, color: 'accent', h: .12, n: 6 }); mplot(S, 'c2b', F, x => [x, 1.2 + .2 * x], .02, 2, { st, color: 'accent', h: .12, n: 6 }); mpt(S, 'd2', F, [0, 1.2], st, C.cur, .24); hole(S, 'h2', F, [0, -.6], st); });
+  pan(3, 4, ['무한 불연속', 'infinite'], ['극한이 없어요 ✗', 'no limit at all ✗'], 'cax-r', (F, st) => { mplot(S, 'c3a', F, x => [x, -.35 / x], -2, -.15, { st, color: 'accent', h: .12, n: 40 }); mplot(S, 'c3b', F, x => [x, .35 / x], .15, 2, { st, color: 'accent', h: .12, n: 40 }); mline(S, 'as3', F, [0, -2], [0, 2.4], { st, color: 'danger', h: .06, dash: 1 }); });
+  stepT(S, 'k', 1, 15.6, [['연속: f(a)가 정의되고, 극한이 있고, 둘이 같아야 해요 · 펜을 떼지 않고 그려져요', 'continuity: f(a) is defined, the limit exists, and they are equal · drawn without lifting the pen'], ['극한은 있지만 그 점의 값만 다르거나 없으면 제거 가능 불연속 · 값 하나만 고치면 연속', 'a limit exists but f(a) is missing or different: removable · fixing one value makes it continuous'], ['왼쪽과 오른쪽에서 다가간 값이 다르면 도약 불연속 · 극한 자체가 없어요', 'left and right approaches disagree: a jump · the limit does not exist'], ['값이 끝없이 커지면 무한 불연속 · x = a가 수직 점근선이에요', 'values blow up: an infinite discontinuity, with x = a as a vertical asymptote']]);
+  fin(S, 'z', 15.6, [['연속: lim_{x→a} f(x) = f(a) · 세 조건이 모두 필요해요', 'continuity: lim_{x→a} f(x) = f(a) · all three conditions are needed', 'cax-xs cax-a'], ['다항식·지수·삼각함수는 정의역 전체에서 연속이고, 합·곱·합성도 연속이에요', 'polynomials, exponentials and trig functions are continuous on their domains, as are their sums, products and compositions'], ['중간값 정리·최대최소 정리는 닫힌 구간에서의 연속을 전제로 해요', 'the intermediate and extreme value theorems both assume continuity on a closed interval']]);
+  S.cap(1, '연속인 함수', 'A continuous function').cap(2, '제거 가능 불연속', 'Removable discontinuity').cap(3, '도약 불연속', 'Jump discontinuity').cap(4, '무한 불연속', 'Infinite discontinuity').cap(5, '연속', 'Continuity');
+  return S;
+}
+
+/* ================= derivatives ================= */
+function sQuot() {
+  const S = scene({ id: 'ca-quot', steps: 5, per: 1.7 });
+  const h = x => x / (x * x + 1), dh = x => (1 - x * x) / (x * x + 1) ** 2;
+  const F = fr(-3.5, 3.5, -.8, 1.2, 1.4, 17.6, 1.2, 12.6);
+  hl(S, 'ax', F.L, F.R, F.Y(0), 'ink-3', 0, { w: .08 }); vl(S, 'ay', F.X(0), F.T, F.B, 'ink-3', 0, { w: .08 });
+  [-3, -2, -1, 1, 2, 3].forEach(v => T(S, 'tx' + v, F.X(v) - 1, F.B + .15, String(v), 'cz-tc cz-mono cax-xs', 0, { w: 2 }));
+  [1, -.5, .5].forEach(v => T(S, 'ty' + v, 0, F.Y(v) - .45, String(v), 'cz-mono cax-xs', 0, { w: 1.3, css: 'text-align:right' }));
+  mplot(S, 'h', F, x => [x, h(x)], -3.5, 3.5, { color: 'accent', h: .14, n: 90 });
+  T(S, 'hl', F.L + .3, .3, 'h(x) = x / (x² + 1)', 'cz-mono cax-xs cax-a', 0);
+  mplot(S, 'dh', F, x => [x, dh(x)], -3.5, 3.5, { st: 4, color: 'ok', h: .12, n: 90 });
+  mT(S, 'dhl', F, [-2.2, dh(-2.2)], -1.4, .4, "h′(x)", 'cz-mono cax-xs cax-g', 4);
+  tang(S, 't0', F, 0, 0, 1, .7, 4); mpt(S, 'p0', F, [0, 0], 4, C.cur, .22); mT(S, 't0l', F, [.25, -.25], .2, 0, "h′(0) = 1", 'cz-mono cax-xs cax-w', 4);
+  tang(S, 't1', F, 1, .5, 0, .8, 4); mpt(S, 'p1', F, [1, .5], 4, C.cur, .22); mT(S, 't1l', F, [1, .5], .3, -1.0, "h′(1) = 0", 'cz-mono cax-xs cax-w', 4);
+  const R = 18.8;
+  T(S, 'r1', R, 1.0, ['f = x (분자), g = x² + 1 (분모)', 'f = x (top), g = x² + 1 (bottom)'], 'cz-mono cax-xs', 1);
+  T(S, 'r2', R, 2.6, '(f / g)′ =', 'cz-mono cax-s', 2); T(S, 'r3', R + .4, 3.9, "(f′g − fg′) / g²", 'cz-mono cax-l cax-a', 2);
+  T(S, 'r4', R, 5.6, ['“아래 × 위′ − 위 × 아래′, 나누기 아래²”', '“low d-high minus high d-low, over low squared”'], 'cax-xs', 2, { w: 12 });
+  T(S, 'r5', R, 7.8, "f′ = 1, g′ = 2x", 'cz-mono cax-xs', 3);
+  T(S, 'r6', R, 8.9, "h′ = (1·(x²+1) − x·2x) / (x²+1)²", 'cz-mono cax-xs', 3);
+  T(S, 'r7', R, 10.0, "  = (1 − x²) / (x² + 1)²", 'cz-mono cax-code cax-g', 3);
+  T(S, 'r8', R, 11.5, ['x = 1에서 0 → 꼭대기', 'zero at x = 1 → the peak'], 'cax-xs cax-g', 4);
+  stepT(S, 'k', 1, 15.6, [['두 함수의 나눗셈 h = f / g의 도함수를 구하고 싶어요', 'we want the derivative of a quotient h = f / g'], ['몫의 미분: (f′g − fg′) / g² · 분자의 순서가 바뀌면 부호가 틀려요', 'the quotient rule: (f′g − fg′) / g² · swap the order in the numerator and the sign flips'], ['f′ = 1, g′ = 2x를 넣으면 h′ = (1 − x²) / (x² + 1)²', 'plugging in f′ = 1 and g′ = 2x gives h′ = (1 − x²) / (x² + 1)²'], ['h′(0) = 1이 원점의 접선 기울기, h′(1) = 0인 곳이 최댓값이에요', 'h′(0) = 1 is the slope at the origin, and h′(1) = 0 marks the maximum']]);
+  fin(S, 'z', 15.6, [['몫의 미분: (f / g)′ = (f′g − fg′) / g² (g ≠ 0)', 'the quotient rule: (f / g)′ = (f′g − fg′) / g² (g ≠ 0)', 'cax-xs cax-a'], ['f · (1/g)에 곱의 미분과 연쇄 법칙을 쓰면 같은 식이 나와요', 'applying the product and chain rules to f · (1/g) gives the same result'], ['예: (tan x)′ = (sin x / cos x)′ = 1 / cos²x = sec²x', 'example: (tan x)′ = (sin x / cos x)′ = 1 / cos²x = sec²x']]);
+  S.cap(1, '나눗셈의 미분', 'Differentiating a quotient').cap(2, '몫의 미분 공식', 'The quotient rule').cap(3, '대입해서 계산', 'Plug in and simplify').cap(4, '접선으로 확인', 'Check with tangents').cap(5, '몫의 미분', 'The quotient rule');
+  return S;
+}
+
+/* ================= multivariable ================= */
+function sDirDeriv() {
+  const S = scene({ id: 'ca-dirderiv', steps: 5, per: 1.7 });
+  const F = fr(-2.2, 2.6, -1.8, 2.2, 1.0, 15.4, 1.0, 13.0), P = [1, 1], g = [2, 4], gn = Math.hypot(...g), tg = Math.atan2(g[1], g[0]);
+  hl(S, 'ax', F.L, F.R, F.Y(0), 'ink-3', 0, { w: .06 }); vl(S, 'ay', F.X(0), F.T, F.B, 'ink-3', 0, { w: .06 });
+  [.5, 1.5, 3, 5].forEach((c, i) => pplot(S, 'lv' + i, t => [F.X(Math.sqrt(c) * Math.cos(t)), F.Y(Math.sqrt(c / 2) * Math.sin(t))], 0, 2 * Math.PI, { color: 'line', h: .08, n: 60 }));
+  T(S, 'fl', F.L + .2, F.T - .2, 'f = x² + 2y²', 'cz-mono cax-xs', 0);
+  mpt(S, 'P', F, P, 0, C.cur, .28); mT(S, 'Pl', F, P, -.75, -1.0, 'P', 'cz-mono cax-s', 0);
+  const S0 = .55, dirs = [0, 45, 90, 135, 180, 225, 270, 315];
+  mar(S, 'u0', F, P, [P[0] + .9, P[1]], 'ink', 2, { h: .12 }); mT(S, 'u0l', F, [P[0] + .9, P[1]], .2, -.15, 'u = (1, 0)', 'cz-mono cax-xs', 2);
+  dirs.forEach((d, i) => { const t = d * Math.PI / 180, v = gn * Math.cos(t - tg), c = v > .3 ? 'ok' : v < -.3 ? 'danger' : 'ink-3'; mar(S, 'ud' + i, F, P, [P[0] + S0 * Math.cos(t), P[1] + S0 * Math.sin(t)], c, 3, { h: .09, off: 4 }); });
+  mar(S, 'gr', F, P, [P[0] + .45 * g[0] / 2, P[1] + .45 * g[1] / 2], 'ok', 4, { h: .16 }); mT(S, 'grl', F, [P[0] + .45, P[1] + .9], .2, -.6, '∇f', 'cz-mono cax-s cax-g', 4);
+  mline(S, 'tn', F, [P[0] - .8 * g[1] / gn, P[1] + .8 * g[0] / gn], [P[0] + .8 * g[1] / gn, P[1] - .8 * g[0] / gn], { st: 4, color: 'warn', h: .08, dash: 1 });
+  const G = fr(0, 360, -5, 5, 18.4, 30.6, 6.6, 12.6);
+  hl(S, 'gx', G.L, G.R, G.Y(0), 'ink-3', 3, { w: .06 }); vl(S, 'gy', G.L, G.T, G.B, 'ink-3', 3, { w: .06 });
+  mplot(S, 'gc', G, d => [d, gn * Math.cos(d * Math.PI / 180 - tg)], 0, 360, { st: 3, color: 'accent', h: .1, n: 72 });
+  [0, 90, 180, 270, 360].forEach(d => T(S, 'gt' + d, G.X(d) - 1, G.B + .1, d + '°', 'cz-tc cz-mono cax-xs', 3, { w: 2 }));
+  T(S, 'gl', G.L, G.T - .95, ['방향 각도에 따른 Dᵤf', 'Dᵤf by direction angle'], 'cax-xs', 3);
+  mpt(S, 'gm', G, [tg * 180 / Math.PI, gn], 4, C.okf, .2);
+  const R = 17.6;
+  T(S, 'r1', R, .8, 'P(1, 1): ∇f = (2x, 4y) = (2, 4)', 'cz-mono cax-xs', 1);
+  T(S, 'r2', R, 2.0, 'Dᵤf = ∇f · u', 'cz-mono cax-s cax-a', 2);
+  T(S, 'r3', R, 3.4, ['동쪽 u = (1, 0) → 2', 'east u = (1, 0) → 2'], 'cz-mono cax-xs', 2);
+  T(S, 'r4', R, 4.5, ['= |∇f| cos θ', '= |∇f| cos θ'], 'cz-mono cax-xs', 3);
+  T(S, 'r5', R, 13.6, ['∇f 방향 최대 · 등고선 방향 0', 'max along ∇f · zero along the contour'], 'cax-xs cax-g', 4);
+  stepT(S, 'k', 1, 15.6, [['등고선 지도 위의 점 P(1, 1) · 그래디언트는 ∇f = (2, 4)예요', 'a point P(1, 1) on a contour map · the gradient there is ∇f = (2, 4)'], ['방향도함수: 단위벡터 u 방향으로 갈 때의 기울기 · ∇f와 u의 내적이에요', 'the directional derivative is the slope when moving along a unit vector u · the dot product ∇f · u'], ['방향을 돌리면 값이 |∇f| cos θ로 변해요 · 초록은 오르막, 빨강은 내리막', 'turning the direction changes it as |∇f| cos θ · green climbs, red descends'], [`∇f 방향에서 최대 ${gn.toFixed(2)}, 등고선을 따라가면 0, 반대 방향이 최소예요`, `the maximum ${gn.toFixed(2)} lies along ∇f, zero along the contour, the minimum opposite`]]);
+  fin(S, 'z', 15.6, [['방향도함수 Dᵤf = ∇f · u: 원하는 방향으로의 변화율', 'the directional derivative Dᵤf = ∇f · u is the rate of change in any chosen direction', 'cax-xs cax-a'], ['편미분 fₓ, f_y는 u = (1, 0), (0, 1)인 특별한 경우예요', 'the partial derivatives fₓ and f_y are the special cases u = (1, 0) and (0, 1)'], ['경사 하강법은 Dᵤf가 가장 작은 −∇f 방향으로 내려가요', 'gradient descent heads along −∇f, where Dᵤf is most negative']]);
+  S.cap(1, '등고선 위의 점', 'A point on the contours').cap(2, '한 방향의 기울기', 'Slope in one direction').cap(3, '방향을 돌리면', 'Turning the direction').cap(4, '최대는 그래디언트 방향', 'Steepest along the gradient').cap(5, '방향도함수', 'The directional derivative');
+  return S;
+}
+
+/* ================= vector calculus ================= */
+function sCurl() {
+  const S = scene({ id: 'ca-curl', steps: 5, per: 1.7 });
+  const field = (k, F, P, st, color) => { for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const [u, v] = P(i, j), m0 = Math.hypot(u, v); if (m0 < 1e-9) continue; const m = m0, s = .38 * Math.min(1, m / 2) / m * 2;
+    mar(S, `${k}${i + 2}${j + 2}`, F, [i - u * s / 2, j - v * s / 2], [i + u * s / 2, j + v * s / 2], color, st, { h: .07 }); } };
+  const F1 = fr(-2.6, 2.6, -2.6, 2.6, 1.0, 13.4, 1.6, 14.0), F2 = fr(-2.6, 2.6, -2.6, 2.6, 17.4, 29.8, 1.6, 14.0);
+  rect(S, 'b1', F1.L, F1.T, F1.R - F1.L, F1.B - F1.T, 'line', 8, 0, { r: .4 });
+  T(S, 't1', F1.L + .3, F1.T + .2, 'F = (−y, x)', 'cz-mono cax-xs', 0);
+  field('f', F1, (i, j) => [-j, i], 0, 'accent');
+  const wheel = (k, F, c, st, spins) => { const cx = F.X(c[0]), cy = F.Y(c[1]);
+    S.el(k, { x: cx - .9, y: cy - .9, w: 1.8, h: 1.8, css: 'border-radius:50%;border:.12em solid var(--warn);background:linear-gradient(var(--warn),var(--warn)) center/0.14em 100% no-repeat,linear-gradient(var(--warn),var(--warn)) center/100% 0.14em no-repeat;z-index:5', s: hid() });
+    S.set(k, st, { opacity: '1' }); spins.forEach(([s, a]) => S.set(k, s, { transform: `rotate(${a}deg)` })); };
+  wheel('w1', F1, [.5, .5], 2, [[2, 0], [3, -120], [4, -240], [5, -360]]);
+  T(S, 'w1l', F2.L, 6.6, ['물레방아가 반시계로 돌아요', 'the paddle wheel turns counterclockwise'], 'cax-xs cax-w', 2, { off: 4, w: 12 });
+  T(S, 'c1', F1.L, F1.B + .35, ['curl = ∂Q/∂x − ∂P/∂y = 1 − (−1) = 2', 'curl = ∂Q/∂x − ∂P/∂y = 1 − (−1) = 2'], 'cz-mono cax-xs cax-a', 3);
+  rect(S, 'b2', F2.L, F2.T, F2.R - F2.L, F2.B - F2.T, 'line', 8, 4, { r: .4 });
+  T(S, 't2', F2.L + .3, F2.T + .2, 'F = (y, 0)', 'cz-mono cax-xs', 4);
+  field('g', F2, (i, j) => [j, 0], 4, 'warn');
+  wheel('w2', F2, [.5, 1.2], 4, [[4, 0], [5, 120]]);
+  T(S, 'c2', F2.L, F2.B + .35, ['곧은 흐름인데 curl = 0 − 1 = −1', 'straight flow, yet curl = 0 − 1 = −1'], 'cz-mono cax-xs cax-r', 4);
+  stepT(S, 'k', 1, 15.6, [['원점 주위를 도는 벡터장 F = (−y, x)', 'a field swirling around the origin, F = (−y, x)'], ['장 안에 작은 물레방아를 두면 그 자리에서 돌아요 · 회전(curl)은 그 회전의 세기', 'drop a tiny paddle wheel in and it spins in place · the curl measures how hard'], ['평면에서는 curl F = ∂Q/∂x − ∂P/∂y · 이 장은 어디서나 2예요', 'in the plane, curl F = ∂Q/∂x − ∂P/∂y · here it is 2 everywhere'], ['흐름선이 곧아도 위아래 속도가 다르면 물레방아가 돌아요 · curl ≠ 0', 'even with straight flow lines, a speed difference across them spins the wheel · curl ≠ 0']]);
+  fin(S, 'z', 15.6, [['회전(curl): 한 점 주변을 휘감아 도는 정도 · 3차원에선 회전축 방향의 벡터 ∇ × F', 'curl measures local swirling · in 3D it is the vector ∇ × F along the spin axis', 'cax-xs cax-a'], ['curl F = 0인 장(단일 연결 영역)은 보존장 · 퍼텐셜의 그래디언트예요', 'a curl-free field on a simply connected region is conservative, a gradient of a potential'], ['스토크스 정리: 면을 지나는 curl의 총량 = 경계를 따라 도는 순환', 'Stokes’ theorem: the total curl through a surface equals the circulation around its edge']]);
+  S.cap(1, '도는 벡터장', 'A swirling field').cap(2, '물레방아를 띄우면', 'Drop in a paddle wheel').cap(3, '회전의 세기 계산', 'Compute the curl').cap(4, '곧은 흐름도 돌 수 있어요', 'Straight flow can spin too').cap(5, '회전 (curl)', 'Curl');
+  return S;
+}
+
+function sCurv() {
+  const S = scene({ id: 'ca-curvature', steps: 5, per: 1.7 });
+  const F = fr(-3, 3, -.5, 4.5, 1.4, 15.8, 1.0, 13.0), f = x => x * x / 2, fp = x => x, kap = x => 1 / (1 + x * x) ** 1.5;
+  hl(S, 'ax', F.L, F.R, F.Y(0), 'ink-3', 0, { w: .06 }); vl(S, 'ay', F.X(0), F.T, F.B, 'ink-3', 0, { w: .06 });
+  mplot(S, 'c', F, x => [x, f(x)], -3, 3, { color: 'accent', h: .14, n: 80 }); T(S, 'cl', F.L + .3, F.T + .1, 'y = x² / 2', 'cz-mono cax-xs cax-a', 0);
+  [-2, -1, 0, 1, 2].forEach((x, i) => { const n = Math.hypot(1, fp(x)), t = [1 / n * .7, fp(x) / n * .7]; mar(S, 'tv' + i, F, [x, f(x)], [x + t[0], f(x) + t[1]], 'ink-3', 2, { h: .1 }); });
+  const circ = (k, x, st, color) => { const R = 1 / kap(x), n = Math.hypot(1, fp(x)), N = [-fp(x) / n, 1 / n], c = [x + R * N[0], f(x) + R * N[1]];
+    ring(S, k, F.X(c[0]), F.Y(c[1]), R * F.u, color, st, { w: .1, dash: 1 }); mpt(S, k + 'p', F, [x, f(x)], st, C.cur, .24); mpt(S, k + 'c', F, c, st, C.idle, .16); mline(S, k + 'r', F, [x, f(x)], c, { st, color, h: .06 }); return [R, c]; };
+  const [R0] = circ('o0', 0, 3, 'ok'); const [R1, c1] = circ('o1', .8, 4, 'warn');
+  const RX = 17.4;
+  T(S, 'r1', RX, 1.0, ['접선 방향이 길을 따라 얼마나 빨리 꺾이나', 'how fast the tangent turns along the curve'], 'cax-xs', 2, { w: 13 });
+  T(S, 'r2', RX, 2.2, 'κ = |dT / ds|', 'cz-mono cax-s cax-a', 2);
+  T(S, 'r3', RX, 3.8, ['곡선에 딱 맞는 원 (접촉원)', 'the best-fitting circle (osculating)'], 'cax-xs', 3);
+  T(S, 'r4', RX, 4.9, `x = 0: R = ${R0.toFixed(2)}, κ = ${(1 / R0).toFixed(2)}`, 'cz-mono cax-xs cax-g', 3);
+  T(S, 'r5', RX, 6.0, `x = 0.8: R = ${R1.toFixed(2)}, κ = ${(1 / R1).toFixed(2)}`, 'cz-mono cax-xs cax-w', 4);
+  T(S, 'r6', RX, 7.5, 'κ = |y″| / (1 + y′²)^(3/2)', 'cz-mono cax-xs', 4);
+  T(S, 'r7', RX, 8.6, ['공간곡선: κ = |r′ × r″| / |r′|³', 'space curve: κ = |r′ × r″| / |r′|³'], 'cz-mono cax-xs', 4);
+  T(S, 'r8', RX, 10.0, ['원: κ = 1/R · 직선: κ = 0', 'circle: κ = 1/R · line: κ = 0'], 'cax-xs cax-a', 4);
+  stepT(S, 'k', 1, 15.6, [['포물선 y = x²/2 · 꼭대기 근처는 급하게, 멀어질수록 완만하게 휘어요', 'the parabola y = x²/2 bends sharply near the vertex and gently farther out'], ['곡률은 단위 접선 T가 호의 길이에 대해 꺾이는 빠르기예요', 'curvature is how fast the unit tangent T turns per unit of arc length'], ['그 점에 가장 잘 맞는 원의 반지름 R의 역수가 곡률 · 꼭대기에선 R = 1', 'it equals 1 over the radius R of the best-fitting circle · R = 1 at the vertex'], [`x = 0.8에선 R = ${R1.toFixed(2)}로 커져 곡률이 ${(1 / R1).toFixed(2)}로 작아져요`, `at x = 0.8, R grows to ${R1.toFixed(2)} and the curvature drops to ${(1 / R1).toFixed(2)}`]]);
+  fin(S, 'z', 15.6, [['곡률 κ = 1/R: 접촉원의 반지름이 작을수록 급하게 휘어요', 'curvature κ = 1/R: the smaller the osculating circle, the sharper the bend', 'cax-xs cax-a'], ['고속도로·철도는 곡률이 0에서 서서히 커지는 클로소이드로 이어 붙여요', 'roads and railways join straights to curves with clothoids, whose curvature rises gradually from 0'], ['원운동의 구심 가속도 v²/R = κv² · 폰트·CAD 곡선의 매끄러움 기준이에요', 'the centripetal acceleration v²/R = κv² · a smoothness criterion for font and CAD curves']]);
+  S.cap(1, '휘는 정도가 다른 곡선', 'A curve that bends unevenly').cap(2, '접선이 꺾이는 빠르기', 'How fast the tangent turns').cap(3, '접촉원', 'The osculating circle').cap(4, '곡률 공식', 'The curvature formula').cap(5, '곡률', 'Curvature');
+  return S;
+}
+
+
+return { css: CSSX, secs: [], add: {
+},
+after: {
+  'ca-onesided': [item('ca-cont', '연속', 'Continuity', 'x가 a로 다가갈 때의 극한이 f(a)와 같으면 a에서 연속이에요. 그래프를 펜을 떼지 않고 그릴 수 있다는 뜻이에요.', 'f가 a에서 연속이려면 세 가지가 모두 필요해요: f(a)가 정의되고, lim_{x→a} f(x)가 존재하고, 둘이 같아야 해요. 하나라도 깨지면 불연속이고, 모양에 따라 세 종류로 나눠요. 극한은 있지만 그 점의 값만 없거나 다르면 제거 가능 불연속이에요. (x² − 1)/(x − 1)은 x = 1에서 정의되지 않지만 극한이 2라서, f(1) = 2로 정해 주면 연속이 돼요. 왼쪽 극한과 오른쪽 극한이 다르면 도약 불연속(바닥 함수, 계단 함수)이고, 값이 무한히 커지면 무한 불연속(1/x의 x = 0)이에요. 다항식, 지수·로그, 삼각함수는 정의역 전체에서 연속이고, 연속 함수의 합·곱·몫(분모 ≠ 0)·합성도 연속이에요. 닫힌 구간에서 연속이면 중간값 정리(값 사이의 모든 값을 지남)와 최대·최소 정리(최댓값·최솟값이 존재)가 성립해서, 이분법으로 근을 찾을 수 있는 근거가 돼요.', 'f is continuous at a when its limit as x → a equals f(a); the graph can be drawn there without lifting the pen.', 'Continuity at a needs all three: f(a) is defined, lim_{x→a} f(x) exists, and the two are equal. If any fails, f is discontinuous, in one of three shapes. If the limit exists but the value is missing or different, the discontinuity is removable: (x² − 1)/(x − 1) is undefined at x = 1 but has limit 2, so setting f(1) = 2 makes it continuous. If the left and right limits differ, it is a jump (floor and step functions); if the values blow up, it is infinite (1/x at x = 0). Polynomials, exponentials, logarithms and trig functions are continuous on their domains, and so are sums, products, quotients (nonzero denominator) and compositions of continuous functions. Continuity on a closed interval gives the intermediate value theorem (every value in between is hit) and the extreme value theorem (a maximum and minimum exist), which is why bisection can find roots.', sCont())],
+  'ca-product': [item('ca-quot', '몫의 미분', 'The quotient rule', '두 함수의 나눗셈을 미분하는 공식 (f/g)′ = (f′g − fg′)/g²이에요. 분자의 순서를 바꾸면 부호가 틀리니 주의해요.', 'g(x) ≠ 0일 때 (f/g)′ = (f′g − fg′)/g²예요. 흔히 “아래 곱하기 위의 미분 빼기 위 곱하기 아래의 미분, 나누기 아래 제곱”으로 외워요. 예를 들어 h(x) = x/(x² + 1)은 f = x, g = x² + 1이라 f′ = 1, g′ = 2x를 넣으면 h′(x) = (1·(x² + 1) − x·2x)/(x² + 1)² = (1 − x²)/(x² + 1)²예요. 그래서 h′(0) = 1이 원점에서의 접선 기울기이고, h′(1) = 0인 x = 1에서 최댓값 1/2를 가져요. 공식은 f · (1/g)에 곱의 미분을 쓰고, (1/g)′ = −g′/g²를 연쇄 법칙으로 구하면 바로 나와요. (tan x)′ = (sin x / cos x)′ = (cos²x + sin²x)/cos²x = sec²x처럼 삼각함수 도함수의 유도에 자주 쓰고, 유리함수의 증감과 극값을 조사할 때 필요해요.', 'The rule for differentiating a ratio of functions: (f/g)′ = (f′g − fg′)/g². Swapping the terms in the numerator flips the sign.', 'For g(x) ≠ 0, (f/g)′ = (f′g − fg′)/g², often remembered as “low d-high minus high d-low, over low squared”. For h(x) = x/(x² + 1), f = x and g = x² + 1 give f′ = 1 and g′ = 2x, so h′(x) = (1·(x² + 1) − x·2x)/(x² + 1)² = (1 − x²)/(x² + 1)². Hence h′(0) = 1 is the slope at the origin, and h′(1) = 0 marks the maximum value 1/2 at x = 1. The rule follows from applying the product rule to f · (1/g), with (1/g)′ = −g′/g² from the chain rule. It derives trigonometric derivatives such as (tan x)′ = (sin x / cos x)′ = (cos²x + sin²x)/cos²x = sec²x, and is needed to study where rational functions rise, fall and peak.', sQuot())],
+  'ca-gradient': [item('ca-dirderiv', '방향도함수', 'The directional derivative', '다변수 함수가 원하는 방향으로 움직일 때의 변화율이에요. 그래디언트와 그 방향의 단위벡터를 내적해서 구해요.', '단위벡터 u 방향의 방향도함수는 Dᵤf = lim_{h→0} (f(P + hu) − f(P))/h이고, f가 미분 가능하면 Dᵤf = ∇f · u예요. f = x² + 2y²의 점 (1, 1)에서 ∇f = (2, 4)이므로 동쪽 u = (1, 0)으로는 기울기 2, u = (0.6, 0.8)로는 4.4예요. u와 ∇f 사이의 각을 θ라 하면 Dᵤf = |∇f| cos θ라서, 방향을 한 바퀴 돌리면 코사인 곡선처럼 변해요. θ = 0, 즉 ∇f 방향에서 최댓값 |∇f| = √20 ≈ 4.47이고, θ = 90°인 등고선 방향에서는 0, 반대 방향에서는 최솟값 −4.47이에요. 편미분 fₓ, f_y는 u가 좌표축 방향인 특별한 경우예요. 그래디언트가 가장 가파른 오르막을 가리키는 이유가 바로 이 식이고, 경사 하강법은 Dᵤf가 가장 작은 −∇f 방향으로 조금씩 내려가요.', 'The rate of change of a multivariable function as you move in a chosen direction, found as the dot product of the gradient with that unit vector.', 'The directional derivative along a unit vector u is Dᵤf = lim_{h→0} (f(P + hu) − f(P))/h, and for a differentiable f it equals ∇f · u. For f = x² + 2y² at (1, 1), ∇f = (2, 4), so the slope is 2 heading east (u = (1, 0)) and 4.4 along u = (0.6, 0.8). With θ the angle between u and ∇f, Dᵤf = |∇f| cos θ, so turning the direction full circle traces a cosine. The maximum |∇f| = √20 ≈ 4.47 lies along ∇f (θ = 0), it is 0 along the contour (θ = 90°), and the minimum −4.47 points the opposite way. The partial derivatives fₓ and f_y are the special cases where u follows a coordinate axis. This formula is why the gradient points straight uphill, and gradient descent steps along −∇f, where Dᵤf is most negative.', sDirDeriv())],
+  'ca-divcurl': [item('ca-curl', '회전 (curl)', 'Curl', '벡터장이 한 점 주변을 휘감아 도는 세기예요. 그 자리에 작은 물레방아를 두었을 때 얼마나 빨리 도는지로 생각하면 돼요.', '평면 벡터장 F = (P, Q)의 회전은 curl F = ∂Q/∂x − ∂P/∂y로, 한 점 주변의 작은 고리를 따라 도는 순환을 넓이로 나눈 값이에요. F = (−y, x)는 원점 주위를 도는 장이고 curl = 1 − (−1) = 2라서, 어디에 물레방아를 두어도 반시계 방향으로 돌아요. 흥미롭게도 흐름선이 곧은 F = (y, 0)도 curl = 0 − 1 = −1이에요. 위쪽이 아래쪽보다 빨리 흐르니 물레방아가 시계 방향으로 돌기 때문이에요. 반대로 원을 그리며 도는 흐름이라도 curl이 0일 수 있어요(F = (−y, x)/(x² + y²)는 원점 밖에서 curl 0). 3차원에서는 ∇ × F = (R_y − Q_z, P_z − Rₓ, Qₓ − P_y)라는 벡터이고, 방향은 회전축, 크기는 회전 세기예요. 단일 연결 영역에서 curl F = 0이면 F는 어떤 퍼텐셜의 그래디언트인 보존장이고, 스토크스 정리는 면을 지나는 curl의 총량이 경계를 따라 도는 순환과 같다고 말해요. 유체의 소용돌이도(vorticity), 맥스웰 방정식에 그대로 나와요.', 'How strongly a vector field swirls around a point: picture how fast a tiny paddle wheel placed there would spin.', 'For a plane field F = (P, Q), curl F = ∂Q/∂x − ∂P/∂y, the circulation around a tiny loop divided by its area. F = (−y, x) swirls around the origin with curl = 1 − (−1) = 2, so a paddle wheel turns counterclockwise wherever it is placed. Surprisingly, the straight flow F = (y, 0) has curl = 0 − 1 = −1: the top moves faster than the bottom, so the wheel turns clockwise. Conversely, a flow going around in circles can have zero curl (F = (−y, x)/(x² + y²) away from the origin). In 3D the curl is the vector ∇ × F = (R_y − Q_z, P_z − Rₓ, Qₓ − P_y), pointing along the spin axis with length equal to the spin rate. On a simply connected region, curl F = 0 means F is conservative, the gradient of a potential, and Stokes’ theorem equates the total curl through a surface with the circulation around its boundary. Curl appears directly as vorticity in fluids and in Maxwell’s equations.', sCurl())],
+  'ca-curve': [item('ca-curvature', '곡률', 'Curvature', '곡선이 얼마나 급하게 휘는지를 나타내는 수예요. 그 점에 가장 잘 맞는 원(접촉원)의 반지름 R의 역수 κ = 1/R로 생각할 수 있어요.', '곡률은 단위 접선벡터 T가 호의 길이 s에 대해 방향을 바꾸는 빠르기 κ = |dT/ds|예요. 반지름 R인 원은 어디서나 κ = 1/R이고 직선은 0이어서, 곡선의 한 점에 가장 잘 맞는 원(접촉원)의 반지름이 1/κ예요. 평면곡선 y = f(x)는 κ = |f″|/(1 + f′²)^(3/2)로 구해요. 포물선 y = x²/2는 꼭대기 x = 0에서 κ = 1(R = 1)로 가장 급하게 휘고, x = 0.8에서는 κ ≈ 0.48(R ≈ 2.1)로 완만해져요. 매개변수로 주어진 공간곡선은 κ = |r′ × r″|/|r′|³이에요. 속력 v로 곡선을 따라 움직이면 법선 방향 가속도가 κv²라서, 같은 속력이라도 곡률이 큰 곳에서 더 큰 구심력이 필요해요. 그래서 고속도로와 철도는 곡률이 0에서 서서히 커지는 클로소이드로 직선과 원호를 이어 붙이고, 글꼴·CAD의 곡선도 곡률이 끊기지 않게 설계해요.', 'A number for how sharply a curve bends: the reciprocal κ = 1/R of the radius of the circle that best fits the curve at a point (the osculating circle).', 'Curvature is the rate at which the unit tangent T changes direction per unit of arc length, κ = |dT/ds|. A circle of radius R has κ = 1/R everywhere and a line has 0, so the best-fitting (osculating) circle at a point has radius 1/κ. For a plane curve y = f(x), κ = |f″|/(1 + f′²)^(3/2). The parabola y = x²/2 bends most sharply at its vertex, κ = 1 (R = 1), and more gently at x = 0.8, κ ≈ 0.48 (R ≈ 2.1). For a parametrized space curve, κ = |r′ × r″|/|r′|³. Moving along a curve at speed v gives a normal acceleration of κv², so tighter curves need larger centripetal force at the same speed. That is why roads and railways join straights and arcs with clothoids, whose curvature rises gradually from 0, and why font and CAD curves are designed so curvature does not jump.', sCurv())]
+} };
+})();
+
 window.UX = page([
   sec('ca-lim', '극한', 'Limits', '극한과 연속', 'Limits and continuity',
     '미적분학의 모든 정의가 극한 위에 서 있어요.', 'Every definition in calculus rests on limits.', [
@@ -852,7 +1114,7 @@ window.UX = page([
     item('ca-epsdelta', 'ε-δ 정의', 'Epsilon–delta definition', '"한없이 가까워진다"를 엄밀하게 쓴 정의예요. 어떤 ε > 0에 대해서도 0 < |x − a| < δ이면 |f(x) − L| < ε가 되는 δ가 있으면 lim f(x) = L이에요.', '증명 요령: |f(x) − L|을 |x − a|로 묶어 δ를 ε로 표현해요. 예: f(x) = x/2 + 1, L = 2일 때 |f(x) − 2| = |x − 2|/2 < ε → δ = 2ε.', 'The rigorous form of “arbitrarily close”: lim f(x) = L if for every ε > 0 there is a δ with 0 < |x − a| < δ ⇒ |f(x) − L| < ε.', 'Proof recipe: bound |f(x) − L| by a multiple of |x − a| and solve for δ. For f(x) = x/2 + 1, |f(x) − 2| = |x − 2|/2 < ε gives δ = 2ε.', sEpsDelta()),
     item('ca-squeeze', '조임 정리', 'Squeeze theorem', 'g(x) ≤ f(x) ≤ h(x)이고 g, h의 극한이 같은 L이면 f의 극한도 L이에요.', '대표 결과: lim(x→0) sin x / x = 1, lim(x→0) (1 − cos x)/x = 0, lim x·sin(1/x) = 0. 진동하는 항은 −1 ≤ sin ≤ 1로 묶어요.', 'If g ≤ f ≤ h near a and g, h share the limit L, then f has limit L too.', 'Key results: lim(x→0) sin x / x = 1, lim(x→0) (1 − cos x)/x = 0, lim x·sin(1/x) = 0. Bound oscillating parts with −1 ≤ sin ≤ 1.', sSqueeze()),
     item('ca-ivt', '중간값 정리', 'Intermediate value theorem', '닫힌 구간에서 연속인 함수는 양 끝값 사이의 모든 값을 반드시 한 번 이상 지나요.', 'f(a)·f(b) < 0이면 (a, b)에 근이 있어요. 예: f(x) = x³ − x − 1은 f(1) = −1, f(2) = 5라서 1과 2 사이에 근이 있어요. 최대·최소 정리와 짝으로 나와요.', 'A function continuous on [a, b] takes every value between f(a) and f(b).', 'If f(a)·f(b) < 0 there is a root in (a, b): x³ − x − 1 has f(1) = −1 and f(2) = 5, so a root lies between. Often paired with the extreme value theorem.', sIVT())
-  ]),
+  ].concat(XT.add['ca-lim'] || [])),
   sec('ca-diff', '미분', 'Derivatives', '미분과 응용', 'Derivatives and applications',
     '순간 변화율을 구하고 그래프의 모양과 최적값을 알아내요.', 'Instantaneous rates of change, curve shapes and optimization.', [
     item('ca-derivative', '미분계수와 도함수', 'The derivative', '할선의 기울기에서 h → 0으로 보낸 극한, 즉 접선의 기울기예요. f′(a) = lim(h→0) (f(a + h) − f(a))/h.', '기본 공식: (xⁿ)′ = nxⁿ⁻¹, (eˣ)′ = eˣ, (ln x)′ = 1/x, (sin x)′ = cos x, (cos x)′ = −sin x, (tan x)′ = sec²x. 미분 가능하면 연속이지만 역은 아니에요 (|x|는 0에서 미분 불가).', 'The limit of secant slopes as h → 0: the tangent’s slope. f′(a) = lim(h→0) (f(a + h) − f(a))/h.', 'Core rules: (xⁿ)′ = nxⁿ⁻¹, (eˣ)′ = eˣ, (ln x)′ = 1/x, (sin x)′ = cos x, (cos x)′ = −sin x, (tan x)′ = sec²x. Differentiable implies continuous, not conversely (|x| at 0).', sDeriv()),
@@ -864,7 +1126,7 @@ window.UX = page([
     item('ca-concavity', '오목·볼록과 변곡점', 'Concavity and inflection', 'f″ > 0이면 아래로 볼록(기울기 증가), f″ < 0이면 위로 볼록이에요. f″의 부호가 바뀌는 점이 변곡점이에요.', '2계도함수 판정: f′(c) = 0이고 f″(c) < 0이면 극대, > 0이면 극소, = 0이면 판정 불가. 그래프 개형은 정의역 → 절편 → 점근선 → 증감 → 오목 순서로 그려요.', 'f″ > 0 means concave up (slope increasing), f″ < 0 concave down; an inflection point is where f″ changes sign.', 'Second-derivative test: f′(c) = 0 with f″(c) < 0 is a max, > 0 a min, = 0 inconclusive. Sketch graphs via domain, intercepts, asymptotes, monotonicity, then concavity.', sConcavity()),
     item('ca-mvt', '평균값 정리', 'Mean value theorem', '[a, b]에서 연속, (a, b)에서 미분 가능하면 f′(c) = (f(b) − f(a))/(b − a)인 c가 있어요. f(a) = f(b)인 경우가 롤의 정리예요.', '예: f = √x, [0, 4]에서 평균 기울기 1/2 = 1/(2√c) → c = 1. 따름 정리: f′ = 0이면 상수, f′ = g′이면 f − g는 상수. 부등식 증명에 자주 써요.', 'If f is continuous on [a, b] and differentiable inside, some c has f′(c) = (f(b) − f(a))/(b − a); Rolle’s theorem is the case f(a) = f(b).', 'f = √x on [0, 4]: average slope 1/2 = 1/(2√c) gives c = 1. Corollaries: f′ = 0 means constant; f′ = g′ means f − g is constant. Handy for proving inequalities.', sMVT()),
     item('ca-lhopital', '로피탈 정리', 'L’Hôpital’s rule', '0/0 또는 ∞/∞ 꼴의 극한은 분자·분모를 각각 미분한 극한과 같아요 (그 극한이 존재할 때).', '예: lim sin x/x = lim cos x/1 = 1, lim ln x/x = lim (1/x)/1 = 0. 0·∞, ∞ − ∞, 1^∞, 0⁰, ∞⁰은 몫이나 ln으로 바꾼 뒤 적용해요. 예: lim(1 + 1/x)ˣ = e.', 'For 0/0 or ∞/∞ forms, the limit equals the limit of the ratio of derivatives, when that exists.', 'lim sin x/x = lim cos x = 1; lim ln x/x = 0. Turn 0·∞, ∞ − ∞, 1^∞, 0⁰ and ∞⁰ into quotients or take logs first: lim (1 + 1/x)ˣ = e.', sLHopital())
-  ]),
+  ].concat(XT.add['ca-diff'] || [])),
   sec('ca-int', '적분', 'Integrals', '적분과 응용', 'Integrals and applications',
     '쌓인 양을 구하는 방법과 대표적인 적분 기법이에요.', 'Accumulation, and the main integration techniques.', [
     item('ca-riemann', '리만 합과 정적분', 'Riemann sums', '구간을 잘게 나눠 직사각형 넓이를 더하고, 칸 수를 무한히 늘린 극한이 정적분이에요.', '∫ₐᵇ f dx = lim Σ f(xᵢ*)Δx, Δx = (b − a)/n. 성질: 선형성, 구간 덧셈, f ≤ g이면 ∫f ≤ ∫g. 극한을 정적분으로 바꾸는 문제: lim (1/n)Σ(k/n)² = ∫₀¹ x² dx = 1/3.', 'Add up rectangle areas over a fine partition; the limit as the pieces shrink is the definite integral.', '∫ₐᵇ f dx = lim Σ f(xᵢ*)Δx with Δx = (b − a)/n. Linear, additive over intervals, monotone. Recognise sums as integrals: lim (1/n)Σ(k/n)² = ∫₀¹ x² dx = 1/3.', sRiemann()),
@@ -875,14 +1137,14 @@ window.UX = page([
     item('ca-improper', '이상적분', 'Improper integrals', '구간이 무한하거나 함수가 발산하는 점이 있는 적분이에요. 유한한 값으로 바꾼 뒤 극한을 취해 수렴·발산을 판정해요.', '∫₁^∞ 1/xᵖ dx는 p > 1이면 1/(p − 1)로 수렴, p ≤ 1이면 발산. ∫₀¹ 1/xᵖ dx는 p < 1이면 수렴. 비교 판정: 0 ≤ f ≤ g이고 ∫g 수렴이면 ∫f 수렴. ∫₀^∞ e^(−x) dx = 1.', 'Integrals over infinite intervals or through blow-ups: integrate to a finite bound, then take the limit.', '∫₁^∞ 1/xᵖ dx converges to 1/(p − 1) iff p > 1; ∫₀¹ 1/xᵖ dx converges iff p < 1. Comparison: 0 ≤ f ≤ g with ∫g finite gives ∫f finite. ∫₀^∞ e^(−x) dx = 1.', sImproper()),
     item('ca-volume', '회전체 부피', 'Volumes of revolution', '영역을 축 둘레로 돌린 입체의 부피를 얇은 원판(또는 원통 껍질)을 쌓아 구해요.', '원판법 V = π∫ f(x)² dx, 와셔법 V = π∫ (R² − r²) dx, 원통껍질법 V = 2π∫ x f(x) dx (y축 회전). 예: y = √x, 0 ≤ x ≤ 4를 x축 회전 → 8π. 단면적을 아는 입체는 V = ∫A(x)dx.', 'Build a solid of revolution from thin disks (or cylindrical shells) and add their volumes.', 'Disks V = π∫ f(x)² dx, washers V = π∫ (R² − r²) dx, shells V = 2π∫ x f(x) dx (about the y-axis). y = √x on [0, 4] about the x-axis gives 8π. Known cross-sections: V = ∫A(x)dx.', sVolume()),
     item('ca-polar', '극좌표와 넓이', 'Polar coordinates and area', '점을 원점까지의 거리 r과 각 θ로 나타내요. 넓이는 얇은 부채꼴 ½r²dθ를 더해서 구해요.', 'x = r cos θ, y = r sin θ, r² = x² + y². 넓이 A = ½∫ r² dθ, 곡선 길이 L = ∫√(r² + (dr/dθ)²) dθ. 예: 심장형 r = 1 + cos θ의 넓이는 3π/2. 매개곡선 길이 L = ∫√(x′² + y′²) dt.', 'Locate points by distance r and angle θ; area adds thin wedges ½r²dθ.', 'x = r cos θ, y = r sin θ, r² = x² + y². Area ½∫ r² dθ; length ∫√(r² + (dr/dθ)²) dθ. The cardioid r = 1 + cos θ has area 3π/2. Parametric length ∫√(x′² + y′²) dt.', sPolar())
-  ]),
+  ].concat(XT.add['ca-int'] || [])),
   sec('ca-ser', '급수', 'Series', '수열과 급수', 'Sequences and series',
     '무한히 많은 항의 합이 언제 유한한지, 함수를 다항식으로 어떻게 펼치는지예요.', 'When infinite sums are finite, and how functions unfold into polynomials.', [
     item('ca-geometric', '등비급수', 'Geometric series', '공비 r인 등비수열의 합 a + ar + ar² + …은 |r| < 1이면 a/(1 − r)로 수렴하고, 아니면 발산해요.', '부분합 Sₙ = a(1 − rⁿ)/(1 − r). 예: Σ(1/2)ⁿ (n ≥ 1) = 1, 0.999… = 1, Σ(−1/3)ⁿ (n ≥ 0) = 3/4. 망원급수 Σ 1/(n(n + 1)) = Σ(1/n − 1/(n + 1)) = 1도 함께 알아 두세요.', 'a + ar + ar² + … converges to a/(1 − r) when |r| < 1 and diverges otherwise.', 'Partial sums Sₙ = a(1 − rⁿ)/(1 − r). Σ(1/2)ⁿ from n = 1 is 1; 0.999… = 1; Σ(−1/3)ⁿ from 0 is 3/4. Telescoping: Σ 1/(n(n + 1)) = 1.', sGeometric()),
     item('ca-tests', '수렴 판정법', 'Convergence tests', '급수의 수렴 여부를 직접 합하지 않고 판정하는 방법들이에요. 먼저 aₙ → 0인지(발산 판정) 확인해요.', '비교·극한비교, 비 판정(|aₙ₊₁/aₙ| → L), 근 판정(ⁿ√|aₙ| → L): L < 1 수렴, L > 1 발산, L = 1 불명. 적분 판정, p급수(p > 1 수렴), 교대급수(|aₙ| 감소 → 0이면 수렴). 절대수렴이면 수렴.', 'Ways to decide convergence without summing. First check aₙ → 0 (the divergence test).', 'Comparison and limit comparison; ratio |aₙ₊₁/aₙ| → L and root ⁿ√|aₙ| → L (L < 1 converges, > 1 diverges, = 1 unknown); integral test; p-series (p > 1); alternating series (|aₙ| decreasing to 0). Absolute convergence implies convergence.', sTests()),
     item('ca-power', '거듭제곱급수', 'Power series', 'Σ cₙ(x − a)ⁿ 꼴의 급수예요. 중심 a에서 반지름 R 안에서는 수렴하고 밖에서는 발산해요.', 'R은 비 판정으로: lim|cₙ₊₁/cₙ|·|x − a| < 1. 끝점은 따로 확인. 반경 안에서 항별 미분·적분 가능: 1/(1 − x) = Σxⁿ → 1/(1 − x)² = Σnxⁿ⁻¹, −ln(1 − x) = Σxⁿ/n, arctan x = Σ(−1)ⁿx²ⁿ⁺¹/(2n + 1).', 'A series Σ cₙ(x − a)ⁿ; it converges within radius R of the centre and diverges beyond.', 'Find R with the ratio test, then test the endpoints separately. Inside, differentiate or integrate term by term: from 1/(1 − x) = Σxⁿ get 1/(1 − x)² = Σnxⁿ⁻¹, −ln(1 − x) = Σxⁿ/n, arctan x = Σ(−1)ⁿx²ⁿ⁺¹/(2n + 1).', sPower()),
     item('ca-taylor', '테일러 급수', 'Taylor series', '한 점에서의 도함수 값만으로 함수를 다항식의 무한합으로 펼쳐요. f(x) = Σ f⁽ⁿ⁾(a)(x − a)ⁿ/n!.', '매클로린: eˣ = Σxⁿ/n!, sin x = x − x³/3! + x⁵/5! − …, cos x = 1 − x²/2! + x⁴/4! − …, ln(1 + x) = x − x²/2 + x³/3 − …, (1 + x)ᵏ = Σ(k choose n)xⁿ. 오차는 라그랑주 나머지 f⁽ⁿ⁺¹⁾(c)xⁿ⁺¹/(n + 1)!.', 'Expand a function into an infinite polynomial from its derivatives at one point: f(x) = Σ f⁽ⁿ⁾(a)(x − a)ⁿ/n!.', 'Maclaurin: eˣ = Σxⁿ/n!, sin x = x − x³/3! + …, cos x = 1 − x²/2! + …, ln(1 + x) = x − x²/2 + …, (1 + x)ᵏ = Σ(k choose n)xⁿ. Error bound: Lagrange remainder f⁽ⁿ⁺¹⁾(c)xⁿ⁺¹/(n + 1)!.', sTaylor())
-  ]),
+  ].concat(XT.add['ca-ser'] || [])),
   sec('ca-multi', '다변수', 'Multivariable', '다변수 미적분', 'Multivariable calculus',
     '변수가 여럿인 함수의 미분과 적분이에요.', 'Differentiation and integration with several variables.', [
     item('ca-partialderiv', '편미분', 'Partial derivatives', '다른 변수를 상수로 고정하고 한 변수로만 미분해요. 곡면을 한 방향으로 자른 단면의 기울기예요.', '예: f = x²y + sin y → fₓ = 2xy, f_y = x² + cos y. 혼합편미분 fₓᵧ = fᵧₓ (연속이면). 전미분 df = fₓdx + fᵧdy, 다변수 연쇄 법칙 dz/dt = fₓ·dx/dt + fᵧ·dy/dt. 접평면 z − z₀ = fₓ(x − x₀) + fᵧ(y − y₀).', 'Hold the other variables fixed and differentiate in one: the slope of a slice through the surface.', 'f = x²y + sin y gives fₓ = 2xy, f_y = x² + cos y. Mixed partials agree when continuous. Total differential df = fₓdx + fᵧdy; chain rule dz/dt = fₓ·dx/dt + fᵧ·dy/dt; tangent plane z − z₀ = fₓ(x − x₀) + fᵧ(y − y₀).', sPartialD()),
@@ -892,7 +1154,7 @@ window.UX = page([
     item('ca-double', '이중적분', 'Double integrals', '영역을 작은 칸으로 나눠 높이 × 넓이를 더한 극한이에요. 한 변수씩 차례로 적분(반복적분)해서 계산해요.', '푸비니: 직사각형 영역이면 순서 교환 가능. 일반 영역은 경계를 함수로: ∫ₐᵇ∫_(g₁(x))^(g₂(x)) f dy dx. 순서를 바꾸면 쉬워지는 문제(예: ∫₀¹∫ₓ¹ e^(y²) dy dx)가 단골이에요. 넓이 = ∬1 dA, 평균값 = (1/A)∬f dA.', 'The limit of height × area sums over small cells, computed as iterated single integrals.', 'Fubini lets you swap the order on rectangles; general regions use variable limits ∫ₐᵇ∫_(g₁(x))^(g₂(x)) f dy dx. Classic trick: swap the order of ∫₀¹∫ₓ¹ e^(y²) dy dx. Area = ∬1 dA; average = (1/A)∬f dA.', sDouble()),
     item('ca-polarint', '극좌표 이중적분', 'Double integrals in polar form', '원·부채꼴 영역은 극좌표로 바꾸면 쉬워요. 넓이 요소가 dA = r dr dθ가 돼요.', '예: ∬_(x² + y² ≤ 1) (x² + y²) dA = ∫₀²π∫₀¹ r²·r dr dθ = π/2. 가우스 적분: ∬e^(−(x² + y²))dA = π → ∫e^(−x²)dx = √π. 3차원은 원통좌표 dV = r dr dθ dz, 구면좌표 dV = ρ² sin φ dρ dφ dθ.', 'Circular regions become simple in polar form, with area element dA = r dr dθ.', '∬ over the unit disk of (x² + y²) dA = ∫₀²π∫₀¹ r³ dr dθ = π/2. Gaussian: ∬e^(−(x² + y²))dA = π, so ∫e^(−x²)dx = √π. In 3D: cylindrical dV = r dr dθ dz, spherical dV = ρ² sin φ dρ dφ dθ.', sPolarInt()),
     item('ca-jacobian', '변수변환과 야코비안', 'Change of variables and the Jacobian', '변수를 바꾸면 작은 넓이(부피)가 늘거나 줄어요. 그 배율이 야코비안 행렬식 |∂(x, y)/∂(u, v)|예요.', '∬f dx dy = ∬f |J| du dv. 예: x = 2u + v, y = u + 2v → |J| = 3. 극좌표 |J| = r, 구면좌표 |J| = ρ² sin φ. 영역 모양을 단순하게 만드는 변환(예: u = x + y, v = x − y)을 고르는 게 요령이에요.', 'Changing variables stretches small areas (volumes); the stretch factor is the Jacobian determinant |∂(x, y)/∂(u, v)|.', '∬f dx dy = ∬f |J| du dv. x = 2u + v, y = u + 2v has |J| = 3; polar |J| = r; spherical |J| = ρ² sin φ. Choose maps that straighten the region, such as u = x + y, v = x − y.', sJacobian())
-  ]),
+  ].concat(XT.add['ca-multi'] || [])),
   sec('ca-vec', '벡터해석', 'Vector calculus', '벡터해석', 'Vector calculus',
     '곡선·곡면 위의 적분과 그린·발산·스토크스 정리예요.', 'Integrals along curves and surfaces, and the theorems of Green, Gauss and Stokes.', [
     item('ca-curve', '공간곡선과 곡률', 'Space curves and curvature', '매개변수 곡선 r(t)의 도함수 r′(t)는 속도(접선 방향), r″(t)는 가속도예요. 곡률은 곡선이 휘는 정도예요.', '속력 |r′|, 호의 길이 L = ∫|r′(t)|dt, 단위접선 T = r′/|r′|, 곡률 κ = |r′ × r″|/|r′|³ (평면곡선 y = f(x): κ = |f″|/(1 + f′²)^(3/2)). 가속도 = 접선 성분 + 법선 성분(κ·속력²).', 'For a curve r(t), r′(t) is velocity (along the tangent) and r″(t) acceleration; curvature measures bending.', 'Speed |r′|; arc length L = ∫|r′(t)|dt; unit tangent T = r′/|r′|; curvature κ = |r′ × r″|/|r′|³ (for y = f(x): κ = |f″|/(1 + f′²)^(3/2)). Acceleration splits into tangential and normal (κ·speed²) parts.', sCurve()),
@@ -904,8 +1166,10 @@ window.UX = page([
     item('ca-flux', '면적분과 플럭스', 'Surface integrals and flux', '곡면을 지나가는 흐름의 양이에요. 벡터장의 법선 성분 F·n을 곡면 위에서 적분해요.', '곡면 r(u, v): dS = |r_u × r_v| du dv, 플럭스 ∬F·n dS = ∬F·(r_u × r_v) du dv. 그래프 z = g(x, y)는 dS = √(1 + gₓ² + g_y²) dA. 방향(법선 방향)을 먼저 정해요.', 'The amount of flow through a surface: integrate the normal component F·n over it.', 'For r(u, v): dS = |r_u × r_v| du dv and flux ∬F·n dS = ∬F·(r_u × r_v) du dv. For z = g(x, y), dS = √(1 + gₓ² + g_y²) dA. Fix the orientation (normal direction) first.', sFlux()),
     item('ca-divthm', '발산 정리', 'Divergence theorem', '닫힌 곡면을 빠져나가는 전체 플럭스는 그 안의 발산을 모두 더한 것과 같아요.', '∯_S F·n dS = ∭_V ∇·F dV. 예: F = (x, y, z), 반지름 R 구 → 3·(4/3)πR³ = 4πR³. 전자기학의 가우스 법칙과 연속 방정식의 수학적 바탕이에요.', 'The total flux out of a closed surface equals the total divergence inside it.', '∯_S F·n dS = ∭_V ∇·F dV. For F = (x, y, z) and a sphere of radius R: 3·(4/3)πR³ = 4πR³. The maths behind Gauss’s law and the continuity equation.', sDivThm()),
     item('ca-stokes', '스토크스 정리', 'Stokes’ theorem', '곡면 S의 경계 C를 도는 선적분은 S 위에서 회전 ∇×F의 플럭스와 같아요. 그린 정리를 3차원으로 넓힌 거예요.', '∮_C F·dr = ∬_S (∇×F)·n dS. 경계 방향은 오른손 법칙(법선 방향에 엄지). 같은 경계를 가진 더 쉬운 곡면(평면 원판 등)으로 바꿔 계산하는 게 요령이에요.', 'The circulation around the boundary C equals the flux of ∇×F through S: Green’s theorem in 3D.', '∮_C F·dr = ∬_S (∇×F)·n dS, with C oriented by the right-hand rule. Swap S for any easier surface with the same boundary, such as a flat disk.', sStokes())
-  ])
-]);
+  ].concat(XT.add['ca-vec'] || []))
+].concat(XT.secs || []));
+window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .ca-b .in{font-weight:800;color:var(--ink)}
 .ca-l .in{font-size:.86em;color:var(--ink);font-weight:700}

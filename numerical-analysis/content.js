@@ -950,6 +950,70 @@ function sAdapt() {
   return S;
 }
 
+/* ================= split-out cards ================= */
+function sGS() {
+  const S = scene({ id: 'nu-gs', steps: 5, per: 1.7 });
+  const F = fr(-.3, 3, -.3, 2.2, 2.2, 17.4, 1.4, 12.6);
+  hl(S, 'ax', F.X(-.3), F.X(3), F.Y(0), 'ink-3', 0, { w: .08 }); vl(S, 'ay', F.X(0), F.Y(2.2), F.Y(-.3), 'ink-3', 0, { w: .08 });
+  [1, 2, 3].forEach(v => T(S, 'tx' + v, F.X(v) - 1, F.Y(0) + .15, String(v), 'cz-tc cz-mono nux-xs', 0, { w: 2 }));
+  [1, 2].forEach(v => T(S, 'ty' + v, F.X(0) - 1.6, F.Y(v) - .45, String(v), 'cz-mono nux-xs', 0, { w: 1.3, css: 'text-align:right' }));
+  mline(S, 'l1', F, [1.65, 2.4], [2.325, -.3], { color: 'warn', h: .12 }); mline(S, 'l2', F, [-.3, 1.7667], [3, .6667], { color: 'ok', h: .12 });
+  mT(S, 'l1l', F, [1.7, 2.1], .5, -.3, '4x + y = 9', 'cz-mono nux-xs nux-w', 0); mT(S, 'l2l', F, [.3, 1.567], 0, -1.15, 'x + 3y = 5', 'cz-mono nux-xs nux-g', 0);
+  mpt(S, 'sol', F, [2, 1], 0, C.okf, .28); mT(S, 'soll', F, [2, 1], .3, -1.1, '(2, 1)', 'cz-mono nux-xs nux-g', 0);
+  const gs = [[0, 0]], ja = [[0, 0]]; let x = 0, y = 0;
+  for (let k = 0; k < 4; k++) { x = (9 - y) / 4; gs.push([x, y]); y = (5 - x) / 3; gs.push([x, y]); }
+  x = 0; y = 0; for (let k = 0; k < 6; k++) { const nx = (9 - y) / 4, ny = (5 - x) / 3; x = nx; y = ny; ja.push([x, y]); }
+  mpt(S, 'p0', F, [0, 0], 1, C.cur, .26);
+  gs.slice(1).forEach((p, i) => { const st = i < 2 ? 2 : 3; mar(S, 'g' + i, F, gs[i], p, 'accent', st, { h: .1 }); });
+  ja.slice(1).forEach((p, i) => { mline(S, 'j' + i, F, ja[i], p, { st: 4, color: 'danger', h: .08, dash: 1 }); mpt(S, 'jp' + i, F, p, 4, C.badf, .16); });
+  const err = p => Math.max(Math.abs(p[0] - 2), Math.abs(p[1] - 1));
+  const R = 18.8;
+  T(S, 'r1', R, 1.0, 'x ← (9 − y) / 4', 'cz-mono nux-xs nux-w', 1); T(S, 'r2', R, 2.0, 'y ← (5 − x) / 3', 'cz-mono nux-xs nux-g', 1);
+  T(S, 'r3', R, 3.4, ['방금 구한 x를 바로 써요', 'use the new x right away'], 'nux-xs nux-a', 2);
+  T(S, 'r4', R, 4.5, ['→ 가로, 세로 계단 모양', '→ a staircase path'], 'nux-xs', 2);
+  T(S, 'th0', R, 6.0, 'k', 'cz-mono nux-xs', 4); T(S, 'th1', R + 1.6, 6.0, ['야코비', 'Jacobi'], 'nux-xs nux-r', 4); T(S, 'th2', R + 6.2, 6.0, ['가우스-자이델', 'Gauss–Seidel'], 'nux-xs nux-a', 4);
+  [1, 2, 3, 4].forEach(k => { T(S, 'tk' + k, R, 6.0 + k * 1.0, String(k), 'cz-mono nux-xs', 4); T(S, 'tj' + k, R + 1.6, 6.0 + k * 1.0, err(ja[k]).toFixed(4), 'cz-mono nux-xs', 4); T(S, 'tg' + k, R + 6.2, 6.0 + k * 1.0, err(gs[2 * k]).toFixed(4), 'cz-mono nux-xs', 4); });
+  T(S, 'r5', R, 11.4, ['오차가 훨씬 빨리 줄어요', 'the error falls much faster'], 'nux-xs nux-g', 4);
+  stepT(S, 'k', 1, 15.6, [['연립방정식을 각 변수에 대해 풀어 두고 (0, 0)에서 출발해요', 'solve each equation for one variable and start from (0, 0)'], ['가우스-자이델: 새로 구한 x를 같은 반복 안에서 바로 y 계산에 써요', 'Gauss–Seidel uses the freshly computed x for y within the same sweep'], ['한 식씩 맞춰 가며 계단처럼 해 (2, 1)로 다가가요', 'it satisfies one equation at a time, stepping like a staircase toward (2, 1)'], ['이전 값만 쓰는 야코비보다 같은 반복 수에서 오차가 훨씬 작아요', 'with the same number of sweeps its error is far below Jacobi’s, which only uses old values']]);
+  fin(S, 'z', 15.6, [['가우스-자이델: 새 값을 즉시 쓰는 반복법 · 메모리도 한 벌이면 충분해요', 'Gauss–Seidel updates in place with the newest values · one copy of the vector suffices', 'nux-xs nux-a'], ['대각 원소가 큰(대각 지배) 행렬이나 대칭 양정치 행렬이면 수렴해요', 'it converges for diagonally dominant or symmetric positive-definite matrices'], ['ω로 한 걸음 더 가는 SOR은 더 빠르지만, 순서 의존 때문에 병렬화는 야코비가 쉬워요', 'SOR overshoots by ω for more speed; Jacobi is easier to parallelize']]);
+  S.cap(1, '각 변수에 대해 풀기', 'Solve for each variable').cap(2, '새 값을 바로 쓰기', 'Use new values at once').cap(3, '계단처럼 수렴', 'A staircase to the answer').cap(4, '야코비와 비교', 'Against Jacobi').cap(5, '가우스-자이델 방법', 'The Gauss–Seidel method');
+  return S;
+}
+
+function sStiff() {
+  const S = scene({ id: 'nu-stiff', steps: 5, per: 1.7 });
+  const L = 50, f = (t, y) => -L * (y - Math.cos(t)), Y = t => (L * L * Math.cos(t) + L * Math.sin(t)) / (L * L + 1) - L * L / (L * L + 1) * Math.exp(-L * t);
+  const F = fr(0, 3, -2, 2, 2.2, 19.6, 1.4, 11.4);
+  hl(S, 'ax', F.L, F.R, F.Y(0), 'ink-3', 0, { w: .08 }); vl(S, 'ay', F.L, F.T, F.B, 'ink-3', 0, { w: .08 });
+  [1, 2, 3].forEach(v => T(S, 'tx' + v, F.X(v) - 1, F.B + .15, String(v), 'cz-tc cz-mono nux-xs', 0, { w: 2 }));
+  [-1, 1].forEach(v => T(S, 'ty' + v, 0, F.Y(v) - .45, String(v), 'cz-mono nux-xs', 0, { w: 1.9, css: 'text-align:right' }));
+  mplot(S, 'ex', F, t => [t, Y(t)], 0, 3, { color: 'ok', h: .14, n: 160 });
+  const run = (h, step) => { const p = [[0, 0]]; let y = 0; for (let t = 0; t < 3 - 1e-9; t += h) { y = step(t, y, h); p.push([t + h, y]); } return p; };
+  const bad = run(.05, (t, y, h) => y + h * f(t, y)), ok = run(.03, (t, y, h) => y + h * f(t, y)), im = run(.3, (t, y, h) => (y + h * L * Math.cos(t + h)) / (1 + L * h));
+  const clipP = p => p.map(([t, y]) => [t, Math.max(-2, Math.min(2, y))]);
+  mpoly(S, 'bd', F, clipP(bad.filter(p => p[0] <= 1.2)), { st: 2, off: 3, color: 'danger', h: .08 });
+  const RW = (k, yy, list, st, c, off) => list.forEach((u, i) => vl(S, k + i, F.X(u), yy, yy + .7, c, st, { w: .06, off }));
+  RW('ok', 12.2, ok.map(p => p[0]), 3, 'warn');
+  T(S, 'okl', F.R + .3, 12.1, [`명시적 h = 0.03 · ${ok.length - 1}걸음`, `explicit h = 0.03 · ${ok.length - 1} steps`], 'nux-xs nux-w', 3);
+  im.forEach((p, i) => mpt(S, 'im' + i, F, p, 4, C.cur, .24)); mpoly(S, 'iml', F, im, { st: 4, color: 'accent', h: .08, dash: 1 });
+  RW('imr', 13.3, im.map(p => p[0]), 4, 'accent');
+  T(S, 'iml2', F.R + .3, 13.2, [`암시적 h = 0.3 · ${im.length - 1}걸음`, `implicit h = 0.3 · ${im.length - 1} steps`], 'nux-xs nux-a', 4);
+  const R = 21.4;
+  T(S, 'r0', R, 1.0, 'y′ = −50 (y − cos t)', 'cz-mono nux-xs', 0);
+  T(S, 'r1', R, 2.1, ['빠른 성분: 0.1초 만에 사라짐', 'fast part: gone in 0.1 s'], 'nux-xs', 1);
+  T(S, 'r2', R, 3.1, ['느린 성분: cos t', 'slow part: cos t'], 'nux-xs nux-g', 1);
+  T(S, 'r3', R, 4.6, ['명시적 오일러 h = 0.05', 'explicit Euler h = 0.05'], 'nux-xs nux-r', 2);
+  T(S, 'r4', R, 5.6, '× (1 − 50h) = × (−1.5) ✗', 'cz-mono nux-xs nux-r', 2);
+  T(S, 'r5', R, 7.0, ['안정 조건 h < 2/50 = 0.04', 'stable only if h < 2/50 = 0.04'], 'nux-xs nux-w', 3);
+  T(S, 'r6', R, 8.0, ['해가 매끈해져도 계속', 'even after the solution is smooth'], 'nux-xs', 3);
+  T(S, 'r7', R, 9.4, ['암시적 오일러', 'implicit Euler'], 'nux-xs nux-a', 4);
+  T(S, 'r8', R, 10.4, ['큰 h에서도 안정 ✓', 'stable with large h ✓'], 'nux-xs nux-g', 4);
+  stepT(S, 'k', 1, 15.6, [['아주 빨리 사라지는 성분과 천천히 변하는 성분이 섞인 강성(stiff) 문제예요', 'a stiff problem mixes a part that dies out very fast with one that changes slowly'], ['빠른 성분은 이미 사라졌는데도, 명시적 오일러는 h = 0.05에서 진동하며 폭발해요', 'the fast part is long gone, yet explicit Euler with h = 0.05 oscillates and blows up'], ['안정하려면 h < 0.04를 끝까지 지켜야 해서 걸음 수가 많아져요', 'staying stable means keeping h < 0.04 the whole way, so the step count balloons'], ['암시적 방법은 매끈한 부분을 큰 걸음으로 따라가요 · 걸음 수가 훨씬 적어요', 'an implicit method follows the smooth part in big strides, with far fewer steps']]);
+  fin(S, 'z', 15.6, [['강성: 시간 척도가 크게 다른 성분이 섞여, 정확도가 아니라 안정성이 걸음 크기를 정하는 문제', 'stiffness: widely different time scales, so stability rather than accuracy limits the step', 'nux-xs nux-a'], ['화학 반응, 전자 회로, 열전달, 게임 물리의 강한 스프링에서 흔해요', 'common in chemical kinetics, circuits, heat transfer and stiff springs in game physics'], ['BDF·라다우 같은 암시적 방법을 써요 · solve_ivp(method="BDF"), MATLAB ode15s', 'use implicit methods such as BDF or Radau · solve_ivp(method="BDF"), MATLAB’s ode15s']]);
+  S.cap(1, '빠른 성분 + 느린 성분', 'A fast part and a slow part').cap(2, '명시적 방법은 폭발', 'Explicit blows up').cap(3, '작은 걸음을 끝까지', 'Tiny steps all the way').cap(4, '암시적 방법', 'Implicit methods').cap(5, '강성 문제', 'Stiff problems');
+  return S;
+}
+
 return { css: CSSX, secs: [], add: {
   'nu-err': [
     item('nu-kahan', '카한 합산', 'Kahan summation', '큰 합에 작은 수를 계속 더하면 반올림으로 작은 부분이 사라져요. 카한 합산은 잃어버린 조각을 따로 기억했다가 다음 덧셈에 돌려줘요.', '유효숫자가 4자리라면 1000 + 0.4 = 1000.4는 1000으로 반올림되어 0.4가 사라져요. 이걸 10번 반복해도 합은 1000에 머물지만 참값은 1004예요. 카한(보정) 합산은 덧셈마다 y = x − c, t = s + y, c = (t − s) − y, s = t를 계산해요. (t − s)는 실제로 더해진 양이므로 c에는 반올림으로 잃은 조각이 부호를 바꿔 남고, 다음 덧셈에서 되돌려져요. 그래서 조각이 모여 한 자리를 넘는 순간 합에 반영되고, 오차가 더할 개수 n과 거의 무관해져요(순서대로 더하면 n에 비례해 커질 수 있어요). float32는 유효숫자가 약 7자리라 수백만 개를 더하는 통계, 게임 물리, 신호 처리에서 차이가 커요. NumPy의 sum은 쌍별(pairwise) 합산으로 오차를 줄이고, Python의 math.fsum은 정확하게 반올림된 합을 돌려줘요. 단, -ffast-math 같은 컴파일러 최적화는 (t − s) − y를 0으로 지워 버릴 수 있어요.', 'Keep adding small numbers to a large sum and rounding wipes out the small parts. Kahan summation remembers each lost piece and feeds it back into the next addition.', 'With 4 significant digits, 1000 + 0.4 = 1000.4 rounds to 1000 and the 0.4 is gone; repeat ten times and the sum is still 1000 although the truth is 1004. Kahan (compensated) summation computes y = x − c, t = s + y, c = (t − s) − y, s = t for each term. Since (t − s) is what actually got added, c holds the rounding loss with its sign flipped and returns it on the next addition. The pieces reach the sum as soon as they add up to a whole digit, and the error becomes almost independent of the number of terms n (plain summation can grow with n). float32 keeps only about 7 digits, so this matters when adding millions of values in statistics, game physics or signal processing. NumPy’s sum uses pairwise summation to limit error, and Python’s math.fsum returns a correctly rounded sum. Beware compiler options such as -ffast-math, which may simplify (t − s) − y to zero.', sKahan())
@@ -966,6 +1030,10 @@ return { css: CSSX, secs: [], add: {
   'nu-ode': [
     item('nu-adapt', '적응형 걸음 크기', 'Adaptive step size', '걸음마다 오차를 추정해서, 해가 완만한 곳은 크게, 급하게 변하는 곳은 작게 걸음 크기를 스스로 조절해요.', '해가 한 곳에서만 급하게 변해도, 고정 간격 h를 쓰면 그 한 곳 때문에 전 구간을 잘게 걸어야 해요. 적응형 방법은 한 걸음을 차수가 다른 두 방법(예: 1차 오일러와 2차 호인)으로 계산하고, 두 결과의 차이를 낮은 쪽 방법의 오차 추정값으로 써요. 오차가 허용치(tol)보다 크면 그 걸음을 버리고 h를 줄여 다시 하고, 작으면 받아들인 뒤 h를 키워요. 새 걸음 크기는 보통 h ← 0.9 · h · (tol/err)^(1/(p+1))처럼 정해요(p는 낮은 쪽 방법의 차수, 0.9는 안전 계수). 그 결과 완만한 구간은 성큼성큼, 가파른 구간은 촘촘히 걸어서 같은 정확도를 더 적은 계산으로 얻어요. scipy의 solve_ivp와 MATLAB의 ode45가 기본으로 쓰는 RK45(도르만-프린스)는 5차와 4차 결과를 함께 내는 임베디드 룽게-쿠타 방법이고, 사용자는 걸음 수 대신 rtol·atol로 원하는 정확도를 정해요. 적응형 적분(적응형 심프슨)도 같은 원리예요.', 'Estimate the error at every step and let the step size adjust itself: long strides where the solution is smooth, short ones where it changes fast.', 'Even if a solution changes sharply in only one place, a fixed step h must be small across the whole interval because of it. An adaptive method computes each step with two methods of different order (say first-order Euler and second-order Heun) and uses their difference as an error estimate for the lower-order one. If the error exceeds the tolerance, the step is rejected and retried with a smaller h; otherwise it is accepted and h grows. The new step is typically h ← 0.9 · h · (tol/err)^(1/(p+1)), where p is the lower order and 0.9 is a safety factor. The result strides through smooth stretches and steps finely through steep ones, reaching the same accuracy with less work. RK45 (Dormand–Prince), the default in scipy’s solve_ivp and MATLAB’s ode45, is an embedded Runge–Kutta method producing 5th- and 4th-order results together, and users choose accuracy through rtol and atol rather than a step count. Adaptive quadrature (adaptive Simpson) works on the same principle.', sAdapt())
   ]
+},
+after: {
+  'nu-iter': [item('nu-gs', '가우스-자이델 방법', 'The Gauss–Seidel method', '연립방정식을 반복해서 풀 때, 방금 새로 구한 값을 같은 반복 안에서 바로 다음 변수 계산에 쓰는 방법이에요. 야코비보다 보통 훨씬 빨리 수렴해요.', '각 식을 한 변수에 대해 풀어 두면 4x + y = 9, x + 3y = 5는 x ← (9 − y)/4, y ← (5 − x)/3가 돼요. 야코비 방법은 한 반복에서 이전 반복의 값만 쓰지만, 가우스-자이델은 방금 구한 x를 그 자리에서 y 계산에 바로 써요. 그래서 평면에서 보면 한 식을 맞추는 가로 이동과 다른 식을 맞추는 세로 이동이 번갈아 나오는 계단 모양으로 해 (2, 1)에 다가가요. (0, 0)에서 시작하면 네 번 반복 뒤 오차가 야코비는 약 0.014, 가우스-자이델은 약 0.0001로 훨씬 작아요. 새 값을 덮어쓰며 진행하므로 벡터 한 벌의 메모리면 충분해요. 행렬이 대각 지배(각 행에서 대각 원소의 절댓값이 나머지 합보다 큼)이거나 대칭 양의 정부호면 수렴이 보장돼요. 갱신량에 ω(1 < ω < 2)를 곱해 한 걸음 더 가는 SOR은 더 빠르게 수렴하고, 반대로 순서에 의존하는 탓에 병렬화는 야코비가 더 쉬워요. 유한 차분으로 만든 거대한 희소 시스템, 열 전도나 포아송 방정식 풀이에 쓰여요.', 'An iterative solver that uses each newly computed value immediately, within the same sweep, for the next variable; it usually converges much faster than Jacobi.', 'Solving each equation for one variable turns 4x + y = 9 and x + 3y = 5 into x ← (9 − y)/4 and y ← (5 − x)/3. Jacobi uses only the previous sweep’s values, but Gauss–Seidel plugs the x it has just computed straight into the y update. In the plane this traces a staircase, alternating a horizontal move that satisfies one equation with a vertical move that satisfies the other, toward the solution (2, 1). Starting from (0, 0), after four sweeps Jacobi’s error is about 0.014 while Gauss–Seidel’s is about 0.0001. Because it overwrites values in place, one copy of the vector is enough. Convergence is guaranteed for diagonally dominant matrices (each diagonal entry outweighs the rest of its row) and for symmetric positive-definite ones. SOR multiplies each update by ω (1 < ω < 2) to converge faster still, while Jacobi, having no ordering dependence, parallelizes more easily. These methods solve the huge sparse systems of finite-difference models, such as heat conduction and Poisson’s equation.', sGS())],
+  'nu-stab': [item('nu-stiff', '강성 문제', 'Stiff problems', '아주 빨리 사라지는 성분과 천천히 변하는 성분이 섞인 미분방정식이에요. 명시적 방법은 안정성 때문에 걸음을 끝까지 작게 해야 해서, 암시적 방법을 써요.', 'y′ = −50(y − cos t)의 해는 처음 0.1초 안에 사라지는 빠른 성분 e^(−50t)과 천천히 변하는 cos t로 이루어져요. 빠른 성분이 사라진 뒤에는 해가 매끈한데도, 명시적 오일러는 h < 2/50 = 0.04를 지켜야만 안정해요. h = 0.05로 하면 한 걸음마다 오차에 1 − 50h = −1.5가 곱해져 진동하며 폭발해요. 그래서 t = 3까지 100걸음이 필요하지만, 다음 값을 미지수로 두고 푸는 암시적 오일러는 h = 0.3으로 10걸음만에 cos t를 따라가요. 이처럼 시간 척도가 크게 다른 성분이 섞여서, 정확도가 아니라 안정성이 걸음 크기를 정하는 문제를 강성(stiff) 문제라고 해요. 화학 반응 속도론, 전자 회로, 열전달, 게임 물리의 강한 스프링에서 흔해요. 암시적 방법은 매 걸음 (비선형) 방정식을 풀어야 해서 한 걸음이 비싸지만, 걸음 수가 훨씬 적어서 전체로는 빨라요. 실제로는 BDF나 라다우 방법을 쓰며, scipy의 solve_ivp(method="BDF")와 MATLAB의 ode15s가 대표적이에요.', 'A differential equation mixing a part that dies out very fast with one that changes slowly. Explicit methods must keep tiny steps for stability, so implicit methods are used instead.', 'The solution of y′ = −50(y − cos t) combines a fast part, e^(−50t), which vanishes within 0.1 s, and a slow part, cos t. Even after the fast part is gone and the solution is smooth, explicit Euler is stable only for h < 2/50 = 0.04; with h = 0.05 each step multiplies the error by 1 − 50h = −1.5 and it oscillates and blows up. It therefore needs 100 steps to reach t = 3, while implicit Euler, which solves for the next value, follows cos t with h = 0.3 in 10 steps. A problem like this, where widely different time scales make stability rather than accuracy set the step size, is called stiff. Stiffness is common in chemical kinetics, electronic circuits, heat transfer and stiff springs in game physics. Each implicit step must solve a (possibly nonlinear) equation and costs more, but far fewer steps make it faster overall. Practical solvers use BDF or Radau methods, such as scipy’s solve_ivp(method="BDF") and MATLAB’s ode15s.', sStiff())]
 } };
 })();
 
@@ -1015,6 +1083,7 @@ window.UX = page([
   ].concat(XT.add['nu-ode'] || []))
 ].concat(XT.secs || []));
 window.UX[0].css += XT.css;
+if (XT.after) for (const [pid, its] of Object.entries(XT.after)) { const s = window.UX.find(q => q.items.some(t => t.id === pid)); if (!s) throw new Error('after: no parent ' + pid); s.items.splice(s.items.findIndex(t => t.id === pid) + 1, 0, ...its); window.UX[0].css += '\n' + its.map(t => t.css || '').join('\n'); }
 window.UX[0].css += `
 .nu-b .in{font-weight:800;color:var(--ink)}
 .nu-l .in{font-size:.86em;color:var(--ink);font-weight:700}
