@@ -305,7 +305,7 @@ function sCouplingT() {
     code: [['// 같은 커밋에 함께 나온 파일 쌍', '// file pairs in the same commit'], ['// 파일 10개 이하인 커밋 4,358개만', '// only the 4,358 commits with ≤ 10 files'], 'conf(A → B) = both(A, B) / changes(A)', 'test/types/index.ts → fastify.d.ts', 'docs/Reference/Errors.md → lib/errors.js'],
     hl: [[0, 3, 'accent'], [3, 1, 'ok'], [4, 1, 'warn'], null],
     draw: (S) => {
-      mono(S, 'm1', 19.0, .5, ['types index → .d.ts    73/81  90%', 'instance test → .d.ts  54/65  83%', 'Warnings.md → .js      16/23  70%', 'Errors.md → errors.js  20/33  61%', 'reply.test → reply.js 64/106  60%'], 1, { w: 12.4, dy: .55, c: 'rfx-g' });
+      mono(S, 'm1', 19.0, .5, nbs(['types index → .d.ts    73/81  90%', 'instance test → .d.ts  54/65  83%', 'Warnings.md → .js      16/23  70%', 'Errors.md → errors.js  20/33  61%', 'reply.test → reply.js 64/106  60%']), 1, { w: 12.4, dy: .55, c: 'rfx-g' });
       lbl(S, 'l1', 19.0, 3.4, ['타입 테스트가 바뀐 81번 가운데 73번은 타입 정의도 함께 바뀌었어요', 'in 73 of 81 changes to the type tests, the type definitions changed too'], 'a', 1, { w: 12.4 });
       lbl(S, 'l2', 19.0, 4.8, ['오류 문서가 바뀐 33번 중 20번은 lib/errors.js도 함께 바뀌었어요', 'in 20 of 33 changes to the errors doc, lib/errors.js changed with it'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 6.2, ['import로는 보이지 않는 연결이에요 · 한쪽만 고치면 다른 쪽이 낡아요', 'imports do not show this link; change one alone and the other goes stale'], 'r', 3, { w: 12.4 });
@@ -340,9 +340,9 @@ function sCycleT() {
     code: ['madge --circular <dir>', ['# 설치된 패키지를 그대로 검사했어요', '# installed packages, checked as shipped'], 'eslint 9.39.5   lib    392 files', 'zod 4.6.7       v4     212 files', 'knip 6.45.1     dist   562 files'],
     hl: [[0, 2, 'accent'], [3, 2, 'warn'], null, [0, 1, 'ok']],
     draw: (S) => {
-      mono(S, 'm1', 19.0, .5, ['eslint   392 files   0 cycles', 'zod      212 files   2 cycles', 'knip     562 files   2 cycles'], 1, { w: 12.4, dy: .55, c: 'rfx-g' });
+      mono(S, 'm1', 19.0, .5, nbs(['eslint   392 files   0 cycles', 'zod      212 files   2 cycles', 'knip     562 files   2 cycles']), 1, { w: 12.4, dy: .55, c: 'rfx-g' });
       lbl(S, 'l1', 19.0, 2.3, ['ESLint는 파일 392개에 순환이 없었고, zod와 knip은 2개씩 있었어요', 'ESLint had none in 392 files; zod and knip had two each'], 'a', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.7, ['zod:  core/core.js ⇄ core/util.js', 'knip: command → plugins → … → scripts'], 2, { w: 12.4, dy: .55, c: 'rfx-r' });
+      mono(S, 'm2', 19.0, 3.7, nbs(['zod:  core/core.js ⇄ core/util.js', 'knip: command → plugins → … → scripts']), 2, { w: 12.4, dy: .55, c: 'rfx-r' });
       lbl(S, 'l2', 19.0, 4.9, ['zod는 두 파일이 서로를, knip은 모듈 6개가 고리를 이뤄 서로를 불러요', 'zod’s two files import each other; six knip modules form a ring'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 6.3, ['madge는 순환을 찾으면 종료 코드 1을 내서 CI에서 바로 막을 수 있어요', 'madge exits with code 1 on a cycle, so CI can block it'], 'g', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['고리 안의 모듈은 따로 떼어 내거나 테스트하기 어려워요', 'modules in a ring cannot be moved or tested on their own'], 'a', 4, { w: 16.0 });
@@ -358,9 +358,9 @@ function sCycleRunT() {
     code: ["// a.mjs: import { helper } from './b.mjs'", 'export class Base {}', 'export const result = helper()', "// b.mjs: import { Base } from './a.mjs'", 'export class Child extends Base {}'],
     hl: [[0, 5, 'warn'], null, [2, 1, 'danger'], null],
     draw: (S) => {
-      mono(S, 'm1', 19.0, .5, ['ESM  enter a → ReferenceError: Base', 'ESM  enter b → ReferenceError: Child'], 1, { w: 12.4, dy: .55, c: 'rfx-r' });
+      mono(S, 'm1', 19.0, .5, nbs(['ESM  enter a → ReferenceError: Base', 'ESM  enter b → ReferenceError: Child']), 1, { w: 12.4, dy: .55, c: 'rfx-r' });
       lbl(S, 'l1', 19.0, 1.75, ['ES 모듈은 어느 파일에서 시작하든 초기화 전 접근 오류가 났어요', 'ES modules failed from either entry: access before initialization'], 'r', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.15, ["CJS  enter a → ok { fromB: 'base' }", 'CJS  enter b → TypeError: b.read …'], 2, { w: 12.4, dy: .55, c: 'rfx-w' });
+      mono(S, 'm2', 19.0, 3.15, nbs(["CJS  enter a → ok { fromB: 'base' }", 'CJS  enter b → TypeError: b.read …']), 2, { w: 12.4, dy: .55, c: 'rfx-w' });
       lbl(S, 'l2', 19.0, 4.4, ['CommonJS는 a에서 시작하면 돌고, b에서 시작하면 죽었어요', 'CommonJS ran when entered at a and crashed when entered at b'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 5.8, ['둘 다 아직 실행이 끝나지 않은 모듈의 값을 읽었기 때문이에요', 'both read values from a module that had not finished running'], 'a', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['순환은 불러오는 순서에 기대는 숨은 버그를 만들어요', 'cycles hide bugs that depend on load order'], 'r', 4, { w: 16.0 });
@@ -430,7 +430,7 @@ function sRenameT() {
     draw: (S) => {
       rbars(S, 'b1', .5, [[['단어 검색', 'grep -w'], 5.0, 'warn', ['25곳', '25 hits']], [['진짜 참조', 'real refs'], 1.2, 'ok', ['6곳', '6 refs']], [['TS 도구', 'TS rename'], 1.0, 'accent', ['5곳', '5 edits']]], 1);
       lbl(S, 'l1', 19.0, 2.3, ['단어 검색 25곳 가운데 19곳은 다른 validate였어요 · 주석, 메서드, 지역 변수예요', '19 of the 25 grep hits were other validates: comments, a method, local variables'], 'w', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.7, ['hooks.js:60  Hooks.prototype.validate', 'request.js:354  let validate'], 2, { w: 12.4, dy: .55, c: 'rfx-r' });
+      mono(S, 'm2', 19.0, 3.7, nbs(['hooks.js:60  Hooks.prototype.validate', 'request.js:354  let validate']), 2, { w: 12.4, dy: .55, c: 'rfx-r' });
       lbl(S, 'l2', 19.0, 4.9, ['TypeScript의 이름 바꾸기는 5곳을 고쳤지만, 다른 파일의 require 하나를 놓쳤어요', 'TypeScript’s rename made 5 edits but missed one require in another file'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 6.3, ['checkJs로 검사하자 handle-request.js의 새 오류 1개로 바로 드러났어요', 'checkJs exposed it at once: one new error in handle-request.js'], 'g', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['이름은 의미를 아는 도구로 바꾸고, 컴파일러로 확인해요', 'rename with a tool that knows meaning, then confirm with the compiler'], 'a', 4, { w: 16.0 });
@@ -448,7 +448,7 @@ function sCodemodT() {
     draw: (S) => {
       mono(S, 'm1', 19.0, .5, nbs([['             고침  틀림  놓침', '             edits wrong missed'], 'regex          29     5     3', 'jscodeshift    27     0     0']), 1, { w: 12.4, dy: .55, c: 'rfx-g' });
       lbl(S, 'l1', 19.0, 2.3, ['정규식은 29곳을 고쳤지만 5곳은 뜻이 바뀌었고, 괄호가 든 3곳은 놓쳤어요', 'the regex made 29 edits, 5 changing meaning, and missed 3 with parentheses'], 'r', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.7, ['ok(a === 200 || a === 503)', '→ strictEqual(a, 200 || a === 503)'], 2, { w: 12.4, dy: .55, c: 'rfx-r' });
+      mono(S, 'm2', 19.0, 3.7, nbs(['ok(a === 200 || a === 503)', '→ strictEqual(a, 200 || a === 503)']), 2, { w: 12.4, dy: .55, c: 'rfx-r' });
       lbl(S, 'l2', 19.0, 4.9, ['같은 패턴을 구문 트리로 찾은 코드모드는 27곳을 모두 맞게 고쳤어요 (4.0초)', 'the syntax-tree codemod fixed all 27 correctly, in 4.0 s'], 'g', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 6.3, ['실패 메시지도 falsy value에서 404 !== 200으로 바뀌었어요', 'failures go from falsy value to 404 !== 200'], 'a', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['같은 규칙을 많은 파일에 적용할 땐 텍스트 대신 구문 트리를 바꿔요', 'to apply one rule across many files, edit the syntax tree, not the text'], 'a', 4, { w: 16.0 });
@@ -483,7 +483,7 @@ function sBisectT() {
     draw: (S) => {
       rbars(S, 'b1', .5, [[['이분 탐색', 'bisect'], .08, 'ok', ['10번 · 0.40초', '10 runs · 0.40 s']], [['하나씩', 'linear'], 4.0, 'danger', ['638번 · 22.5초', '638 runs · 22.5 s']]], 1);
       lbl(S, 'l1', 19.0, 1.75, ['이분 탐색은 검사를 10번 돌려 637번째 커밋을 정확히 찾았어요', 'bisect ran the check 10 times and named commit #637 exactly'], 'g', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.15, ['1000 → 500 → 250 → … → 1', 'log2(1000) ≈ 9.97 → 10 runs'], 2, { w: 12.4, dy: .55, c: 'rfx-g' });
+      mono(S, 'm2', 19.0, 3.15, nbs(['1000 → 500 → 250 → … → 1', 'log2(1000) ≈ 9.97 → 10 runs']), 2, { w: 12.4, dy: .55, c: 'rfx-g' });
       lbl(S, 'l2', 19.0, 4.35, ['처음부터 하나씩 확인하면 638번 돌려야 했고 22.5초가 걸렸어요', 'checking one by one from the start took 638 runs and 22.5 s'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 5.75, ['찾은 커밋에 변경이 하나만 들어 있어야 원인이 바로 보여요', 'the found commit names the cause only if it holds one change'], 'a', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['작은 커밋이 이분 탐색을 강하게 만들어요', 'small commits make bisect powerful'], 'a', 4, { w: 16.0 });
@@ -570,7 +570,7 @@ function sUnusedT() {
     draw: (S) => {
       rbars(S, 'b1', .5, [[['지역 변수', 'locals'], .05, 'ok', '0'], [['매개변수', 'parameters'], 5.0, 'warn', '22']], 1);
       lbl(S, 'l1', 19.0, 1.75, ['안 쓰는 지역 변수는 0개, 안 쓰는 매개변수는 22개였어요', 'unused locals: 0; unused parameters: 22'], 'a', 1, { w: 12.4 });
-      mono(S, 'm2', 19.0, 3.0, ['log-controller.js  metadata ×6 …', 'content-type-parser.js  req ×2 …'], 2, { w: 12.4, dy: .55, c: 'rfx-w' });
+      mono(S, 'm2', 19.0, 3.0, nbs(['log-controller.js  metadata ×6 …', 'content-type-parser.js  req ×2 …']), 2, { w: 12.4, dy: .55, c: 'rfx-w' });
       lbl(S, 'l2', 19.0, 4.2, ['대부분 콜백 모양을 맞추려고 남긴 req, reply, metadata였어요', 'most were req, reply and metadata kept to match a callback’s shape'], 'w', 2, { w: 12.4 });
       lbl(S, 'l3', 19.0, 5.6, ['_request처럼 밑줄로 시작한 이름은 검사에서 빠졌어요', 'names starting with an underscore, like _request, were skipped'], 'g', 3, { w: 12.4 });
       lbl(S, 'm1', 1, 7.0, ['일부러 안 쓰는 것이라면 이름으로 드러내요', 'when something is unused on purpose, say so in its name'], 'a', 4, { w: 16.0 });
@@ -694,7 +694,7 @@ function sFormatterT() {
     code: ['prettier --write fastify.js lib/*.js', ['# 저장소의 .prettierignore는 *', '# the repo’s .prettierignore is *'], ['# 기본 설정으로 30개 파일을 정리', '# 30 files with default settings'], 'prettier --check …   # then again', ['# 두 번째에는 바뀐 줄이 없어요', '# the second run changes nothing']],
     hl: [[0, 3, 'warn'], [3, 2, 'ok'], null, null],
     draw: (S) => {
-      mono(S, 'm1', 19.0, .5, ['30 files  +4,679  −3,784 lines', '8,136 → 9,031 lines   1.35 s'], 1, { w: 12.4, dy: .55, c: 'rfx-w' });
+      mono(S, 'm1', 19.0, .5, nbs(['30 files  +4,679  −3,784 lines', '8,136 → 9,031 lines   1.35 s']), 1, { w: 12.4, dy: .55, c: 'rfx-w' });
       lbl(S, 'l1', 19.0, 1.75, ['Fastify의 스타일과 Prettier 기본값이 달라 30개 파일에서 4,679줄이 바뀌었어요', 'Fastify’s style differs from Prettier’s defaults: 4,679 lines changed in 30 files'], 'w', 1, { w: 12.4 });
       T(S, 't2', 19.0, 3.15, '--check 1.07 s · 2nd --write: 0 lines', 'cz-mono rfx-tiny rfx-g', 2, { w: 12.4 });
       lbl(S, 'l2', 19.0, 3.75, ['다시 돌리면 바뀌는 줄이 0개예요 · 같은 코드에는 늘 같은 결과가 나와요', 'a second run changed 0 lines: the same code always gives the same result'], 'g', 2, { w: 12.4 });
