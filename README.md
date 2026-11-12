@@ -11,9 +11,9 @@
 
 코드 뒤의 원리를 움직임으로 봐요
 
-컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 60개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
+컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 61개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 60" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-60-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2388" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2388-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 61" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-61-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2420" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2420-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -27,7 +27,7 @@
 
 **[https://starrykss.github.io/CS_Study/](https://starrykss.github.io/CS_Study/)**
 
-포털에는 도감 60개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
+포털에는 도감 61개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
 
 ```
 통합 포털  →  도감 카드 선택  →  과목 페이지 (주제별 개념 카드)  →  카드를 눌러 크게 보기
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 59개와 UI/UX 도감, 개념 2388개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 60개와 UI/UX 도감, 개념 2420개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -121,6 +121,7 @@ JavaScript·TypeScript·Python·Java·C/C++·Go·Rust·SQL 같은 언어와 CSS,
 | **정보 검색**<br><sub>Information Retrieval</sub> | 색인, 순위 모델, 평가, 웹 검색, 질의 처리와 시스템, 학습과 신경 검색 | 32 | [열기](https://starrykss.github.io/CS_Study/information-retrieval/) | [`information-retrieval/`](./information-retrieval) |
 | **정보 보안**<br><sub>Security</sub> | 암호화, 해시, 서명, 인증서, 웹 취약점, 인증·인가 | 33 | [열기](https://starrykss.github.io/CS_Study/security/) | [`security/`](./security) |
 | **분산 시스템·시스템 설계**<br><sub>Distributed systems & design</sub> | 확장, 캐시, 메시지 큐, 레이트 리밋, 합의, 서킷 브레이커, API | 33 | [열기](https://starrykss.github.io/CS_Study/distributed-systems/) | [`distributed-systems/`](./distributed-systems) |
+| **시스템 설계**<br><sub>System design</sub> | 기초 수치, URL 단축기, 피드와 타임라인, 채팅과 실시간, 검색과 위치, 확장과 운영 | 32 | [열기](https://starrykss.github.io/CS_Study/system-design/) | [`system-design/`](./system-design) |
 | **DevOps·클라우드**<br><sub>DevOps & cloud</sub> | Git, CI/CD, 컨테이너, 쿠버네티스, 배포 전략, 관측성 | 67 | [열기](https://starrykss.github.io/CS_Study/devops-cloud/) | [`devops-cloud/`](./devops-cloud) |
 | **웹 기술**<br><sub>Web technology</sub> | 렌더링, 쿠키·스토리지, CORS, 캐싱, CSR·SSR, 웹 바이탈 | 33 | [열기](https://starrykss.github.io/CS_Study/web/) | [`web/`](./web) |
 | **클라우드**<br><sub>Cloud</sub> | 클라우드 기초, 권한과 보안, 네트워크, 컴퓨팅, 스토리지와 데이터, 운영과 비용 | 32 | [열기](https://starrykss.github.io/CS_Study/cloud/) | [`cloud/`](./cloud) |
@@ -187,7 +188,7 @@ quantum-computing/  circuits-and-electronics/  digital-logic/  computer-architec
 operating-systems/  systems-programming/  embedded-systems/  linux-shell/
 computer-networks/  programming-languages/  compilers/  programming-paradigms/
 design-patterns/  software-engineering/  databases/  data-engineering/
-information-retrieval/  security/  distributed-systems/  devops-cloud/  web/
+information-retrieval/  security/  distributed-systems/  system-design/  devops-cloud/  web/
 computer-graphics/  mobile-development/  ai-ml/  deep-learning/  llm-generative-ai/
 calculus/  linear-algebra/  probability-statistics/  numerical-analysis/
 signals-and-systems/  general-physics/  javascript/  typescript/  python/  java/  c-cpp/

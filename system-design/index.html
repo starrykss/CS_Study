@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>시스템 설계 · 개발자 지식 도감</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/ux.css">
+<style>.grid{grid-template-columns:repeat(2,minmax(0,1fr))}@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}}.dlg{width:min(1320px,100%);grid-template-columns:minmax(0,1.85fr) minmax(300px,1fr)}.d-st .stage{width:min(100%,calc((100vh - 64px) * 4 / 3));margin-inline:auto}@media (max-width:900px){.dlg{grid-template-columns:minmax(0,1fr)}}@media (max-width:600px){.ov{padding:8px}.dlg{padding:6px;border-radius:22px}}</style>
+</head>
+<body data-page="sysdesign">
+<header class="top wrap"><a class="brand" href="../index.html" data-en="&larr; Developer Atlas">&larr; 개발자 지식 도감</a><nav class="pages" aria-label="과목"><a href="../data-structures/index.html" data-en="Data structures">자료구조</a><a href="../algorithms/index.html" data-en="Algorithms">알고리즘</a><a href="../discrete-math/index.html" data-en="Discrete mathematics">이산수학</a><a href="../theory-of-computation/index.html" data-en="Theory of computation">계산 이론</a><a href="../information-theory/index.html" data-en="Information theory">정보 이론</a><a href="../cryptography/index.html" data-en="Cryptography">암호학</a><a href="../quantum-computing/index.html" data-en="Quantum Computing">양자 컴퓨팅</a><a href="../circuits-and-electronics/index.html" data-en="Circuits and Electronics">회로·전자공학 기초</a><a href="../digital-logic/index.html" data-en="Digital logic">디지털 논리</a><a href="../computer-architecture/index.html" data-en="Computer architecture">컴퓨터 구조</a><a href="../operating-systems/index.html" data-en="Operating systems">운영체제</a><a href="../systems-programming/index.html" data-en="Systems programming">시스템 프로그래밍</a><a href="../embedded-systems/index.html" data-en="Embedded Systems">임베디드 시스템</a><a href="../linux-shell/index.html" data-en="Linux &amp; shell">리눅스·셸</a><a href="../computer-networks/index.html" data-en="Computer networks">컴퓨터 네트워크</a><a href="../programming-languages/index.html" data-en="Programming languages">프로그래밍 언어</a><a href="../compilers/index.html" data-en="Compilers">컴파일러</a><a href="../programming-paradigms/index.html" data-en="Paradigms &amp; practices">프로그래밍 패러다임·방법론</a><a href="../design-patterns/index.html" data-en="Design patterns">디자인 패턴</a><a href="../software-engineering/index.html" data-en="Software engineering">소프트웨어 공학</a><a href="../databases/index.html" data-en="Databases">데이터베이스</a><a href="../data-engineering/index.html" data-en="Data engineering">데이터 엔지니어링</a><a href="../information-retrieval/index.html" data-en="Information Retrieval">정보 검색</a><a href="../security/index.html" data-en="Security">정보 보안</a><a href="../distributed-systems/index.html" data-en="Distributed systems &amp; design">분산 시스템·시스템 설계</a><a href="../system-design/index.html" aria-current="page" data-en="System design">시스템 설계</a><a href="../devops-cloud/index.html" data-en="DevOps">DevOps</a><a href="../web/index.html" data-en="Web technology">웹 기술</a><a href="../computer-graphics/index.html" data-en="Computer graphics">컴퓨터 그래픽스</a><a href="../mobile-development/index.html" data-en="Mobile development">모바일 앱 개발</a><a href="../ai-ml/index.html" data-en="AI &amp; machine learning">인공지능·머신러닝</a><a href="../deep-learning/index.html" data-en="Deep Learning">딥러닝</a><a href="../llm-generative-ai/index.html" data-en="LLMs and Generative AI">LLM·생성형 AI</a><a href="../calculus/index.html" data-en="Calculus">미적분학</a><a href="../linear-algebra/index.html" data-en="Linear algebra">선형대수학</a><a href="../probability-statistics/index.html" data-en="Probability &amp; statistics">확률·통계</a><a href="../numerical-analysis/index.html" data-en="Numerical analysis">수치해석</a><a href="../signals-and-systems/index.html" data-en="Signals and Systems">신호와 시스템</a><a href="../general-physics/index.html" data-en="General physics">일반물리학</a><a href="../javascript/index.html" data-en="JavaScript">JavaScript</a><a href="../typescript/index.html" data-en="TypeScript">TypeScript</a><a href="../python/index.html" data-en="Python">Python</a><a href="../java/index.html" data-en="Java">Java</a><a href="../c-cpp/index.html" data-en="C/C++">C/C++</a><a href="../go/index.html" data-en="Go">Go</a><a href="../rust/index.html" data-en="Rust">Rust</a><a href="../sql/index.html" data-en="SQL">SQL</a><a href="../css/index.html" data-en="CSS">CSS</a><a href="../react/index.html" data-en="React">React</a><a href="../nextjs/index.html" data-en="Next.js">Next.js</a><a href="../vue/index.html" data-en="Vue">Vue</a><a href="../tailwindcss/index.html" data-en="Tailwind CSS">Tailwind CSS</a><a href="../nodejs/index.html" data-en="Node.js">Node.js</a><a href="../nestjs/index.html" data-en="NestJS">NestJS</a><a href="../django-fastapi/index.html" data-en="Django &amp; FastAPI">Django·FastAPI</a><a href="../graphql/index.html" data-en="GraphQL">GraphQL</a><a href="../frontend/index.html" data-en="Frontend">프론트엔드</a><a href="../backend/index.html" data-en="Backend">백엔드</a><a href="../cloud/index.html" data-en="Cloud">클라우드</a><a href="../ux-basics/index.html" data-en="UI/UX basics">UI/UX 기초</a></nav></header>
+
+<header class="hero wrap">
+  <p class="eyebrow" data-en="Data &amp; infrastructure · System design">데이터·인프라 · System design</p>
+  <h1 data-en="Designing systems&lt;br&gt;by the &lt;mark&gt;numbers&lt;/mark&gt;">숫자로 따져 보는,<br><mark>시스템 설계</mark></h1>
+  <p class="lede" data-en="From the latency of each layer, Little’s law, utilization and queues, tail latency from fan-out, hedged requests and cache hit rates, through code length and key types for a URL shortener, 301 versus 302, caching and expiry, pull, push and hybrid feeds, timeline caches and hot counters, chat sequence numbers and unread counts, pub/sub fan-out, WebSocket memory and presence, to search autocomplete, precomputed top results, radius search and geohashes, leaderboards, and then hot keys, replica reads, load shedding, backpressure, write batching and ID generation, with animated pictures of how design choices change the numbers, built from results run on PostgreSQL 16 and Redis 7.">각 계층의 지연 시간, 리틀의 법칙, 사용률과 대기열, 팬아웃이 만드는 꼬리 지연, 헤지 요청, 캐시 적중률에서 시작해 URL 단축기의 코드 길이와 키 타입, 301과 302, 캐시와 만료, 피드의 풀과 푸시와 혼합 방식, 타임라인 캐시, 뜨거운 카운터, 채팅의 순서 번호와 안 읽은 수, Pub/Sub 팬아웃, 웹소켓 메모리, 접속 상태, 검색 자동완성, 미리 계산한 상위 결과, 반경 검색과 지오해시, 리더보드, 그리고 뜨거운 키, 복제본 읽기, 부하 차단, 배압, 쓰기 묶기, ID 생성까지. PostgreSQL 16과 Redis 7을 직접 돌려 잰 결과로 설계의 선택이 숫자를 어떻게 바꾸는지 그림으로 움직여 보여줘요.</p>
+  <dl class="meta">
+    <div><dt data-en="Concepts">개념</dt><dd id="n-items">0</dd></div>
+    <div><dt data-en="Topics">분류</dt><dd id="n-cats">0</dd></div>
+  </dl>
+</header>
+
+<nav class="bar" aria-label="분류와 검색">
+  <div class="bar-in wrap">
+    <button class="chip" id="c-all" type="button" aria-pressed="true">전체</button>
+    <button class="chip pk" id="pk" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="pop"><span class="pk-l" id="pk-l">주제 선택</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="pop" id="pop" hidden><div class="pop-h"><b id="pop-t">주제를 골라 보세요</b></div><div class="pop-g" id="pop-g"></div></div>
+    <label class="search" for="q"><span class="sr" id="q-l">개념 검색</span><input id="q" type="search" placeholder="꼬리 지연, 캐시 적중률, URL 단축기, 피드 팬아웃, 리더보드, 위치 검색, 부하 차단…" data-q-ko="꼬리 지연, 캐시 적중률, URL 단축기, 피드 팬아웃, 리더보드, 위치 검색, 부하 차단…" data-q-en="Tail latency, cache hit rates, URL shorteners, feed fan-out, leaderboards, location search, load shedding…" autocomplete="off"></label>
+    <button class="ib lg" id="lg" type="button" aria-label="Switch to English"><span>EN</span></button>
+    <button class="ib tt" id="tt" type="button" aria-label="다크 모드로 보기"><svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </div>
+</nav>
+
+<main id="list" class="wrap"></main>
+<p class="empty wrap" id="empty" hidden data-en="Nothing matches. Try the Korean or English name.">찾는 개념이 없어요. 한글 이름이나 영어 이름으로 다시 검색해 보세요.</p>
+
+<footer class="foot wrap">
+  <div class="foot-t">
+    <p data-en="Every example is a CSS animation and only plays while its card is on screen.">예시는 모두 CSS 애니메이션이에요. 카드가 화면에 보일 때만 재생돼요.</p>
+    <p data-en="With Reduce Motion turned on, examples stay still and only move on hover or when a card is opened.">기기에서 '동작 줄이기'를 켜면 멈춘 상태로 보이고, 마우스를 올리거나 카드를 열 때만 움직여요.</p>
+  </div>
+  <p class="made">Made by <a href="https://github.com/starrykss" target="_blank" rel="noopener noreferrer">@starrykss</a></p>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="d-t">
+    <div class="d-st"><div class="stage"><div class="sc" id="d-sc"></div></div></div>
+    <div class="d-b">
+      <div class="d-top">
+        <p class="eyebrow" id="d-cat"></p>
+        <button class="ib" id="d-x" type="button" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <h3 id="d-t"></h3>
+      <p class="d-e" id="d-e"></p>
+      <p class="d-d" id="d-d"></p>
+      <div class="d-u"><b id="d-ul">언제 쓰나요</b><span id="d-u"></span></div>
+      <div class="d-nav">
+        <button class="ib" id="d-p" type="button" aria-label="이전 개념"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="d-pos" id="d-pos"></span>
+        <button class="ib" id="d-n" type="button" aria-label="다음 개념"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/cs0.js"></script>
+<script src="content.js"></script>
+<script src="../assets/app.js"></script>
+</body>
+</html>
