@@ -11,9 +11,9 @@
 
 코드 뒤의 원리를 움직임으로 봐요
 
-컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 64개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
+컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 65개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 64" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-64-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2516" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2516-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 65" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-65-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2550" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2550-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -27,7 +27,7 @@
 
 **[https://starrykss.github.io/CS_Study/](https://starrykss.github.io/CS_Study/)**
 
-포털에는 도감 64개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
+포털에는 도감 65개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
 
 ```
 통합 포털  →  도감 카드 선택  →  과목 페이지 (주제별 개념 카드)  →  카드를 눌러 크게 보기
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 63개와 UI/UX 도감, 개념 2516개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 64개와 UI/UX 도감, 개념 2550개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -91,7 +91,7 @@
 
 ### 언어·프레임워크 · Languages & frameworks
 
-JavaScript·TypeScript·Python·Java·C/C++·Go·Rust·SQL 같은 언어와 CSS, React·Next.js·Vue·Tailwind·Node.js·NestJS·Django·FastAPI 같은 프레임워크와 런타임, 그리고 GraphQL까지, 실무에서 매일 쓰는 언어와 프레임워크의 동작 원리예요.
+JavaScript·TypeScript·Python·Java·Kotlin·C/C++·Go·Rust·SQL 같은 언어와 CSS, React·Next.js·Vue·Tailwind·Node.js·NestJS·Django·FastAPI 같은 프레임워크와 런타임, 그리고 GraphQL까지, 실무에서 매일 쓰는 언어와 프레임워크의 동작 원리예요.
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
@@ -99,6 +99,7 @@ JavaScript·TypeScript·Python·Java·C/C++·Go·Rust·SQL 같은 언어와 CSS,
 | **TypeScript**<br><sub>TypeScript</sub> | 타입 기초, 함수와 객체, 제네릭과 유틸리티 타입, 고급 타입, 설정과 도구 | 32 | [열기](https://starrykss.github.io/CS_Study/typescript/) | [`typescript/`](./typescript) |
 | **Python**<br><sub>Python</sub> | 객체와 자료형, 함수와 이터레이션, 클래스와 데이터 모델, 실행 모델, 동시성과 성능, 타입과 도구 | 32 | [열기](https://starrykss.github.io/CS_Study/python/) | [`python/`](./python) |
 | **Java**<br><sub>Java</sub> | 언어와 타입, 컬렉션과 스트림, JVM 내부, 동시성, 언어 설계, 빌드와 운영 | 32 | [열기](https://starrykss.github.io/CS_Study/java/) | [`java/`](./java) |
+| **Kotlin**<br><sub>Kotlin</sub> | null과 기본 문법, 함수와 람다, 클래스와 위임, 컬렉션, 코루틴, Java 상호 운용과 빌드 | 34 | [열기](https://starrykss.github.io/CS_Study/kotlin/) | [`kotlin/`](./kotlin) |
 | **C/C++**<br><sub>C/C++</sub> | 메모리와 포인터, 소유권과 RAII, 언어 기능, 표준 라이브러리, 동시성, 모던 C++과 도구 | 32 | [열기](https://starrykss.github.io/CS_Study/c-cpp/) | [`c-cpp/`](./c-cpp) |
 | **Go**<br><sub>Go</sub> | 기본과 타입, 인터페이스와 오류, 고루틴과 채널, 런타임과 메모리, 도구와 모듈, 실전 패턴 | 32 | [열기](https://starrykss.github.io/CS_Study/go/) | [`go/`](./go) |
 | **Rust**<br><sub>Rust</sub> | 소유권과 빌림, 타입과 트레이트, 스마트 포인터와 메모리, 동시성, 도구, 실전 패턴 | 32 | [열기](https://starrykss.github.io/CS_Study/rust/) | [`rust/`](./rust) |
@@ -195,9 +196,9 @@ performance-optimization/  databases/  data-engineering/  information-retrieval/
 distributed-systems/  system-design/  devops-cloud/  web/  computer-graphics/
 mobile-development/  ai-ml/  deep-learning/  llm-generative-ai/  calculus/  linear-algebra/
 probability-statistics/  numerical-analysis/  signals-and-systems/  general-physics/
-javascript/  typescript/  python/  java/  c-cpp/  go/  rust/  sql/  css/  react/  nextjs/
-vue/  tailwindcss/  nodejs/  nestjs/  django-fastapi/  graphql/  frontend/  backend/  cloud/
-ux-basics/
+javascript/  typescript/  python/  java/  kotlin/  c-cpp/  go/  rust/  sql/  css/  react/
+nextjs/  vue/  tailwindcss/  nodejs/  nestjs/  django-fastapi/  graphql/  frontend/
+backend/  cloud/  ux-basics/
 ```
 
 ## 내 컴퓨터에서 보기
