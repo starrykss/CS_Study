@@ -11,9 +11,9 @@
 
 코드 뒤의 원리를 움직임으로 봐요
 
-컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 67개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
+컴퓨터공학 전공 과목과 기초 수학·과학, 현업에서 매일 쓰는 지식을 도감 68개로 나누고,<br>개념마다 직접 움직이는 예시를 붙였어요.
 
-<a href="#도감-목록"><img alt="도감 67" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-67-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2609" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2609-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
+<a href="#도감-목록"><img alt="도감 68" src="https://img.shields.io/badge/%EB%8F%84%EA%B0%90-68-2F6FED?style=flat-square"></a> <a href="#도감-목록"><img alt="개념 2637" src="https://img.shields.io/badge/%EA%B0%9C%EB%85%90-2637-2F6FED?style=flat-square"></a> <a href="#이렇게-볼-수-있어요"><img alt="언어 한국어 · English" src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-%ED%95%9C%EA%B5%AD%EC%96%B4_%C2%B7_English-475569?style=flat-square"></a> <a href="https://starrykss.github.io/CS_Study/"><img alt="GitHub Pages live" src="https://img.shields.io/badge/GitHub_Pages-live-16A34A?style=flat-square&logo=github&logoColor=white"></a> <a href="https://github.com/starrykss"><img alt="made by @starrykss" src="https://img.shields.io/badge/made_by-%40starrykss-0F172A?style=flat-square&logo=github&logoColor=white"></a>
 
 <br>
 
@@ -27,7 +27,7 @@
 
 **[https://starrykss.github.io/CS_Study/](https://starrykss.github.io/CS_Study/)**
 
-포털에는 도감 67개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
+포털에는 도감 68개가 분야별 카드로 놓여 있어요. 카드마다 그 과목의 대표 개념이 움직이고 있고, 카드를 누르면 해당 도감 페이지로 이동해요. 도감 페이지에서는 주제별로 나뉜 개념 카드를 보면서 검색하거나 크게 열어 볼 수 있어요.
 
 ```
 통합 포털  →  도감 카드 선택  →  과목 페이지 (주제별 개념 카드)  →  카드를 눌러 크게 보기
@@ -35,7 +35,7 @@
 
 ## 도감 목록
 
-과목 66개와 UI/UX 도감, 개념 2609개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
+과목 67개와 UI/UX 도감, 개념 2637개예요. **바로가기**는 웹 페이지, **폴더**는 이 저장소의 내용(개념 설명을 글로 정리한 README 포함)이에요.
 
 ### 디자인 · Design
 
@@ -91,7 +91,7 @@
 
 ### 언어·프레임워크 · Languages & frameworks
 
-JavaScript·TypeScript·Python·Java·Kotlin·C/C++·Go·Rust·SQL 같은 언어와 CSS, React·React Native·Next.js·Vue·Tailwind·Node.js·NestJS·Spring Boot·Django·FastAPI 같은 프레임워크와 런타임, 그리고 GraphQL까지, 실무에서 매일 쓰는 언어와 프레임워크의 동작 원리예요.
+JavaScript·TypeScript·Python·Java·Kotlin·C/C++·Go·Rust·SQL 같은 언어와 CSS, React·React Native·Flutter·Next.js·Vue·Tailwind·Node.js·NestJS·Spring Boot·Django·FastAPI 같은 프레임워크와 런타임, 그리고 GraphQL까지, 실무에서 매일 쓰는 언어와 프레임워크의 동작 원리예요.
 
 | 도감 | 다루는 내용 | 개념 | 바로가기 | 폴더 |
 | --- | --- | ---: | :---: | --- |
@@ -107,6 +107,7 @@ JavaScript·TypeScript·Python·Java·Kotlin·C/C++·Go·Rust·SQL 같은 언어
 | **CSS**<br><sub>CSS</sub> | 선택자와 캐스케이드, 박스와 흐름, 레이아웃, 시각 표현, 아키텍처와 성능 | 34 | [열기](https://starrykss.github.io/CS_Study/css/) | [`css/`](./css) |
 | **React**<br><sub>React</sub> | JSX와 컴포넌트, 상태와 렌더링, 이펙트와 훅, 상태 관리와 구조, 최신 React | 33 | [열기](https://starrykss.github.io/CS_Study/react/) | [`react/`](./react) |
 | **React Native**<br><sub>React Native</sub> | Hermes 엔진, Metro 번들, 리스트, 스타일과 레이아웃, JS 스레드와 네이티브 경계, 배포와 운영 | 32 | [열기](https://starrykss.github.io/CS_Study/react-native/) | [`react-native/`](./react-native) |
+| **Flutter**<br><sub>Flutter</sub> | 위젯과 리빌드, 레이아웃 제약, 목록과 이미지, 비동기와 생명주기, Dart 실행, 웹 빌드와 패키지 | 28 | [열기](https://starrykss.github.io/CS_Study/flutter/) | [`flutter/`](./flutter) |
 | **Next.js**<br><sub>Next.js</sub> | 라우팅, 렌더링 전략, 데이터, 최적화, 빌드와 운영 | 30 | [열기](https://starrykss.github.io/CS_Study/nextjs/) | [`nextjs/`](./nextjs) |
 | **Vue**<br><sub>Vue</sub> | 반응성, 렌더링, 컴포넌트, Composition API, 상태와 라우팅, 빌드와 성능 | 32 | [열기](https://starrykss.github.io/CS_Study/vue/) | [`vue/`](./vue) |
 | **Tailwind CSS**<br><sub>Tailwind CSS</sub> | 기초, 레이아웃, 변형, v4 설정, 실무 패턴 | 33 | [열기](https://starrykss.github.io/CS_Study/tailwindcss/) | [`tailwindcss/`](./tailwindcss) |
@@ -199,8 +200,8 @@ distributed-systems/  system-design/  devops-cloud/  web/  computer-graphics/
 mobile-development/  ai-ml/  deep-learning/  llm-generative-ai/  calculus/  linear-algebra/
 probability-statistics/  numerical-analysis/  signals-and-systems/  general-physics/
 javascript/  typescript/  python/  java/  kotlin/  c-cpp/  go/  rust/  sql/  css/  react/
-react-native/  nextjs/  vue/  tailwindcss/  nodejs/  nestjs/  spring-boot/  django-fastapi/
-graphql/  frontend/  backend/  cloud/  ux-basics/
+react-native/  flutter/  nextjs/  vue/  tailwindcss/  nodejs/  nestjs/  spring-boot/
+django-fastapi/  graphql/  frontend/  backend/  cloud/  ux-basics/
 ```
 
 ## 내 컴퓨터에서 보기
